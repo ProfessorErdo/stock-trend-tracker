@@ -38,7 +38,7 @@ def format_symbol(code):
     else:
         return f'sz{code}'
     
-def calculate_stock_values(stock_codes, price_date, financial_date="20251213"): 
+def calculate_stock_values(stock_codes, price_date, financial_date="20251213"):
     """
     Calculate stock values based on financial data and price data
     """
@@ -46,14 +46,14 @@ def calculate_stock_values(stock_codes, price_date, financial_date="20251213"):
     stock_symbols = [format_symbol(code) for code in stock_codes]
     financial_files = os.listdir(f'../data/input/financial-indicators/{financial_date}/')
     price_files = os.listdir(f'../data/input/price-data/{price_date}/')
-    
+
     for stock_code, stock_symbol in tqdm(zip(stock_codes, stock_symbols)):
         financial_file = [file for file in financial_files if stock_code in file][0]
         price_file = [file for file in price_files if stock_symbol in file][0]
-        
+
         financial_df = pd.read_csv(f"../data/input/financial-indicators/{financial_date}/{financial_file}")
         price_df = pd.read_csv(f"../data/input/price-data/{price_date}/{price_file}")
-            
+
         # --- merge the price data with financial data ---
         financial_df['report_date'] = pd.to_datetime(financial_df['report_date'])
         price_df['report_date'] = pd.to_datetime(price_df['report_date'])
@@ -64,7 +64,7 @@ def calculate_stock_values(stock_codes, price_date, financial_date="20251213"):
         # aggregate the daily price into monthly price
         price_month = price_df.groupby(['year', 'month']).agg({'open': 'first', 'close': 'last', 
                                                         'high': 'max', 'low': 'min'}).reset_index()
-        
+
         financial_price = pd.merge(price_month, financial_df, on=['year', 'month'], how='left', validate="1:1")
         financial_price = financial_price.ffill()
 
@@ -73,7 +73,7 @@ def calculate_stock_values(stock_codes, price_date, financial_date="20251213"):
         financial_price['pb_ttm'] = financial_price['close'] / financial_price['bps_ttm']
         financial_price['pr_ttm'] = financial_price['pe_ttm'] / financial_price['roe_ttm']
         financial_price['code'] = stock_code.zfill(6)
-        today = datetime.today().strftime("%Y%m%d")
+        today = datetime.now().strftime("%Y%m%d")
         financial_price['update_date'] = today
         os.makedirs(f"../data/processed/stock-valuation/{price_date}", exist_ok=True)
         financial_price.to_csv(f"../data/processed/stock-valuation/{price_date}/stock_valuation_{stock_code}_{price_date}.csv", index=False)
@@ -189,12 +189,20 @@ if __name__ == "__main__":
                         help="The threshold value for filtering stocks")
     parser.add_argument("--financial_date", type=str, default='20251213',
                         help="The end date of the season for financial data")
+    parser.add_argument("--step", type=str, 
+                        choices=['value', 'visualize', 'all'], 
+                        help="The step to run, either 'value', 'visualize', or 'all'")
     
     args = parser.parse_args()
     
     stock_codes = get_stock_codes(args.price_date, args.financial_date)
-    calculate_stock_values(stock_codes, args.price_date, args.financial_date)
-    find_and_visualize_best_stocks(args.price_date, args.threshold)
+    if args.step == 'value': 
+        calculate_stock_values(stock_codes, args.price_date, args.financial_date)
+    elif args.step == 'visualize':
+        find_and_visualize_best_stocks(args.price_date, args.threshold)
+    elif args.step == 'all':
+        calculate_stock_values(stock_codes, args.price_date, args.financial_date)
+        find_and_visualize_best_stocks(args.price_date, args.threshold)
     
 
 

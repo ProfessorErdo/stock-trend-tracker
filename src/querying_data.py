@@ -50,7 +50,7 @@ def query_financial_data(stocks_df, output_dir, today, season_end='2025-12-31'):
     # check financial data already loaded    
     files_in_folder = os.listdir(f'../data/input/financial-indicators/{today}/')
     loaded_stocks = [stock[21:27] for stock in files_in_folder]
-    missed_codes = list(set(stock_codes) - set(loaded_stocks)) 
+    missed_codes = list(set(stock_codes) - set(loaded_stocks))
     print(f"There are already {len(loaded_stocks)} stocks loaded and {len(missed_codes)} stocks missed.")
     stock_codes = missed_codes
 
@@ -88,7 +88,7 @@ def query_financial_data(stocks_df, output_dir, today, season_end='2025-12-31'):
             except Exception as e:
                 continue
         iters += 1
-    if len(stock_codes) > 0: 
+    if stock_codes: 
         print(f"There are {len(stock_codes)} price data not received and the stock codes are {stock_codes}.")
 
     print("Successfully queried financial data for all stocks")
@@ -105,7 +105,7 @@ def query_price_data(stocks_df, output_dir, today):
     # check price data already loaded
     files_in_folder = os.listdir(f'../data/input/price-data/{today}/')
     loaded_stocks = [stock[13:19] for stock in files_in_folder]
-    missed_codes = list(set(stock_codes) - set(loaded_stocks)) 
+    missed_codes = list(set(stock_codes) - set(loaded_stocks))
     print(f"There are already {len(loaded_stocks)} stocks loaded and {len(missed_codes)} stocks missed.")
     stock_symbols = [format_symbol(code) for code in missed_codes]
 
@@ -121,8 +121,8 @@ def query_price_data(stocks_df, output_dir, today):
             except Exception as e:
                 continue
         iters += 1
-    if len(stock_symbols) > 0: 
-        print(f"There are {len(stock_symbols)} price data not received and the stock symbols are {stock_symbols}.")
+    if stock_symbols: 
+        print(f"There are {len(stock_symbols)} price data not received and the stock codes are {stock_symbols}.")
 
     print("Successfully queried price data for all stocks")
 
