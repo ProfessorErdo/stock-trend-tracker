@@ -36,7 +36,7 @@ def load_stock_codes(price_date='20251219'):
 #     smtp.sendmail(sender_mail, receiver, msg.as_string())
 #     smtp.quit()
 
-def send_mail(receiver='', mail_title='', mail_content='', img_dir=f'../img/20251219'):
+def send_mail(receiver='', mail_title='', mail_content='', img_dir='../img/20251219'):
     smtp = SMTP_SSL(host_server)
     smtp.ehlo(host_server)
     smtp.login(sender_mail, sender_passcode)
@@ -105,5 +105,5 @@ if __name__ == '__main__':
     f'There are {number_of_stocks} stocks in total and \n' + \
     f'The stock codes are: {stock_codes}.'
 
-    send_mail(receiver=receiver,mail_title=mail_title,mail_content=mail_content)
+    send_mail(receiver=receiver,mail_title=mail_title,mail_content=mail_content, img_dir=f'../img/{price_date}')
     print('Email sent successfully.')
