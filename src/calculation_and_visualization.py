@@ -191,6 +191,7 @@ if __name__ == "__main__":
                         help="The end date of the season for financial data")
     parser.add_argument("--step", type=str, 
                         choices=['value', 'visualize', 'all'], 
+                        default='all',
                         help="The step to run, either 'value', 'visualize', or 'all'")
     
     args = parser.parse_args()
