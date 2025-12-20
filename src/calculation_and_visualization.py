@@ -100,6 +100,9 @@ def find_and_visualize_best_stocks(price_date, threshold=0.35):
     stock_values_filtered.to_csv(f"../data/processed/stock-valuation/stocks_values_filtered_{price_date}.csv", index=False)
     
     ob_stocks = stock_values_filtered.code.tolist()
+    # craete the img/{price_date} folder if it doesn't exist
+    if not os.path.exists(f"../img/{price_date}"):
+        os.makedirs(f"../img/{price_date}")
     print(f"The number of stocks that meet the criteria is {len(ob_stocks)} and are {ob_stocks}.")
     for stock_code in ob_stocks:
         stock_files = os.listdir(f"../data/processed/stock-valuation/{price_date}")
@@ -174,9 +177,6 @@ def find_and_visualize_best_stocks(price_date, threshold=0.35):
         plt.tight_layout()
     
         # save the image
-        # craete the img/{price_date} folder if it doesn't exist
-        if not os.path.exists(f"../img/{price_date}"):
-            os.makedirs(f"../img/{price_date}")
         plt.savefig(f"../img/{price_date}/pe_pb_pr_roe_distribution_monthly_close_{stock_code}_{price_date}.png", dpi=300)
         # plt.show()
         plt.close()

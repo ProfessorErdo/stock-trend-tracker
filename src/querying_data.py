@@ -9,7 +9,7 @@ import sys
 
 STOCK_TYPE_MAPPING = {
     "hongli": "../data/input/hongli_list_20251213.csv",
-    "honglidb": "../data/input/honglidbo_list_20251213.csv",
+    "honglidibo": "../data/input/honglidibo_list_20251213.csv",
     "hs300": "../data/input/hs300_list_20251213.csv",
     "zz500": "../data/input/zz500_list_20251216.csv"
 }
@@ -127,12 +127,13 @@ def query_price_data(stocks_df, output_dir, today):
     print("Successfully queried price data for all stocks")
 
 
-def query_data(data_type, stock_type, season_end="2025-12-31"):
+def query_data(data_type, stock_type, query_date, season_end="2025-12-31"):
     """
     Main function to query either financial or price data for specified stock type
     """
     # Get current date for directory naming
-    today = pd.to_datetime("today").strftime("%Y%m%d")
+    # today = pd.to_datetime("today").strftime("%Y%m%d")
+    today = query_date
     
     # Get the stock list
     stocks_df = get_stock_list(stock_type)
@@ -156,15 +157,17 @@ if __name__ == "__main__":
                         choices=['financial', 'price'], 
                         help="Type of data to query: 'financial' or 'price'")
     parser.add_argument("--stock_type", type=str, required=True,
-                        choices=['ss300', 'zz500', 'hongli', 'honglidbo'],
-                        help="Type of stocks to query: 'ss300', 'zz500', 'hongli', or 'honglidbo'")
+                        choices=['ss300', 'zz500', 'hongli', 'honglidibo'],
+                        help="Type of stocks to query: 'ss300', 'zz500', 'hongli', or 'honglidibo'")
     parser.add_argument("--season_end", type=str, default='2025-12-31',
                         help="The end date of the season for financial data")
+    parser.add_argument("--query_date", type=str, default=pd.to_datetime("today").strftime("%Y%m%d"),
+                        help="The date of the price data to process, in the format 'YYYYMMDD'")
     
     args = parser.parse_args()
     
     try:
-        query_data(args.data_type, args.stock_type, args.season_end)
+        query_data(args.data_type, args.stock_type, args.query_date, args.season_end)
         print("Data querying completed successfully!")
     except Exception as e:
         print(f"Error during data querying: {e}")

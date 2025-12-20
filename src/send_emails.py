@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # mail title
     mail_title = f'Stock Analytics Results by {price_date}'
     # load the results
-    number_of_stocks, stock_codes = load_stock_codes()
+    number_of_stocks, stock_codes = load_stock_codes(price_date=args.price_date)
     # mail contents
     mail_content = f'The analysis results by {price_date} are: \n' + \
     f'There are {number_of_stocks} stocks in total and \n' + \
