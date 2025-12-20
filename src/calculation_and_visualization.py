@@ -168,8 +168,8 @@ def find_and_visualize_best_stocks(price_date, threshold=0.35):
         
         stock_names = pd.read_csv("../data/input/stock_names_full.csv")
         stock_name = stock_names[stock_names['code'] == int(stock_code)]['name'].values[0]
-        fig.suptitle(f"{stock_code} {stock_name} | pettm {financial_price.iloc[-1, -4]:<10.2f} | \
-            pbttm {financial_price.iloc[-1, -3]:<10.2f} | prttm {financial_price.iloc[-1, -2]:<10.2f} | roettm {financial_price.iloc[-1, -5]:<10.2f}", 
+        fig.suptitle(f"{stock_code} {stock_name} | pettm {financial_price.iloc[-1, -5]:<10.2f} | \
+            pbttm {financial_price.iloc[-1, -4]:<10.2f} | prttm {financial_price.iloc[-1, -3]:<10.2f} | roettm {financial_price.iloc[-1, -6]:<10.2f}", 
             fontsize=10)
         plt.tight_layout()
     
