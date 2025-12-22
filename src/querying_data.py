@@ -160,7 +160,7 @@ if __name__ == "__main__":
                         choices=['financial', 'price'], 
                         help="Type of data to query: 'financial' or 'price'")
     parser.add_argument("--stock_type", type=str, required=True,
-                        choices=['ss300', 'zz500', 'hongli', 'honglidibo'],
+                        choices=['ss300', 'zz500', 'hongli', 'honglidibo', 'portfolio'],
                         help="Type of stocks to query: 'ss300', 'zz500', 'hongli', or 'honglidibo'")
     parser.add_argument("--season_end", type=str, default='2025-12-31',
                         help="The end date of the season for financial data")

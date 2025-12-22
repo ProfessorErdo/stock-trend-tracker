@@ -14,6 +14,7 @@ python querying_data.py --data_type price --stock_type honglidibo --season_end 2
 python querying_data.py --data_type price --stock_type hongli --season_end 2025-12-31 --query_date $PRICE_DATE
 python querying_data.py --data_type price --stock_type hs300 --season_end 2025-12-31 --query_date $PRICE_DATE
 python querying_data.py --data_type price --stock_type zz500 --season_end 2025-12-31 --query_date $PRICE_DATE
+python querying_data.py --data_type price --stock_type portfolio --season_end 2025-12-31 --query_date $PRICE_DATE
 
 # calcualte the stock value and visualize the stocks meeting the criteria
 python calculation_and_visualization.py --price_date $PRICE_DATE --step all --threshold 0.26
