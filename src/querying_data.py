@@ -11,7 +11,8 @@ STOCK_TYPE_MAPPING = {
     "hongli": "../data/input/hongli_list_20251213.csv",
     "honglidibo": "../data/input/honglidibo_list_20251213.csv",
     "hs300": "../data/input/hs300_list_20251213.csv",
-    "zz500": "../data/input/zz500_list_20251216.csv"
+    "zz500": "../data/input/zz500_list_20251216.csv", 
+    "portfolio": ["600519", "000858", "600938", "000333", "600926", "300866", "600900", "601128"], 
 }
 
 def get_stock_list(stock_type):
@@ -20,6 +21,8 @@ def get_stock_list(stock_type):
     """
     if stock_type == "zz500": 
         df = pd.read_csv(STOCK_TYPE_MAPPING[stock_type], sep='\t')
+    elif stock_type == "portfolio": 
+        df = pd.DataFrame(STOCK_TYPE_MAPPING[stock_type], columns=['code'])
     else: 
         df = pd.read_csv(STOCK_TYPE_MAPPING[stock_type])
 
