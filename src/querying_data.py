@@ -58,7 +58,7 @@ def query_financial_data(stocks_df, output_dir, today, season_end='2025-12-31'):
     stock_codes = missed_codes
 
     iters = 0
-    while (len(stock_codes)) > 0 & (iters <= 20):
+    while (len(stock_codes) > 0) & (iters <= 20):
         for stock_code in tqdm(stock_codes, desc="Querying financial data"):
             try:
                 # Get the financial data
@@ -113,7 +113,7 @@ def query_price_data(stocks_df, output_dir, today):
     stock_symbols = [format_symbol(code) for code in missed_codes]
 
     iters = 0
-    while (len(stock_symbols)) > 0 & (iters <= 20):
+    while (len(stock_symbols) > 0) & (iters <= 20):
         for symbol in tqdm(stock_symbols, desc="Querying price data"):
             try:
                 price_df = ak.stock_zh_a_daily(symbol=f"{symbol}", start_date="20101231", end_date=f"{today}", adjust="")
@@ -160,8 +160,8 @@ if __name__ == "__main__":
                         choices=['financial', 'price'], 
                         help="Type of data to query: 'financial' or 'price'")
     parser.add_argument("--stock_type", type=str, required=True,
-                        choices=['ss300', 'zz500', 'hongli', 'honglidibo', 'portfolio'],
-                        help="Type of stocks to query: 'ss300', 'zz500', 'hongli', or 'honglidibo'")
+                        choices=['hs300', 'zz500', 'hongli', 'honglidibo', 'portfolio'],
+                        help="Type of stocks to query: 'hs300', 'zz500', 'hongli', or 'honglidibo'")
     parser.add_argument("--season_end", type=str, default='2025-12-31',
                         help="The end date of the season for financial data")
     parser.add_argument("--query_date", type=str, default=pd.to_datetime("today").strftime("%Y%m%d"),
