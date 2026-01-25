@@ -13,6 +13,7 @@ STOCK_TYPE_MAPPING = {
     "hs300": "../data/input/hs300_list_20251213.csv",
     "zz500": "../data/input/zz500_list_20251216.csv", 
     "portfolio": ["600519", "000858", "600938", "000333", "600926", "300866", "600900", "601128"], 
+    "all": "../data/input/stock_names_full.csv", 
 }
 
 def get_stock_list(stock_type):
@@ -160,8 +161,8 @@ if __name__ == "__main__":
                         choices=['financial', 'price'], 
                         help="Type of data to query: 'financial' or 'price'")
     parser.add_argument("--stock_type", type=str, required=True,
-                        choices=['hs300', 'zz500', 'hongli', 'honglidibo', 'portfolio'],
-                        help="Type of stocks to query: 'hs300', 'zz500', 'hongli', or 'honglidibo'")
+                        choices=['hs300', 'zz500', 'hongli', 'honglidibo', 'portfolio', 'all'],
+                        help="Type of stocks to query: 'all', 'hs300', 'zz500', 'hongli', or 'honglidibo'")
     parser.add_argument("--season_end", type=str, default='2025-12-31',
                         help="The end date of the season for financial data")
     parser.add_argument("--query_date", type=str, default=pd.to_datetime("today").strftime("%Y%m%d"),
