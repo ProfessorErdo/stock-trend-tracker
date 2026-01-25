@@ -98,7 +98,7 @@ def query_financial_data(stocks_df, output_dir, today, season_end='2025-12-31'):
     print("Successfully queried financial data for all stocks")
 
 
-def query_price_data(stocks_df, output_dir, today):
+def query_price_data(stocks_df, output_dir, today, adjust=""):
     """
     Query price data for the given stocks and save to the specified directory
     """
@@ -117,7 +117,7 @@ def query_price_data(stocks_df, output_dir, today):
     while (len(stock_symbols) > 0) & (iters <= 20):
         for symbol in tqdm(stock_symbols, desc="Querying price data"):
             try:
-                price_df = ak.stock_zh_a_daily(symbol=f"{symbol}", start_date="20101231", end_date=f"{today}", adjust="")
+                price_df = ak.stock_zh_a_daily(symbol=f"{symbol}", start_date="20101231", end_date=f"{today}", adjust=adjust)
                 price_df = price_df[['date', 'open', 'high', 'low', 'close']]
                 price_df.columns = ['report_date', 'open', 'high', 'low', 'close']
                 price_df.to_csv(f"{output_dir}/price_data_{symbol}_{today}.csv", index=False)
@@ -131,7 +131,7 @@ def query_price_data(stocks_df, output_dir, today):
     print("Successfully queried price data for all stocks")
 
 
-def query_data(data_type, stock_type, query_date, season_end="2025-12-31"):
+def query_data(data_type, stock_type, query_date, season_end="2025-12-31", adjust=""):
     """
     Main function to query either financial or price data for specified stock type
     """
@@ -150,7 +150,7 @@ def query_data(data_type, stock_type, query_date, season_end="2025-12-31"):
     elif data_type.lower() == "price":
         output_dir = f"../data/input/price-data/{today}"
         os.makedirs(output_dir, exist_ok=True)
-        query_price_data(stocks_df, output_dir, today)
+        query_price_data(stocks_df, output_dir, today, adjust)
     else:
         raise ValueError(f"Unknown data type: {data_type}. Use 'financial' or 'price'.")
 
@@ -167,11 +167,13 @@ if __name__ == "__main__":
                         help="The end date of the season for financial data")
     parser.add_argument("--query_date", type=str, default=pd.to_datetime("today").strftime("%Y%m%d"),
                         help="The date of the price data to process, in the format 'YYYYMMDD'")
+    parser.add_argument("--adjust", type=str, default="",
+                        help="The adjustment method for price data: 'qfq' for forward fill, 'hfq' for backward fill, or '' for no adjustment")
     
     args = parser.parse_args()
     
     try:
-        query_data(args.data_type, args.stock_type, args.query_date, args.season_end)
+        query_data(args.data_type, args.stock_type, args.query_date, args.season_end, args.adjust)
         print("Data querying completed successfully!")
     except Exception as e:
         print(f"Error during data querying: {e}")
