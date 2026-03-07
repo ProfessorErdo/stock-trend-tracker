@@ -133,7 +133,8 @@ def find_and_visualize_best_stocks(threshold=0.35):
         axes = axes.flatten()
 
         # pe ttm distribution
-        sns.kdeplot(financial_price, x='pe_ttm', fill=True, color="#eeb908", ax=axes[0])
+        sns.histplot(financial_price, x='pe_ttm', color="#eeb908", ax=axes[0], kde=True)
+        axes[0].set_xlim(0, None)
 
         # median pettm
         axes[0].axvline(x=financial_price['pe_ttm'].median(), color='blue', linestyle='--', label='median')
@@ -147,7 +148,8 @@ def find_and_visualize_best_stocks(threshold=0.35):
         axes[0].legend()
 
         # pb ttm distribution
-        sns.kdeplot(financial_price, x='pb_ttm', fill=True, color="#eeb908", ax=axes[1])
+        sns.histplot(financial_price, x='pb_ttm', color="#eeb908", ax=axes[1], kde=True)
+        axes[1].set_xlim(0, None)
 
         # median pbttm
         axes[1].axvline(x=financial_price['pb_ttm'].median(), color='blue', linestyle='--')
@@ -159,7 +161,8 @@ def find_and_visualize_best_stocks(threshold=0.35):
         axes[1].axvline(x=financial_price.iloc[-1, -4], color='red', linestyle='--')
 
         # pr ttm distribution
-        sns.kdeplot(financial_price, x='pr_ttm', fill=True, color="#eeb908", ax=axes[2])
+        sns.histplot(financial_price, x='pr_ttm', color="#eeb908", ax=axes[2], kde=True)
+        axes[2].set_xlim(0, None)
 
         # median prttm
         axes[2].axvline(x=financial_price['pr_ttm'].median(), color='blue', linestyle='--')
@@ -171,7 +174,8 @@ def find_and_visualize_best_stocks(threshold=0.35):
         axes[2].axvline(x=financial_price.iloc[-1, -3], color='red', linestyle='--')
 
         # roe ttm distribution
-        sns.kdeplot(financial_price, x='roe_ttm', fill=True, color="#eeb908", ax=axes[3])
+        sns.histplot(financial_price, x='roe_ttm', color="#eeb908", ax=axes[3], kde=True)
+        axes[3].set_xlim(0, None)
 
         # median roettm
         axes[3].axvline(x=financial_price['roe_ttm'].median(), color='blue', linestyle='--')
