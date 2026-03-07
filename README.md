@@ -10,6 +10,8 @@ A Python-based stock analysis tool that queries financial and price data, calcul
 - **Stock Screening**: Filter stocks based on quantile thresholds
 - **Visualization**: Generate distribution plots for selected stocks
 - **Email Reports**: Send analysis results with inline charts via email
+- **Individual Stock Query**: Query and visualize valuation data for a specific stock
+- **Top Stocks Ranking**: Find top N stocks based on valuation indicators
 
 ## Project Structure
 
@@ -29,6 +31,8 @@ stock-trend-tracker/
 │   ├── query_data_new.py                # Incremental data query
 │   ├── calculation_and_visualization_new.py  # Valuation calculation
 │   ├── send_emails_new.py               # Email reporting
+│   ├── query_stock_valuation.py         # Query individual stock valuation
+│   ├── query_top_stocks.py              # Find top stocks by indicator
 │   └── run_new.sh                       # Pipeline runner
 ├── pyproject.toml
 └── README.md
@@ -133,6 +137,56 @@ python send_emails_new.py
 python send_emails_new.py --date 20250307
 ```
 
+#### 4. Query Individual Stock Valuation
+
+```bash
+# Query a specific stock
+python query_stock_valuation.py --stock_code 600519
+
+# Query without plotting
+python query_stock_valuation.py --stock_code 000858 --no_plot
+```
+
+**Parameters:**
+
+| Parameter | Description |
+|-----------|-------------|
+| `--stock_code` | Stock code to query (e.g., `600519`, `000858`) |
+| `--no_plot` | Skip plotting distribution charts |
+
+**Output includes:**
+- Latest metrics (PE-TTM, PB-TTM, PR-TTM, ROE-TTM) with quantiles across all stocks
+- Last 24 report dates with EPS, BPS, ROE
+- Price information with target prices based on PR percentiles
+- Distribution plots showing historical values
+
+#### 5. Query Top Stocks
+
+```bash
+# Top 10 stocks by PE-TTM (lowest PE)
+python query_top_stocks.py --indicator pe_ttm --top_n 10
+
+# Top 20 stocks by ROE-TTM (highest ROE)
+python query_top_stocks.py --indicator roe_ttm --top_n 20
+
+# Top 15 stocks by PR-TTM (lowest PR)
+python query_top_stocks.py --indicator pr_ttm --top_n 15
+```
+
+**Parameters:**
+
+| Parameter | Default | Choices | Description |
+|-----------|---------|---------|-------------|
+| `--top_n` | 10 | - | Number of top stocks to display |
+| `--indicator` | `pe_ttm` | `pe_ttm`, `pb_ttm`, `pr_ttm`, `roe_ttm` | Indicator to sort by |
+
+**Sorting Logic:**
+- `pe_ttm`, `pb_ttm`, `pr_ttm`: Lower is better (smallest values first)
+- `roe_ttm`: Higher is better (largest values first)
+
+**Filters:**
+- Stocks with negative or zero PE-TTM, PR-TTM, or ROE-TTM are excluded
+
 ## Incremental Query Logic
 
 The new incremental query system significantly reduces data fetching time:
@@ -163,6 +217,17 @@ Stocks are filtered based on the following criteria:
 - **ROE-TTM** > (1 - threshold) percentile (default: 74th)
 
 Lower threshold = stricter filtering = fewer stocks selected.
+
+## Indicators Explained
+
+| Indicator | Name | Description | Interpretation |
+|-----------|------|-------------|----------------|
+| PE-TTM | Price-to-Earnings | Stock price / EPS (TTM) | Lower = cheaper valuation |
+| PB-TTM | Price-to-Book | Stock price / BPS (TTM) | Lower = cheaper valuation |
+| PR-TTM | PE/ROE Ratio | PE-TTM / ROE-TTM | Lower = better value relative to profitability |
+| ROE-TTM | Return on Equity | Net income / Shareholders' equity (TTM) | Higher = better profitability |
+| EPS | Earnings Per Share | Net income / Shares outstanding | Higher = more profitable |
+| BPS | Book Value Per Share | Equity / Shares outstanding | Higher = more assets per share |
 
 ## Data Sources
 
