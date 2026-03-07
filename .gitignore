@@ -12,3 +12,4 @@ wheels/
 .env
 data
 img
+.qwen/
