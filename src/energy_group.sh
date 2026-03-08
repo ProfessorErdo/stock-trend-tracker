@@ -1,0 +1,2 @@
+#!/bin/bash
+python query_stock_valuation.py --stock_code 601225,600188,601898,600863,601008,600866,600025,600900,600795,600027
