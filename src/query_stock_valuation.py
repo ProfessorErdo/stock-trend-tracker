@@ -56,18 +56,114 @@ def calculate_quantiles(all_stocks_df, metric, value):
     return (valid_values <= value).mean()
 
 
+def get_stock_name(stock_code):
+    """
+    Get stock name from stock code
+    """
+    stock_code = str(stock_code).zfill(6)
+    stock_names_file = "../data/input/stock_names_full.csv"
+    if os.path.exists(stock_names_file):
+        stock_names = pd.read_csv(stock_names_file)
+        stock_name = stock_names[stock_names['code'].astype(str).str.zfill(6) == stock_code]['name'].values
+        return stock_name[0] if len(stock_name) > 0 else "Unknown"
+    return "Unknown"
+
+
+def print_comparison_table(stock_codes, all_stocks_df):
+    """
+    Print a comparison table for multiple stocks
+    """
+    # Collect data for all stocks
+    stocks_data = []
+    
+    for stock_code in stock_codes:
+        try:
+            stock_df = load_stock_valuation(stock_code)
+            latest = stock_df.iloc[-1]
+            
+            # Calculate quantiles
+            pe_quantile = calculate_quantiles(all_stocks_df, 'pe_ttm', latest['pe_ttm'])
+            pb_quantile = calculate_quantiles(all_stocks_df, 'pb_ttm', latest['pb_ttm'])
+            pr_quantile = calculate_quantiles(all_stocks_df, 'pr_ttm', latest['pr_ttm'])
+            roe_quantile = calculate_quantiles(all_stocks_df, 'roe_ttm', latest['roe_ttm'])
+            
+            # Calculate target prices
+            pr_25 = stock_df['pr_ttm'].quantile(0.25)
+            pr_75 = stock_df['pr_ttm'].quantile(0.75)
+            current_pr = latest['pr_ttm']
+            
+            price_25th = latest['close'] * pr_25 / current_pr if current_pr > 0 else None
+            price_75th = latest['close'] * pr_75 / current_pr if current_pr > 0 else None
+            
+            stocks_data.append({
+                'code': stock_code,
+                'name': get_stock_name(stock_code),
+                'close': latest['close'],
+                'pe_ttm': latest['pe_ttm'],
+                'pe_quantile': pe_quantile,
+                'pb_ttm': latest['pb_ttm'],
+                'pb_quantile': pb_quantile,
+                'pr_ttm': latest['pr_ttm'],
+                'pr_quantile': pr_quantile,
+                'roe_ttm': latest['roe_ttm'],
+                'roe_quantile': roe_quantile,
+                'price_25th': price_25th,
+                'price_75th': price_75th
+            })
+        except FileNotFoundError as e:
+            print(f"Warning: {e}")
+            continue
+    
+    if not stocks_data:
+        print("No valid stock data found.")
+        return
+    
+    # Print comparison table
+    print("\n" + "=" * 120)
+    print("  Stock Valuation Comparison")
+    print("=" * 120)
+    
+    # Header
+    print(f"  {'Code':<8} {'Name':<10} {'Price':>10} {'PE-TTM':>10} {'PE%':>8} {'PB-TTM':>10} {'PB%':>8} {'PR-TTM':>10} {'PR%':>8} {'ROE-TTM':>10} {'ROE%':>8}")
+    print("-" * 120)
+    
+    # Data rows
+    for stock in stocks_data:
+        print(f"  {stock['code']:<8} {stock['name']:<10} {stock['close']:>10.2f} "
+              f"{stock['pe_ttm']:>10.2f} {stock['pe_quantile']*100:>7.1f}% "
+              f"{stock['pb_ttm']:>10.2f} {stock['pb_quantile']*100:>7.1f}% "
+              f"{stock['pr_ttm']:>10.2f} {stock['pr_quantile']*100:>7.1f}% "
+              f"{stock['roe_ttm']:>10.2f} {stock['roe_quantile']*100:>7.1f}%")
+    
+    print("-" * 120)
+    
+    # Target prices table
+    print(f"\n  Target Prices (based on historical PR percentiles):")
+    print("-" * 120)
+    print(f"  {'Code':<8} {'Name':<10} {'Current':>12} {'Target (25th)':>15} {'Upside':>10} {'Target (75th)':>15} {'Upside':>10}")
+    print("-" * 120)
+    
+    for stock in stocks_data:
+        if stock['price_25th'] and stock['price_75th']:
+            upside_25 = (stock['price_25th'] / stock['close'] - 1) * 100
+            upside_75 = (stock['price_75th'] / stock['close'] - 1) * 100
+            print(f"  {stock['code']:<8} {stock['name']:<10} {stock['close']:>12.2f} "
+                  f"{stock['price_25th']:>15.2f} {upside_25:>9.1f}% "
+                  f"{stock['price_75th']:>15.2f} {upside_75:>9.1f}%")
+        else:
+            print(f"  {stock['code']:<8} {stock['name']:<10} {stock['close']:>12.2f} {'N/A':>15} {'N/A':>10} {'N/A':>15} {'N/A':>10}")
+    
+    print("=" * 120 + "\n")
+    
+    return stocks_data
+
+
 def print_stock_info(stock_code, stock_df, all_stocks_df):
     """
     Print stock information in a nice layout
     """
     # Get stock name
-    stock_names_file = "../data/input/stock_names_full.csv"
-    if os.path.exists(stock_names_file):
-        stock_names = pd.read_csv(stock_names_file)
-        stock_name = stock_names[stock_names['code'] == int(stock_code)]['name'].values
-        stock_name = stock_name[0] if len(stock_name) > 0 else "Unknown"
-    else:
-        stock_name = "Unknown"
+    stock_name = get_stock_name(stock_code)
     
     # Get latest data
     latest = stock_df.iloc[-1]
@@ -171,47 +267,98 @@ def plot_distributions(stock_code, stock_df):
         
         axes[i].legend(fontsize=8)
     
-    # Get stock name
-    stock_names_file = "../data/input/stock_names_full.csv"
-    if os.path.exists(stock_names_file):
-        stock_names = pd.read_csv(stock_names_file)
-        stock_name = stock_names[stock_names['code'] == int(stock_code)]['name'].values
-        stock_name = stock_name[0] if len(stock_name) > 0 else stock_code
-    else:
-        stock_name = stock_code
+    stock_name = get_stock_name(stock_code)
     
     fig.suptitle(f"{stock_code} - {stock_name} | Historical Valuation Distribution", fontsize=14, fontweight='bold')
     plt.tight_layout()
     plt.show()
 
 
+def plot_comparison(stock_codes, stocks_data):
+    """
+    Plot comparison charts for multiple stocks
+    """
+    if not stocks_data or len(stocks_data) < 2:
+        return
+    
+    # Create comparison bar chart
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    axes = axes.flatten()
+    
+    metrics = [
+        ('pe_ttm', 'PE-TTM', 'lower'),
+        ('pb_ttm', 'PB-TTM', 'lower'),
+        ('pr_ttm', 'PR-TTM', 'lower'),
+        ('roe_ttm', 'ROE-TTM', 'higher')
+    ]
+    
+    codes = [s['code'] for s in stocks_data]
+    names = [s['name'][:6] for s in stocks_data]  # Truncate long names
+    labels = [f"{c}\n{n}" for c, n in zip(codes, names)]
+    
+    colors = ['#eeb908', '#4CAF50', '#2196F3', '#FF5722', '#9C27B0', '#00BCD4']
+    
+    for i, (metric, title, better) in enumerate(metrics):
+        values = [s[metric] for s in stocks_data]
+        
+        # Sort by value
+        sorted_indices = np.argsort(values)
+        if better == 'higher':
+            sorted_indices = sorted_indices[::-1]
+        
+        sorted_labels = [labels[j] for j in sorted_indices]
+        sorted_values = [values[j] for j in sorted_indices]
+        sorted_colors = [colors[j % len(colors)] for j in range(len(sorted_indices))]
+        
+        bars = axes[i].bar(sorted_labels, sorted_values, color=sorted_colors)
+        axes[i].set_title(f'{title} Comparison ({better} is better)', fontsize=12)
+        axes[i].set_ylabel(title, fontsize=10)
+        
+        # Add value labels on bars
+        for bar, val in zip(bars, sorted_values):
+            axes[i].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
+                        f'{val:.2f}', ha='center', va='bottom', fontsize=9)
+    
+    fig.suptitle("Stock Valuation Comparison", fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    plt.show()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Query and visualize stock valuation data")
-    parser.add_argument("--stock_code", type=str, required=True,
-                        help="Stock code to query (e.g., '600519', '000858')")
+    parser.add_argument("--stock_codes", type=str, required=True,
+                        help="Stock codes to query, comma-separated (e.g., '600519,000858,600036')")
     parser.add_argument("--no_plot", action="store_true",
                         help="Skip plotting distribution charts")
     
     args = parser.parse_args()
     
-    # Pad stock code to 6 digits
-    stock_code = args.stock_code.zfill(6)
+    # Parse stock codes
+    stock_codes = [code.strip().zfill(6) for code in args.stock_codes.split(',')]
     
     try:
-        # Load data
-        stock_df = load_stock_valuation(stock_code)
+        # Load all stocks data for quantile calculation
         all_stocks_df = load_all_stocks_valuation()
         
-        # Print stock info
-        print_stock_info(stock_code, stock_df, all_stocks_df)
-        
-        # Plot distributions
-        if not args.no_plot:
-            plot_distributions(stock_code, stock_df)
+        # Print comparison table if multiple stocks
+        if len(stock_codes) > 1:
+            stocks_data = print_comparison_table(stock_codes, all_stocks_df)
+            
+            # Plot comparison charts
+            if not args.no_plot and stocks_data:
+                plot_comparison(stock_codes, stocks_data)
+        else:
+            # Single stock - print detailed info
+            stock_code = stock_codes[0]
+            stock_df = load_stock_valuation(stock_code)
+            print_stock_info(stock_code, stock_df, all_stocks_df)
+            
+            # Plot distributions
+            if not args.no_plot:
+                plot_distributions(stock_code, stock_df)
         
     except FileNotFoundError as e:
         print(f"Error: {e}")
-        print(f"Please ensure stock valuation data exists for {stock_code}")
         print("Run 'python calculation_and_visualization_new.py --step value' first to generate valuation data.")
     except Exception as e:
         print(f"Error: {e}")
