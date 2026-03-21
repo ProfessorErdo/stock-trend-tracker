@@ -6,21 +6,65 @@ from datetime import datetime, timedelta
 from tqdm import tqdm
 import argparse
 import json
+import glob
+import re
 
-STOCK_TYPE_MAPPING = {
-    "hongli": "../data/input/hongli_list_20251213.csv",
-    "honglidibo": "../data/input/honglidibo_list_20251213.csv",
-    "hs300": "../data/input/hs300_list_20251213.csv",
-    "zz500": "../data/input/zz500_list_20251216.csv",
-    "gz100": "../data/input/gz100_list_20260227.csv",
-    "gzfc": "../data/input/gzfc_list_20260227.csv",
-    "zzfc": "../data/input/zzfc_list_20260316.csv",
+# Stock types with hardcoded paths (portfolio is a list of codes, all uses full list)
+HARDCODED_STOCK_TYPES = {
     "portfolio": ["600519", "000858", "600938", "000333", "600926", "300866", "600900", "601128"],
     "all": "../data/input/stock_names_full.csv",
 }
 
+# Stock types that auto-detect latest file (pattern: {stock_type}_list_*.csv)
+AUTO_DETECT_STOCK_TYPES = ["hongli", "honglidibo", "hs300", "zz500", "gz100", "gzfc", "zzfc"]
+
+# Data directory for stock list files
+DATA_INPUT_DIR = "../data/input"
+
 # Metadata file to track last update times
 METADATA_FILE = "../data/input/query_metadata.json"
+
+
+def get_latest_stock_list_path(stock_type):
+    """
+    Find the latest stock list file for a given stock type.
+    Files follow the naming pattern: {stock_type}_list_YYYYMMDD.csv
+    
+    Args:
+        stock_type: The type of stock list (e.g., 'hs300', 'gz100')
+    
+    Returns:
+        Path to the latest file, or None if no files found
+    """
+    pattern = os.path.join(DATA_INPUT_DIR, f"{stock_type}_list_*.csv")
+    files = glob.glob(pattern)
+    
+    if not files:
+        raise FileNotFoundError(f"No stock list files found for pattern: {pattern}")
+    
+    # Extract date from filename and find the latest
+    latest_file = None
+    latest_date = None
+    
+    for file_path in files:
+        filename = os.path.basename(file_path)
+        # Extract date from filename (format: {stock_type}_list_YYYYMMDD.csv)
+        match = re.search(r'_list_(\d{8})\.csv$', filename)
+        if match:
+            date_str = match.group(1)
+            try:
+                file_date = datetime.strptime(date_str, "%Y%m%d")
+                if latest_date is None or file_date > latest_date:
+                    latest_date = file_date
+                    latest_file = file_path
+            except ValueError:
+                continue
+    
+    if latest_file is None:
+        raise ValueError(f"Could not parse date from any files matching pattern: {pattern}")
+    
+    print(f"Using latest {stock_type} list: {os.path.basename(latest_file)}")
+    return latest_file
 
 
 def load_metadata():
@@ -41,13 +85,24 @@ def save_metadata(metadata):
 def get_stock_list(stock_type):
     """
     Get stock list based on the specified type
+    
+    Args:
+        stock_type: Type of stock list to load
+                   - Auto-detect types: 'hongli', 'honglidibo', 'hs300', 'zz500', 'gz100', 'gzfc', 'zzfc'
+                   - Hardcoded types: 'portfolio', 'all'
     """
-    if stock_type == "zz500":
-        df = pd.read_csv(STOCK_TYPE_MAPPING[stock_type], sep='\t')
+    if stock_type in AUTO_DETECT_STOCK_TYPES:
+        # Auto-detect latest file for this stock type
+        file_path = get_latest_stock_list_path(stock_type)
+        # zz500 uses tab separator, others use comma
+        sep = '\t' if stock_type == "zz500" else ','
+        df = pd.read_csv(file_path, sep=sep)
     elif stock_type == "portfolio":
-        df = pd.DataFrame(STOCK_TYPE_MAPPING[stock_type], columns=['code'])
+        df = pd.DataFrame(HARDCODED_STOCK_TYPES[stock_type], columns=['code'])
+    elif stock_type == "all":
+        df = pd.read_csv(HARDCODED_STOCK_TYPES[stock_type])
     else:
-        df = pd.read_csv(STOCK_TYPE_MAPPING[stock_type])
+        raise ValueError(f"Unknown stock type: {stock_type}")
 
     df['code'] = df['code'].astype(str).str.zfill(6)
     return df
@@ -311,13 +366,16 @@ def query_data(data_type, stock_type, force=False, season_end="2025-12-31", adju
 
 
 if __name__ == "__main__":
+    # Build stock type choices dynamically
+    STOCK_TYPE_CHOICES = AUTO_DETECT_STOCK_TYPES + list(HARDCODED_STOCK_TYPES.keys())
+    
     parser = argparse.ArgumentParser(description="Query financial or price data incrementally for specified stock lists")
     parser.add_argument("--data_type", type=str, required=True,
                         choices=['financial', 'price'],
                         help="Type of data to query: 'financial' or 'price'")
     parser.add_argument("--stock_type", type=str, required=True,
-                        choices=['hs300', 'zz500', 'hongli', 'honglidibo', 'gz100', 'gzfc', 'zzfc', 'portfolio', 'all'],
-                        help="Type of stocks to query")
+                        choices=STOCK_TYPE_CHOICES,
+                        help=f"Type of stocks to query. Auto-detect types: {AUTO_DETECT_STOCK_TYPES}")
     parser.add_argument("--force", action="store_true",
                         help="Force query all stocks, ignoring last update time")
     parser.add_argument("--season_end", type=str, default='2025-12-31',

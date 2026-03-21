@@ -17,7 +17,8 @@
 #                  - 'financial': Financial indicators (EPS, BPS, ROE, etc.)
 #                  - 'price'    : Daily stock price data (OHLC)
 #
-# --stock_type   : Stock list to query
+# --stock_type   : Stock list to query (auto-detects latest file for most types)
+#                  Auto-detect types (finds latest {stock_type}_list_YYYYMMDD.csv):
 #                  - 'hs300'     : CSI 300 stocks
 #                  - 'zz500'     : CSI 500 stocks
 #                  - 'hongli'    : Hongli stock list
@@ -25,8 +26,9 @@
 #                  - 'gz100'     : Guangzhou 100 stocks
 #                  - 'gzfc'      : Guangzhou Fortune stocks
 #                  - 'zzfc'      : CSI Cash Flow stocks
-#                  - 'portfolio' : Personal portfolio stocks
-#                  - 'all'       : All stocks from full list
+#                  Hardcoded types:
+#                  - 'portfolio' : Personal portfolio stocks (hardcoded list)
+#                  - 'all'       : All stocks from full list (stock_names_full.csv)
 #
 # --force        : (Optional) Force query all stocks, ignoring last update time
 #                  - Without this flag: Only query stocks that need updating
