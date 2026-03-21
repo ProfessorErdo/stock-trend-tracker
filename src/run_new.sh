@@ -22,6 +22,9 @@
 #                  - 'zz500'     : CSI 500 stocks
 #                  - 'hongli'    : Hongli stock list
 #                  - 'honglidibo': Honglidibo stock list
+#                  - 'gz100'     : Guangzhou 100 stocks
+#                  - 'gzfc'      : Guangzhou Fortune stocks
+#                  - 'zzfc'      : CSI Cash Flow stocks
 #                  - 'portfolio' : Personal portfolio stocks
 #                  - 'all'       : All stocks from full list
 #
@@ -71,10 +74,13 @@
 # and only queries stocks that haven't been updated in 30+ days.
 # Uncomment the lines below to run financial data queries.
 
-python query_data_new.py --data_type financial --stock_type honglidibo --season_end 2026-12-31
-python query_data_new.py --data_type financial --stock_type hongli --season_end 2026-12-31
-python query_data_new.py --data_type financial --stock_type hs300 --season_end 2026-12-31
-python query_data_new.py --data_type financial --stock_type zz500 --season_end 2026-12-31
+python query_data_new.py --data_type financial --stock_type honglidibo --season_end 2026-12-31 --force
+python query_data_new.py --data_type financial --stock_type hongli --season_end 2026-12-31 --force
+python query_data_new.py --data_type financial --stock_type hs300 --season_end 2026-12-31 --force
+python query_data_new.py --data_type financial --stock_type zz500 --season_end 2026-12-31 --force
+python query_data_new.py --data_type financial --stock_type gz100 --season_end 2026-12-31 --force
+python query_data_new.py --data_type financial --stock_type gzfc --season_end 2026-12-31 --force
+python query_data_new.py --data_type financial --stock_type zzfc --season_end 2026-12-31 --force
 
 # Force query all financial data (ignore last update time):
 # python query_data_new.py --data_type financial --stock_type hs300 --force
@@ -87,11 +93,14 @@ python query_data_new.py --data_type financial --stock_type zz500 --season_end 2
 # and only queries stocks that haven't been updated today.
 # Incremental updates append new data to existing files.
 
-python query_data_new.py --data_type price --stock_type honglidibo
-python query_data_new.py --data_type price --stock_type hongli
-python query_data_new.py --data_type price --stock_type hs300
-python query_data_new.py --data_type price --stock_type zz500
-python query_data_new.py --data_type price --stock_type portfolio
+python query_data_new.py --data_type price --stock_type honglidibo 
+python query_data_new.py --data_type price --stock_type hongli 
+python query_data_new.py --data_type price --stock_type hs300 
+python query_data_new.py --data_type price --stock_type zz500 
+python query_data_new.py --data_type price --stock_type gz100 
+python query_data_new.py --data_type price --stock_type gzfc 
+python query_data_new.py --data_type price --stock_type zzfc 
+python query_data_new.py --data_type price --stock_type portfolio 
 
 # Query all stocks:
 # python query_data_new.py --data_type price --stock_type all
@@ -104,6 +113,9 @@ python query_data_new.py --data_type price --stock_type portfolio
 # python query_data_new.py --data_type price --stock_type hongli --adjust hfq
 # python query_data_new.py --data_type price --stock_type hs300 --adjust hfq
 # python query_data_new.py --data_type price --stock_type zz500 --adjust hfq
+# python query_data_new.py --data_type price --stock_type gz100 --adjust hfq
+# python query_data_new.py --data_type price --stock_type gzfc --adjust hfq
+# python query_data_new.py --data_type price --stock_type zzfc --adjust hfq
 # python query_data_new.py --data_type price --stock_type portfolio --adjust hfq
 
 

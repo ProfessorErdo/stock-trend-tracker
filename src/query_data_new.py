@@ -12,6 +12,9 @@ STOCK_TYPE_MAPPING = {
     "honglidibo": "../data/input/honglidibo_list_20251213.csv",
     "hs300": "../data/input/hs300_list_20251213.csv",
     "zz500": "../data/input/zz500_list_20251216.csv",
+    "gz100": "../data/input/gz100_list_20260227.csv",
+    "gzfc": "../data/input/gzfc_list_20260227.csv",
+    "zzfc": "../data/input/zzfc_list_20260316.csv",
     "portfolio": ["600519", "000858", "600938", "000333", "600926", "300866", "600900", "601128"],
     "all": "../data/input/stock_names_full.csv",
 }
@@ -313,7 +316,7 @@ if __name__ == "__main__":
                         choices=['financial', 'price'],
                         help="Type of data to query: 'financial' or 'price'")
     parser.add_argument("--stock_type", type=str, required=True,
-                        choices=['hs300', 'zz500', 'hongli', 'honglidibo', 'portfolio', 'all'],
+                        choices=['hs300', 'zz500', 'hongli', 'honglidibo', 'gz100', 'gzfc', 'zzfc', 'portfolio', 'all'],
                         help="Type of stocks to query")
     parser.add_argument("--force", action="store_true",
                         help="Force query all stocks, ignoring last update time")
