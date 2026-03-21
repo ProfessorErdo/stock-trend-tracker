@@ -7,7 +7,6 @@ from tqdm import tqdm
 import argparse
 import json
 import glob
-import re
 
 # Stock types with hardcoded paths (portfolio is a list of codes, all uses full list)
 HARDCODED_STOCK_TYPES = {
@@ -25,16 +24,18 @@ DATA_INPUT_DIR = "../data/input"
 METADATA_FILE = "../data/input/query_metadata.json"
 
 
-def get_latest_stock_list_path(stock_type):
+def get_combined_stock_list(stock_type):
     """
-    Find the latest stock list file for a given stock type.
+    Load and combine all stock list files for a given stock type.
     Files follow the naming pattern: {stock_type}_list_YYYYMMDD.csv
+    Combines all files and removes duplicates to capture all stocks that 
+    have ever been in the list.
     
     Args:
         stock_type: The type of stock list (e.g., 'hs300', 'gz100')
     
     Returns:
-        Path to the latest file, or None if no files found
+        DataFrame with combined stock codes (no duplicates)
     """
     pattern = os.path.join(DATA_INPUT_DIR, f"{stock_type}_list_*.csv")
     files = glob.glob(pattern)
@@ -42,29 +43,33 @@ def get_latest_stock_list_path(stock_type):
     if not files:
         raise FileNotFoundError(f"No stock list files found for pattern: {pattern}")
     
-    # Extract date from filename and find the latest
-    latest_file = None
-    latest_date = None
+    # Determine separator (zz500 uses tab)
+    sep = '\t' if stock_type == "zz500" else ','
     
+    # Load all files and combine
+    dfs = []
     for file_path in files:
-        filename = os.path.basename(file_path)
-        # Extract date from filename (format: {stock_type}_list_YYYYMMDD.csv)
-        match = re.search(r'_list_(\d{8})\.csv$', filename)
-        if match:
-            date_str = match.group(1)
-            try:
-                file_date = datetime.strptime(date_str, "%Y%m%d")
-                if latest_date is None or file_date > latest_date:
-                    latest_date = file_date
-                    latest_file = file_path
-            except ValueError:
-                continue
+        try:
+            df = pd.read_csv(file_path, sep=sep)
+            dfs.append(df)
+        except Exception as e:
+            print(f"Warning: Failed to load {file_path}: {e}")
+            continue
     
-    if latest_file is None:
-        raise ValueError(f"Could not parse date from any files matching pattern: {pattern}")
+    if not dfs:
+        raise ValueError(f"Could not load any files for stock type: {stock_type}")
     
-    print(f"Using latest {stock_type} list: {os.path.basename(latest_file)}")
-    return latest_file
+    # Combine all dataframes
+    combined_df = pd.concat(dfs, ignore_index=True)
+    
+    # Remove duplicates based on 'code' column, keep first occurrence
+    original_count = len(combined_df)
+    combined_df = combined_df.drop_duplicates(subset=['code'], keep='first')
+    final_count = len(combined_df)
+    
+    print(f"Combined {len(files)} files for {stock_type}: {original_count} records -> {final_count} unique stocks")
+    
+    return combined_df
 
 
 def load_metadata():
@@ -92,11 +97,8 @@ def get_stock_list(stock_type):
                    - Hardcoded types: 'portfolio', 'all'
     """
     if stock_type in AUTO_DETECT_STOCK_TYPES:
-        # Auto-detect latest file for this stock type
-        file_path = get_latest_stock_list_path(stock_type)
-        # zz500 uses tab separator, others use comma
-        sep = '\t' if stock_type == "zz500" else ','
-        df = pd.read_csv(file_path, sep=sep)
+        # Combine all files for this stock type (captures all stocks ever in the list)
+        df = get_combined_stock_list(stock_type)
     elif stock_type == "portfolio":
         df = pd.DataFrame(HARDCODED_STOCK_TYPES[stock_type], columns=['code'])
     elif stock_type == "all":

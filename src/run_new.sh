@@ -17,15 +17,15 @@
 #                  - 'financial': Financial indicators (EPS, BPS, ROE, etc.)
 #                  - 'price'    : Daily stock price data (OHLC)
 #
-# --stock_type   : Stock list to query (auto-detects latest file for most types)
-#                  Auto-detect types (finds latest {stock_type}_list_YYYYMMDD.csv):
-#                  - 'hs300'     : CSI 300 stocks
-#                  - 'zz500'     : CSI 500 stocks
-#                  - 'hongli'    : Hongli stock list
-#                  - 'honglidibo': Honglidibo stock list
-#                  - 'gz100'     : Guangzhou 100 stocks
-#                  - 'gzfc'      : Guangzhou Fortune stocks
-#                  - 'zzfc'      : CSI Cash Flow stocks
+# --stock_type   : Stock list to query (combines all files for most types)
+#                  Auto-combine types (loads all {stock_type}_list_*.csv and removes duplicates):
+#                  - 'hs300'     : CSI 300 stocks (all historical members)
+#                  - 'zz500'     : CSI 500 stocks (all historical members)
+#                  - 'hongli'    : Hongli stock list (all historical members)
+#                  - 'honglidibo': Honglidibo stock list (all historical members)
+#                  - 'gz100'     : Guangzhou 100 stocks (all historical members)
+#                  - 'gzfc'      : Guangzhou Fortune stocks (all historical members)
+#                  - 'zzfc'      : CSI Cash Flow stocks (all historical members)
 #                  Hardcoded types:
 #                  - 'portfolio' : Personal portfolio stocks (hardcoded list)
 #                  - 'all'       : All stocks from full list (stock_names_full.csv)
