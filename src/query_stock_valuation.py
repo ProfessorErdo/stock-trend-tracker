@@ -314,9 +314,12 @@ def plot_comparison(stock_codes, stocks_data):
         axes[i].set_title(f'{title} Comparison ({better} is better)', fontsize=12)
         axes[i].set_ylabel(title, fontsize=10)
         
+        # rotate x-axis labels
+        axes[i].tick_params(axis='x', rotation=45)
+        
         # Add value labels on bars
         for bar, val in zip(bars, sorted_values):
-            axes[i].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
+            axes[i].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01 * bar.get_height(),
                         f'{val:.2f}', ha='center', va='bottom', fontsize=9)
     
     fig.suptitle("Stock Valuation Comparison", fontsize=14, fontweight='bold')

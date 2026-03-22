@@ -198,7 +198,7 @@ def find_and_visualize_best_stocks(threshold=0.35):
         plt.tight_layout()
 
         # save the image
-        plt.savefig(f"../img/{today}/pe_pb_pr_roe_distribution_monthly_close_{stock_code}_{today}.png", dpi=300)
+        plt.savefig(f"../img/{today}/pe_pb_pr_roe_distribution_monthly_close_{stock_code}_{today}.png", dpi=100)
         plt.close()
 
 
