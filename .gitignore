@@ -13,3 +13,6 @@ wheels/
 data
 img
 .qwen/
+
+*.html
+/notebooks/private
