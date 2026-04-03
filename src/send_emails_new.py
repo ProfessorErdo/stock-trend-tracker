@@ -20,6 +20,7 @@ def load_stock_codes():
     stocks = pd.read_csv(f'../data/processed/stock-valuation/stocks_values_filtered_{today}.csv')
     number_of_stocks = len(stocks)
     stock_codes = stocks.code.tolist()
+    stock_codes = [str(code).zfill(6) for code in stock_codes]  # Ensure stock codes are 6-digit strings
     return number_of_stocks, stock_codes
 
 
