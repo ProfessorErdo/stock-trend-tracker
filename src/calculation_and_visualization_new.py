@@ -7,6 +7,9 @@ from tqdm import tqdm
 import argparse
 import sys
 
+# Use non-interactive backend for server/headless environments
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.font_manager as fm
