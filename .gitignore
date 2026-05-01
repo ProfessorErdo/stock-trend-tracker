@@ -10,9 +10,42 @@ wheels/
 .venv
 
 .env
-data
-img
 .qwen/
 
 *.html
 /notebooks/private
+
+# macOS
+.DS_Store
+
+# Data folders - ignore contents but keep structure
+/data/input/financial-indicators/*
+!/data/input/financial-indicators/.gitkeep
+!/data/input/financial-indicators/all/
+/data/input/financial-indicators/all/*
+!/data/input/financial-indicators/all/.gitkeep
+
+/data/input/price-data/*
+!/data/input/price-data/.gitkeep
+!/data/input/price-data/all/
+/data/input/price-data/all/*
+!/data/input/price-data/all/.gitkeep
+
+/data/input/portfolio/*
+!/data/input/portfolio/.gitkeep
+
+/data/output/*
+!/data/output/.gitkeep
+
+/data/processed/*
+!/data/processed/.gitkeep
+!/data/processed/stock-valuation/
+/data/processed/stock-valuation/*
+!/data/processed/stock-valuation/all/
+!/data/processed/stock-valuation/all/*.csv
+!/data/processed/stock-valuation/stocks_values_filtered_*.csv
+
+/img/*
+!/img/.gitkeep
+!/img/20260501/
+!/img/20260501/*.png
