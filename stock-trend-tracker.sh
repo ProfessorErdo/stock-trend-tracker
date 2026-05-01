@@ -16,10 +16,15 @@
 #   ./stock-trend-tracker.sh -p 9000   # Start on port 9000
 #
 # Features:
+#   - Auto-installs dependencies using uv (if not installed)
 #   - Auto-detects and handles port conflicts
 #   - Starts FastAPI backend (serves both API and frontend)
 #   - Auto-opens browser when server is ready
 #   - Creates log file for debugging
+#
+# Prerequisites:
+#   - Python 3.12+ (will be checked automatically)
+#   - uv package manager (will be installed if not present)
 #
 # ============================================================
 
@@ -138,6 +143,103 @@ open_browser() {
     fi
 }
 
+# Function: Check Python version (let uv handle version management)
+check_python() {
+    log_info "Checking Python..."
+
+    # Check if uv can manage Python versions
+    # uv will automatically install required Python version from .python-version
+    if command -v python3 &> /dev/null; then
+        local python_version=$(python3 --version 2>&1)
+        log_info "System Python: $python_version"
+    else
+        log_warning "System Python not found"
+    fi
+
+    # Check .python-version file
+    if [ -f ".python-version" ]; then
+        local required_version=$(cat .python-version)
+        log_info "Required Python version (from .python-version): $required_version"
+        log_info "uv will automatically install/manage Python $required_version if needed"
+    fi
+
+    log_success "Python check passed (uv will handle version management)"
+}
+
+# Function: Check and install uv package manager
+setup_uv() {
+    log_info "Checking uv package manager..."
+
+    if command -v uv &> /dev/null; then
+        local uv_version=$(uv --version 2>&1)
+        log_success "uv is installed: $uv_version"
+        return 0
+    fi
+
+    log_warning "uv is not installed"
+    log_info "Installing uv package manager..."
+
+    # Install uv using the official installer
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    # Add uv to PATH for current session
+    export PATH="$HOME/.local/bin:$PATH"
+
+    # Verify installation
+    if command -v uv &> /dev/null; then
+        log_success "uv installed successfully: $(uv --version)"
+    else
+        log_error "Failed to install uv"
+        log_info "Please install uv manually: curl -LsSf https://astral.sh/uv/install.sh | sh"
+        exit 1
+    fi
+}
+
+# Function: Setup Python environment and install dependencies
+setup_environment() {
+    log_info "Setting up Python environment..."
+
+    cd "$PROJECT_DIR" || {
+        log_error "Failed to change to project directory"
+        exit 1
+    }
+
+    # Check if .venv exists and has dependencies installed
+    local needs_sync=false
+
+    if [ ! -d ".venv" ]; then
+        log_warning "Virtual environment not found"
+        needs_sync=true
+    elif [ ! -f ".venv/bin/python" ]; then
+        log_warning "Virtual environment is incomplete"
+        needs_sync=true
+    elif [ ! -f "uv.lock" ]; then
+        log_warning "Lock file not found, need to sync dependencies"
+        needs_sync=true
+    else
+        # Check if dependencies are installed by testing import
+        if ! .venv/bin/python -c "import fastapi" 2>/dev/null; then
+            log_warning "Dependencies not fully installed"
+            needs_sync=true
+        fi
+    fi
+
+    if [ "$needs_sync" = true ]; then
+        log_info "Installing dependencies with uv sync..."
+        uv sync
+
+        if [ $? -eq 0 ]; then
+            log_success "Dependencies installed successfully"
+        else
+            log_error "Failed to install dependencies"
+            log_info "Check pyproject.toml and uv.lock for issues"
+            exit 1
+        fi
+    else
+        log_success "Environment already set up"
+    fi
+}
+
 # Function: Cleanup on exit
 cleanup() {
     log_info "Shutting down server..."
@@ -170,11 +272,14 @@ cd "$PROJECT_DIR" || {
     exit 1
 }
 
-# Check Python environment
-if [ ! -d ".venv" ]; then
-    log_error "Virtual environment not found. Please run: uv venv && uv sync"
-    exit 1
-fi
+# Step 1: Check Python version
+check_python
+
+# Step 2: Setup uv package manager
+setup_uv
+
+# Step 3: Setup environment and install dependencies
+setup_environment
 
 # Handle port conflicts
 if check_port $PORT; then
@@ -218,7 +323,7 @@ rm -f "$LOG_FILE"
 log_info "Starting server on port $PORT..."
 log_info "Log file: $LOG_FILE"
 
-source .venv/bin/activate && nohup uvicorn src.api:app --host 0.0.0.0 --port $PORT --reload > "$LOG_FILE" 2>&1 &
+uv run uvicorn src.api:app --host 0.0.0.0 --port $PORT --reload > "$LOG_FILE" 2>&1 &
 SERVER_PID=$!
 echo $SERVER_PID > "$PID_FILE"
 
