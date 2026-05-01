@@ -5,26 +5,34 @@
 # ============================================================
 #
 # Usage:
-#   ./stock-trend-tracker.sh [options]
+#   ./stock-trend-tracker.sh [command] [options]
+#
+# Commands:
+#   start        Start the server (default)
+#   stop         Stop the server
+#   status       Check server status
+#   logs         View server logs
+#   restart      Restart the server
 #
 # Options:
 #   -p <port>    Specify port number (default: 8082)
 #   -h           Show this help message
 #
 # Examples:
-#   ./stock-trend-tracker.sh           # Start on default port 8082
-#   ./stock-trend-tracker.sh -p 9000   # Start on port 9000
+#   ./stock-trend-tracker.sh              # Start on default port 8082
+#   ./stock-trend-tracker.sh start        # Start server
+#   ./stock-trend-tracker.sh start -p 9000   # Start on port 9000
+#   ./stock-trend-tracker.sh stop         # Stop server
+#   ./stock-trend-tracker.sh status       # Check if server is running
+#   ./stock-trend-tracker.sh logs         # View logs (tail -f)
+#   ./stock-trend-tracker.sh restart      # Restart server
 #
 # Features:
 #   - Auto-installs dependencies using uv (if not installed)
 #   - Auto-detects and handles port conflicts
-#   - Starts FastAPI backend (serves both API and frontend)
-#   - Auto-opens browser when server is ready
+#   - Runs server in background (detached from terminal)
+#   - Server continues running after terminal closes
 #   - Creates log file for debugging
-#
-# Prerequisites:
-#   - Python 3.12+ (will be checked automatically)
-#   - uv package manager (will be installed if not present)
 #
 # ============================================================
 
@@ -34,12 +42,25 @@ PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG_FILE="${PROJECT_DIR}/server.log"
 PID_FILE="${PROJECT_DIR}/server.pid"
 
+# Parse command (first argument)
+COMMAND="start"
+if [ $# -gt 0 ] && [[ ! "$1" =~ ^- ]]; then
+    COMMAND="$1"
+    shift
+fi
+
 # Parse command line arguments
 PORT=$DEFAULT_PORT
 while getopts "p:h" opt; do
     case $opt in
         p) PORT="$OPTARG" ;;
-        h) echo "Usage: $0 [-p <port>] [-h]" && exit 0 ;;
+        h)
+            echo "Usage: $0 [command] [options]"
+            echo ""
+            echo "Commands: start, stop, status, logs, restart"
+            echo "Options:  -p <port>  Specify port (default: 8082)"
+            exit 0
+            ;;
         *) echo "Invalid option" && exit 1 ;;
     esac
 done
@@ -240,30 +261,81 @@ setup_environment() {
     fi
 }
 
-# Function: Cleanup on exit
-cleanup() {
-    log_info "Shutting down server..."
+# Function: Stop server
+stop_server() {
+    log_info "Stopping server..."
 
     if [ -f "$PID_FILE" ]; then
         local pid=$(cat "$PID_FILE")
         if [ -n "$pid" ] && kill -0 $pid 2>/dev/null; then
-            kill $pid 2>/dev/null
-            log_success "Server process $pid stopped"
+            # Kill the main process and any child processes
+            kill -TERM $pid 2>/dev/null
+            sleep 2
+            # Force kill if still running
+            if kill -0 $pid 2>/dev/null; then
+                kill -9 $pid 2>/dev/null
+            fi
+            log_success "Server stopped (PID: $pid)"
+        else
+            log_warning "Server process not running"
+        fi
+        rm -f "$PID_FILE"
+    else
+        log_warning "No PID file found"
+
+        # Try to find and kill by port
+        if check_port $PORT; then
+            local port_pid=$(lsof -Pi :$PORT -sTCP:LISTEN -t 2>/dev/null | head -1)
+            if [ -n "$port_pid" ]; then
+                kill -9 $port_pid 2>/dev/null
+                log_success "Killed process $port_pid on port $PORT"
+            fi
+        fi
+    fi
+}
+
+# Function: Show server status
+show_status() {
+    if [ -f "$PID_FILE" ]; then
+        local pid=$(cat "$PID_FILE")
+        if kill -0 $pid 2>/dev/null; then
+            log_success "Server is running (PID: $pid)"
+            log_info "Port: $PORT"
+            log_info "URL: http://localhost:$PORT"
+            log_info "Log file: $LOG_FILE"
+            return 0
+        else
+            log_warning "Server PID file exists but process is not running"
+            return 1
+        fi
+    else
+        log_warning "Server is not running"
+        return 1
+    fi
+}
+
+# Function: Cleanup on exit (for start command failure)
+cleanup() {
+    log_info "Cleaning up..."
+
+    if [ -f "$PID_FILE" ]; then
+        local pid=$(cat "$PID_FILE")
+        if [ -n "$pid" ] && kill -0 $pid 2>/dev/null; then
+            kill -TERM $pid 2>/dev/null
+            sleep 1
+            kill -9 $pid 2>/dev/null
         fi
         rm -f "$PID_FILE"
     fi
 
-    exit 0
+    exit 1
 }
-
-# Register cleanup on script exit
-trap cleanup SIGINT SIGTERM
 
 # ============================================================
 # Main Script
 # ============================================================
 
-log_info "Stock Trend Tracker Startup Script"
+log_info "Stock Trend Tracker - $COMMAND"
 log_info "Project directory: $PROJECT_DIR"
 
 # Change to project directory
@@ -271,6 +343,41 @@ cd "$PROJECT_DIR" || {
     log_error "Failed to change to project directory"
     exit 1
 }
+
+# Handle different commands
+case $COMMAND in
+    stop)
+        stop_server
+        exit 0
+        ;;
+    status)
+        show_status
+        exit $?
+        ;;
+    logs)
+        if [ -f "$LOG_FILE" ]; then
+            log_info "Showing logs from $LOG_FILE (Ctrl+C to exit)"
+            tail -f "$LOG_FILE"
+        else
+            log_warning "No log file found at $LOG_FILE"
+            exit 1
+        fi
+        ;;
+    restart)
+        log_info "Restarting server..."
+        stop_server
+        sleep 2
+        # Continue to start logic below
+        ;;
+    start)
+        # Continue to start logic below
+        ;;
+    *)
+        log_error "Unknown command: $COMMAND"
+        log_info "Available commands: start, stop, status, logs, restart"
+        exit 1
+        ;;
+esac
 
 # Step 1: Check Python version
 check_python
@@ -281,9 +388,19 @@ setup_uv
 # Step 3: Setup environment and install dependencies
 setup_environment
 
-# Handle port conflicts
+# Handle port conflicts (for start/restart)
 if check_port $PORT; then
     log_warning "Port $PORT is already in use"
+
+    # Check if it's our server
+    if [ -f "$PID_FILE" ]; then
+        local old_pid=$(cat "$PID_FILE")
+        if kill -0 $old_pid 2>/dev/null; then
+            log_warning "Server appears to be already running (PID: $old_pid)"
+            log_info "Use './stock-trend-tracker.sh restart' to restart, or './stock-trend-tracker.sh stop' to stop"
+            exit 1
+        fi
+    fi
 
     # Ask user what to do
     echo ""
@@ -319,39 +436,38 @@ fi
 # Clear old log file
 rm -f "$LOG_FILE"
 
-# Start server
+# Start server in background (detached from terminal)
 log_info "Starting server on port $PORT..."
 log_info "Log file: $LOG_FILE"
 
-uv run uvicorn src.api:app --host 0.0.0.0 --port $PORT --reload > "$LOG_FILE" 2>&1 &
+# Use nohup to keep server running after terminal closes
+nohup uv run uvicorn src.api:app --host 0.0.0.0 --port $PORT --reload > "$LOG_FILE" 2>&1 &
 SERVER_PID=$!
 echo $SERVER_PID > "$PID_FILE"
+echo $PORT > "${PROJECT_DIR}/server.port"
 
 log_info "Server PID: $SERVER_PID"
 
-# Wait for server to be ready
+# Wait for server to be ready (with timeout)
 if wait_for_server $PORT; then
     URL="http://localhost:$PORT"
     log_success "Server is running at $URL"
-    log_info "Press Ctrl+C to stop the server"
+    log_success "Server is running in background (detached from terminal)"
+    log_info ""
+    log_info "Useful commands:"
+    log_info "  ./stock-trend-tracker.sh status  - Check server status"
+    log_info "  ./stock-trend-tracker.sh logs    - View server logs"
+    log_info "  ./stock-trend-tracker.sh stop    - Stop server"
+    log_info ""
 
-    # Open browser
-    open_browser "$URL"
+    # Open browser (only on local machine, not remote server)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        open_browser "$URL"
+    fi
 
-    # Keep script running to maintain server process
-    log_info "Server is running in background. Logs available at $LOG_FILE"
-
-    # Tail log file for debugging
-    tail -f "$LOG_FILE" &
-    TAIL_PID=$!
-
-    # Wait for server process
-    wait $SERVER_PID 2>/dev/null
-
-    # Cleanup tail process
-    kill $TAIL_PID 2>/dev/null
+    # Exit successfully - server continues running
+    exit 0
 else
     log_error "Server failed to start. Check $LOG_FILE for details"
     cleanup
-    exit 1
 fi
