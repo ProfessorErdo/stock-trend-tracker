@@ -12,7 +12,9 @@ wheels/
 .env
 .qwen/
 
-*.html
+# HTML files in root (but keep static/index.html)
+/*.html
+!static/index.html
 /notebooks/private
 
 # macOS

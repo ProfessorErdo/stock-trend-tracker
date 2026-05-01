@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Trend Tracker</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: oklch(10% 0.015 260);
+            --bg-secondary: oklch(14% 0.015 260);
+            --bg-card: oklch(18% 0.02 260);
+            --bg-hover: oklch(22% 0.02 260);
+            --bg-elevated: oklch(24% 0.02 260);
+            --text-primary: oklch(95% 0.005 260);
+            --text-secondary: oklch(75% 0.01 260);
+            --text-muted: oklch(55% 0.01 260);
+            --accent-primary: oklch(68% 0.16 145);
+            --accent-secondary: oklch(58% 0.14 200);
+            --accent-tertiary: oklch(72% 0.12 85);
+            --accent-warning: oklch(72% 0.18 50);
+            --accent-danger: oklch(58% 0.22 25);
+            --border-color: oklch(28% 0.02 260);
+            --border-subtle: oklch(22% 0.015 260);
+            --border-accent: oklch(38% 0.06 145);
+            --glow-primary: oklch(68% 0.16 145 / 0.15);
+            --glow-secondary: oklch(58% 0.14 200 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.55;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Subtle background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, var(--glow-primary), transparent),
+                radial-gradient(ellipse 60% 40% at 100% 100%, var(--glow-secondary), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Header */
+        .header {
+            background: oklch(12% 0.015 260 / 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 1.25rem 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px var(--glow-primary);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .logo-icon:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 16px var(--glow-primary);
+        }
+
+        .logo-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: var(--bg-primary);
+            stroke-width: 2.5;
+        }
+
+        .logo-text {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        .logo-text span {
+            color: var(--accent-primary);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            box-shadow: 0 0 8px var(--accent-primary);
+            animation: pulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--accent-primary); }
+            50% { opacity: 0.6; box-shadow: 0 0 4px var(--accent-primary); }
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: calc(100vh - 64px);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: oklch(12% 0.015 260 / 0.6);
+            backdrop-filter: blur(8px);
+            border-right: 1px solid var(--border-subtle);
+            padding: 1.75rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nav-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .nav-title {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            padding-left: 0.75rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.875rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s ease-out;
+            margin-bottom: 0.375rem;
+            color: var(--text-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--glow-primary), transparent);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            transform: translateX(2px);
+        }
+
+        .nav-item:hover::before {
+            opacity: 0.3;
+        }
+
+        .nav-item.active {
+            background: var(--bg-card);
+            color: var(--accent-primary);
+            border: 1px solid var(--border-accent);
+            box-shadow: 0 2px 12px var(--glow-primary);
+        }
+
+        .nav-item.active::before {
+            opacity: 0.5;
+        }
+
+        .nav-item svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 1.75;
+            flex-shrink: 0;
+        }
+
+        .nav-item-text {
+            font-size: 0.875rem;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+        }
+
+        /* Sidebar Stats */
+        .sidebar-stats {
+            margin-top: auto;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 0.75rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-color);
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .stat-value.small {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Content Area */
+        .content {
+            padding: 2.5rem 3rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 64px);
+        }
+
+        .section {
+            display: none;
+            animation: sectionFadeIn 0.4s ease-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes sectionFadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(16px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .section-header {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.625rem;
+            color: var(--text-primary);
+        }
+
+        .section-desc {
+            color: var(--text-secondary);
+            font-size: 0.925rem;
+            font-weight: 400;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.75rem;
+            margin-bottom: 1.75rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: oklch(32% 0.02 260);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .card-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 500;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--accent-tertiary);
+            border: 1px solid var(--border-subtle);
+            letter-spacing: 0.02em;
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.625rem;
+            letter-spacing: 0.01em;
+        }
+
+        .form-select, .form-input {
+            width: 100%;
+            padding: 0.875rem 1.125rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .form-select:hover, .form-input:hover {
+            border-color: oklch(35% 0.02 260);
+            background: var(--bg-hover);
+        }
+
+        .form-select:focus, .form-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background: var(--bg-hover);
+            box-shadow: 0 0 0 3px var(--glow-primary);
+        }
+
+        .form-select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 0.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.75rem 0;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent-primary);
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .checkbox-label:hover {
+            color: var(--text-primary);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.625rem;
+            padding: 0.875rem 1.75rem;
+            border-radius: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease-out;
+            border: none;
+            letter-spacing: -0.01em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 40%, oklch(100% 0 0 / 0.1));
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            box-shadow: 0 2px 8px var(--glow-primary);
+        }
+
+        .btn-primary:hover {
+            background: oklch(72% 0.16 145);
+            box-shadow: 0 4px 16px var(--glow-primary);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px var(--glow-primary);
+        }
+
+        .btn-primary:disabled {
+            background: var(--bg-hover);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-accent);
+        }
+
+        .btn-icon {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            flex-shrink: 0;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 3px;
+            transition: width 0.4s ease-out;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 20px;
+            background: linear-gradient(90deg, transparent, oklch(100% 0 0 / 0.3));
+            animation: progressShine 1.5s ease-in-out infinite;
+        }
+
+        @keyframes progressShine {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .progress-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-percent {
+            color: var(--accent-primary);
+            font-weight: 500;
+        }
+
+        /* Status Message */
+        .status-message {
+            padding: 1.125rem 1.25rem;
+            border-radius: 8px;
+            margin-top: 1.25rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: statusSlideIn 0.3s ease-out;
+        }
+
+        @keyframes statusSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-message.success {
+            background: oklch(22% 0.04 145);
+            color: var(--accent-primary);
+            border: 1px solid oklch(32% 0.06 145);
+        }
+
+        .status-message.success::before {
+            content: '✓';
+            font-weight: 700;
+        }
+
+        .status-message.error {
+            background: oklch(22% 0.04 25);
+            color: var(--accent-danger);
+            border: 1px solid oklch(32% 0.06 25);
+        }
+
+        .status-message.error::before {
+            content: '!';
+            font-weight: 700;
+        }
+
+        .status-message.info {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .status-message.info::before {
+            content: 'i';
+            font-weight: 700;
+            font-style: italic;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .info-box-title {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+
+        .info-box-content {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .info-box-content span {
+            color: var(--accent-primary);
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Data Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table td {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            transition: background 0.15s ease;
+        }
+
+        .data-table tbody tr {
+            transition: background 0.15s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .data-table tbody tr:hover td {
+            border-bottom-color: var(--border-color);
+        }
+
+        .data-table .code-cell {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-secondary);
+            font-weight: 500;
+        }
+
+        .data-table .value-cell {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        .data-table .positive {
+            color: var(--accent-primary);
+        }
+
+        .data-table .negative {
+            color: var(--accent-danger);
+        }
+
+        .data-table .rank-cell {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .metric-card:hover {
+            border-color: oklch(32% 0.02 260);
+            transform: translateY(-2px);
+        }
+
+        .metric-card:hover::before {
+            opacity: 1;
+        }
+
+        .metric-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.625rem;
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.625rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .metric-unit {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-left: 0.25rem;
+            font-weight: 400;
+        }
+
+        /* Stock Detail */
+        .stock-detail-header {
+            display: flex;
+            align-items: baseline;
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .stock-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--accent-secondary);
+            letter-spacing: -0.02em;
+        }
+
+        .stock-name {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .quantile-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .quantile-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 1.25rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .quantile-item:hover {
+            border-color: var(--border-color);
+        }
+
+        .quantile-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .quantile-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.375rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .quantile-rank {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .quantile-rank span {
+            color: var(--accent-primary);
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-overlay {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        /* Images Gallery */
+        .images-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .image-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.25s ease;
+        }
+
+        .image-card:hover {
+            border-color: var(--border-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px oklch(0% 0 0 / 0.2);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+        }
+
+        .image-card-header {
+            padding: 0.75rem 1rem;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .image-card-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-secondary);
+            font-weight: 500;
+        }
+
+        .image-card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .image-btn {
+            padding: 0.375rem 0.625rem;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .image-btn:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        /* Image Modal */
+        .image-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: oklch(0% 0 0 / 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .image-modal.active {
+            display: flex;
+        }
+
+        .image-modal-content {
+            max-width: 90vw;
+            max-height: 90vh;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-modal-content img {
+            max-width: 100%;
+            max-height: 85vh;
+            display: block;
+        }
+
+        .image-modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 36px;
+            height: 36px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .image-modal-close:hover {
+            background: var(--accent-danger);
+            color: var(--bg-primary);
+        }
+
+        /* Search Input */
+        .search-container {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.875rem 1.125rem 0.875rem 3rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:hover {
+            border-color: oklch(35% 0.02 260);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--glow-primary);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            stroke: var(--text-muted);
+            stroke-width: 2;
+            transition: stroke 0.2s ease;
+        }
+
+        .search-input:focus + .search-icon {
+            stroke: var(--accent-primary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            width: 48px;
+            height: 48px;
+            stroke: var(--text-muted);
+            stroke-width: 1.5;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .content {
+                padding: 2rem;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .quantile-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .header {
+                padding: 1rem 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 1.5rem;
+            }
+            
+            .section-title {
+                font-size: 1.5rem;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .quantile-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .data-table {
+                font-size: 0.75rem;
+            }
+            
+            .data-table th, .data-table td {
+                padding: 0.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content {
+                padding: 1rem;
+            }
+            
+            .card {
+                padding: 1.25rem;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .quantile-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Focus visible for keyboard navigation */
+        :focus-visible {
+            outline: 2px solid var(--accent-primary);
+            outline-offset: 2px;
+        }
+
+        /* Scrollbar styling */
+        .content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .content::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .content::-webkit-scrollbar-thumb:hover {
+            background: oklch(35% 0.02 260);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                    <polyline points="16 7 22 7 22 13"></polyline>
+                </svg>
+            </div>
+            <div class="logo-text">Stock<span>Trend</span></div>
+        </div>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>API Connected</span>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <aside class="sidebar">
+            <nav class="nav-section">
+                <div class="nav-title">Functions</div>
+                <div class="nav-item active" data-section="update" tabindex="0" role="button" aria-label="Update Data">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                        <path d="M16 21h5v-5"></path>
+                    </svg>
+                    <span class="nav-item-text">Update Data</span>
+                </div>
+                <div class="nav-item" data-section="calculate" tabindex="0" role="button" aria-label="Calculate Stocks">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                        <line x1="8" y1="6" x2="16" y2="6"></line>
+                        <line x1="8" y1="10" x2="16" y2="10"></line>
+                        <line x1="8" y1="14" x2="12" y2="14"></line>
+                        <line x1="8" y1="18" x2="10" y2="18"></line>
+                    </svg>
+                    <span class="nav-item-text">Calculate Stocks</span>
+                </div>
+                <div class="nav-item" data-section="top-stocks" tabindex="0" role="button" aria-label="Top Stocks">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                    <span class="nav-item-text">Top Stocks</span>
+                </div>
+                <div class="nav-item" data-section="valuation" tabindex="0" role="button" aria-label="Stock Valuation">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    <span class="nav-item-text">Stock Valuation</span>
+                </div>
+            </nav>
+
+            <nav class="nav-section sidebar-stats">
+                <div class="nav-title">Quick Stats</div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Stocks</div>
+                    <div class="stat-value" id="total-stocks">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Last Update</div>
+                    <div class="stat-value small" id="last-update">--</div>
+                </div>
+            </nav>
+        </aside>
+
+        <div class="content">
+            <!-- Section 1: Update Data -->
+            <section class="section active" id="section-update" aria-label="Update Stock Data">
+                <div class="section-header">
+                    <h1 class="section-title">Update Stock Data</h1>
+                    <p class="section-desc">Refresh financial and price data from data sources with incremental updates</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Data Configuration</h2>
+                        <span class="card-badge">Incremental</span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="update-data-type">Data Type</label>
+                            <select class="form-select" id="update-data-type" aria-describedby="data-type-desc">
+                                <option value="financial">Financial Data (Monthly)</option>
+                                <option value="price">Price Data (Daily)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="update-stock-type">Stock Type</label>
+                            <select class="form-select" id="update-stock-type">
+                                <option value="all">All Stocks</option>
+                                <option value="hs300">HS300 Index</option>
+                                <option value="zz500">ZZ500 Index</option>
+                                <option value="hongli">Hongli List</option>
+                                <option value="honglidibo">Honglidibo List</option>
+                                <option value="gz100">GZ100 Index</option>
+                                <option value="gzfc">GZFC List</option>
+                                <option value="zzfc">ZZFC List</option>
+                                <option value="portfolio">Portfolio</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" class="checkbox" id="update-force" aria-describedby="force-desc">
+                                <label class="checkbox-label" for="update-force">Force update all stocks</label>
+                            </div>
+                            <small id="force-desc" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Ignore last update time and refresh all data</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="update-adjust">Price Adjustment</label>
+                            <select class="form-select" id="update-adjust">
+                                <option value="">No Adjustment</option>
+                                <option value="qfq">Forward Adjusted (qfq)</option>
+                                <option value="hfq">Backward Adjusted (hfq)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-update-data" aria-live="polite">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                            <path d="M3 3v5h5"></path>
+                        </svg>
+                        Start Update
+                    </button>
+
+                    <div class="progress-container" id="update-progress-container" style="display: none;" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="update-progress-fill"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span id="update-progress-text">Initializing...</span>
+                            <span class="progress-percent" id="update-progress-percent">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="status-message info" id="update-status-message" style="display: none;" role="status" aria-live="polite"></div>
+                </div>
+            </section>
+
+            <!-- Section 2: Calculate Stocks -->
+            <section class="section" id="section-calculate" aria-label="Calculate and Filter Stocks">
+                <div class="section-header">
+                    <h1 class="section-title">Calculate & Filter Stocks</h1>
+                    <p class="section-desc">Calculate valuations and find stocks meeting investment criteria</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Filter Parameters</h2>
+                        <span class="card-badge">Quantile-based</span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="calc-threshold">Threshold (Quantile)</label>
+                            <input type="number" class="form-input" id="calc-threshold" value="0.26" min="0.1" max="0.5" step="0.01" aria-describedby="threshold-desc">
+                            <small id="threshold-desc" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Lower threshold = stricter filtering</small>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group" style="margin-top: 1.5rem;">
+                                <input type="checkbox" class="checkbox" id="calc-images" checked>
+                                <label class="checkbox-label" for="calc-images">Generate visualization images</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-box-title">Filter Criteria</div>
+                        <div class="info-box-content">
+                            <span>PE-TTM</span> &lt; threshold quantile (lower is better)<br>
+                            <span>PB-TTM</span> &lt; threshold quantile (lower is better)<br>
+                            <span>PR-TTM</span> &lt; threshold quantile (lower is better)<br>
+                            <span>ROE-TTM</span> &gt; (1 - threshold) quantile (higher is better)
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-calculate" aria-live="polite">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="6 3 20 12 6 21 6 3"></polygon>
+                        </svg>
+                        Run Calculation
+                    </button>
+
+                    <div class="progress-container" id="calc-progress-container" style="display: none;" role="progressbar">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="calc-progress-fill"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span id="calc-progress-text">Initializing...</span>
+                            <span class="progress-percent" id="calc-progress-percent">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="status-message info" id="calc-status-message" style="display: none;" role="status"></div>
+                </div>
+
+                <div class="card" id="calc-results-card" style="display: none;">
+                    <div class="card-header">
+                        <h2 class="card-title">Filtered Stocks Results</h2>
+                        <span class="card-badge" id="calc-results-count">0 stocks</span>
+                    </div>
+
+                    <div class="metrics-grid" id="calc-thresholds-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">PE Threshold</div>
+                            <div class="metric-value" id="calc-pe-th">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">PB Threshold</div>
+                            <div class="metric-value" id="calc-pb-th">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">PR Threshold</div>
+                            <div class="metric-value" id="calc-pr-th">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">ROE Threshold</div>
+                            <div class="metric-value" id="calc-roe-th">--</div>
+                        </div>
+                    </div>
+
+                    <table class="data-table" id="calc-results-table" aria-label="Filtered stocks results">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Price</th>
+                                <th>PE-TTM</th>
+                                <th>PB-TTM</th>
+                                <th>PR-TTM</th>
+                                <th>ROE-TTM</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="card" id="calc-images-card" style="display: none;">
+                    <div class="card-header">
+                        <h2 class="card-title">Generated Visualization Images</h2>
+                        <span class="card-badge" id="calc-images-count">0 images</span>
+                    </div>
+                    <div class="images-gallery" id="calc-images-gallery">
+                        <!-- Images will be loaded here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: Top Stocks -->
+            <section class="section" id="section-top-stocks" aria-label="Top Stocks Query">
+                <div class="section-header">
+                    <h1 class="section-title">Top Stocks Query</h1>
+                    <p class="section-desc">Find top performing stocks by valuation metrics</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Query Parameters</h2>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="top-indicator">Sort By Indicator</label>
+                            <select class="form-select" id="top-indicator">
+                                <option value="pe_ttm">PE-TTM (Lower is better)</option>
+                                <option value="pb_ttm">PB-TTM (Lower is better)</option>
+                                <option value="pr_ttm">PR-TTM (Lower is better)</option>
+                                <option value="roe_ttm">ROE-TTM (Higher is better)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="top-n">Number of Stocks</label>
+                            <input type="number" class="form-input" id="top-n" value="10" min="1" max="100">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-query-top" onclick="handleQueryTopStocks()" aria-live="polite">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="M21 21l-4.35-4.35"></path>
+                        </svg>
+                        Query Top Stocks
+                    </button>
+
+                    <div class="status-message info" id="top-status-message" style="display: none;" role="status"></div>
+                </div>
+
+                <div class="card" id="top-results-card" style="display: none;">
+                    <div class="card-header">
+                        <h2 class="card-title">Top Stocks Results</h2>
+                        <span class="card-badge" id="top-analyzed-count">0 analyzed</span>
+                    </div>
+
+                    <table class="data-table" id="top-results-table" aria-label="Top stocks results">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Price</th>
+                                <th>PE-TTM</th>
+                                <th>PB-TTM</th>
+                                <th>PR-TTM</th>
+                                <th>ROE-TTM</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section 4: Stock Valuation -->
+            <section class="section" id="section-valuation" aria-label="Stock Valuation Query">
+                <div class="section-header">
+                    <h1 class="section-title">Stock Valuation Query</h1>
+                    <p class="section-desc">Get detailed valuation analysis for specific stocks</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Stock Search</h2>
+                    </div>
+
+                    <div class="search-container">
+                        <input type="text" class="search-input" id="valuation-search" placeholder="Enter stock code (e.g., 600519)" aria-label="Stock code search">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="M21 21l-4.35-4.35"></path>
+                        </svg>
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-query-valuation" onclick="handleQueryValuation()" aria-live="polite">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Query Valuation
+                    </button>
+
+                    <div class="status-message info" id="valuation-status-message" style="display: none;" role="status"></div>
+                </div>
+
+                <div class="card" id="valuation-results-card" style="display: none;">
+                    <div class="stock-detail-header">
+                        <span class="stock-code" id="val-stock-code">--</span>
+                        <span class="stock-name" id="val-stock-name">--</span>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Current Price</div>
+                            <div class="metric-value" id="val-price">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">PE-TTM</div>
+                            <div class="metric-value" id="val-pe">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">PB-TTM</div>
+                            <div class="metric-value" id="val-pb">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">ROE-TTM</div>
+                            <div class="metric-value" id="val-roe">--</div>
+                        </div>
+                    </div>
+
+                    <div class="card-header" style="margin-top: 2rem; margin-bottom: 1rem;">
+                        <h2 class="card-title">Quantile Rankings (vs All Stocks)</h2>
+                    </div>
+
+                    <div class="quantile-grid">
+                        <div class="quantile-item">
+                            <div class="quantile-label">PE-TTM</div>
+                            <div class="quantile-value" id="val-pe-value">--</div>
+                            <div class="quantile-rank"><span id="val-pe-rank">--</span>% percentile</div>
+                        </div>
+                        <div class="quantile-item">
+                            <div class="quantile-label">PB-TTM</div>
+                            <div class="quantile-value" id="val-pb-value">--</div>
+                            <div class="quantile-rank"><span id="val-pb-rank">--</span>% percentile</div>
+                        </div>
+                        <div class="quantile-item">
+                            <div class="quantile-label">PR-TTM</div>
+                            <div class="quantile-value" id="val-pr-value">--</div>
+                            <div class="quantile-rank"><span id="val-pr-rank">--</span>% percentile</div>
+                        </div>
+                        <div class="quantile-item">
+                            <div class="quantile-label">ROE-TTM</div>
+                            <div class="quantile-value" id="val-roe-value">--</div>
+                            <div class="quantile-rank"><span id="val-roe-rank">--</span>% percentile</div>
+                        </div>
+                    </div>
+
+                    <div class="card-header" style="margin-top: 2rem; margin-bottom: 1rem;">
+                        <h2 class="card-title">Target Prices (Based on Historical PR)</h2>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Current Price</div>
+                            <div class="metric-value" id="val-target-current">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Target (25th PR)</div>
+                            <div class="metric-value" id="val-target-25">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Target (75th PR)</div>
+                            <div class="metric-value" id="val-target-75">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Upside Range</div>
+                            <div class="metric-value" id="val-upside">--</div>
+                        </div>
+                    </div>
+
+                    <div class="card-header" style="margin-top: 2rem; margin-bottom: 1rem;">
+                        <h2 class="card-title">Historical Data (Last 24 Months)</h2>
+                    </div>
+
+                    <table class="data-table" id="val-history-table" aria-label="Historical valuation data">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Close</th>
+                                <th>PE-TTM</th>
+                                <th>PB-TTM</th>
+                                <th>PR-TTM</th>
+                                <th>ROE-TTM</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+const btnUpdateOriginal = `
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+            </svg>
+            Start Update`;
+
+const btnCalcOriginal = `
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="6 3 20 12 6 21 6 3"></polygon>
+            </svg>
+            Run Calculation`;
+
+const btnTopOriginal = `
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+            Query Top Stocks`;
+
+const btnValOriginal = `
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Query Valuation`;
+
+
+
+        console.log('Stock Trend Tracker initialized');
+        // API Base URL
+        const API_BASE = window.location.origin;
+
+        // Navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.section');
+
+        function switchSection(sectionId) {
+            navItems.forEach(item => item.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+            
+            const activeNav = document.querySelector(`[data-section="${sectionId}"]`);
+            const activeSection = document.getElementById(`section-${sectionId}`);
+            
+            if (activeNav && activeSection) {
+                activeNav.classList.add('active');
+                activeSection.classList.add('active');
+            }
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => switchSection(item.dataset.section));
+            item.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    switchSection(item.dataset.section);
+                }
+            });
+        });
+
+        // Utility Functions
+        async function fetchAPI(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    return { success: false, message: errorData.detail || `HTTP ${response.status}` };
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                return { success: false, message: error.message };
+            }
+        }
+
+        function showStatus(elementId, message, type = 'info') {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = `status-message ${type} fade-in`;
+            el.style.display = 'block';
+        }
+
+        function hideStatus(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+
+        function showProgress(containerId, fillId, textId, percentId, progress, text) {
+            const container = document.getElementById(containerId);
+            container.style.display = 'block';
+            container.setAttribute('aria-valuenow', progress);
+            document.getElementById(fillId).style.width = `${progress}%`;
+            document.getElementById(textId).textContent = text;
+            document.getElementById(percentId).textContent = `${progress}%`;
+        }
+
+        function hideProgress(containerId) {
+            document.getElementById(containerId).style.display = 'none';
+        }
+
+        function setButtonLoading(btnId, loading, originalContent) {
+            const btn = document.getElementById(btnId);
+            if (loading) {
+                btn.disabled = true;
+                btn.innerHTML = '<div class="spinner"></div> Processing...';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        }
+
+        // Load initial stats
+        async function loadStats() {
+            const metadata = await fetchAPI('/api/metadata');
+            if (metadata.success) {
+                const financialCount = Object.keys(metadata.metadata.financial || {}).length;
+                const priceCount = Object.keys(metadata.metadata.price || {}).length;
+                document.getElementById('total-stocks').textContent = Math.max(financialCount, priceCount) || '--';
+                
+                const allDates = [...Object.values(metadata.metadata.financial || {}), ...Object.values(metadata.metadata.price || {})];
+                if (allDates.length > 0) {
+                    const latest = allDates.sort().reverse()[0];
+                    document.getElementById('last-update').textContent = latest;
+                }
+            }
+        }
+
+        // Section 1: Update Data
+                document.getElementById('btn-update-data').addEventListener('click', async () => {
+            const dataType = document.getElementById('update-data-type').value;
+            const stockType = document.getElementById('update-stock-type').value;
+            const force = document.getElementById('update-force').checked;
+            const adjust = document.getElementById('update-adjust').value;
+
+            hideStatus('update-status-message');
+            showProgress('update-progress-container', 'update-progress-fill', 'update-progress-text', 'update-progress-percent', 5, 'Starting update...');
+            setButtonLoading('btn-update-data', true, btnUpdateOriginal);
+
+            const result = await fetchAPI('/api/update-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data_type: dataType, stock_type: stockType, force, adjust })
+            });
+
+            if (result.success) {
+                pollUpdateStatus();
+            } else {
+                showStatus('update-status-message', result.message || 'Failed to start update', 'error');
+                hideProgress('update-progress-container');
+                setButtonLoading('btn-update-data', false, btnUpdateOriginal);
+            }
+        });
+
+        async function pollUpdateStatus() {
+            const status = await fetchAPI('/api/update-status');
+
+            if (status.success && status.status) {
+                showProgress('update-progress-container', 'update-progress-fill', 'update-progress-text', 'update-progress-percent',
+                    status.status.progress, status.status.message);
+
+                if (status.status.status === 'completed') {
+                    showStatus('update-status-message', status.status.message, 'success');
+                    hideProgress('update-progress-container');
+                    setButtonLoading('btn-update-data', false, btnUpdateOriginal);
+                    loadStats();
+                } else if (status.status.status === 'failed') {
+                    showStatus('update-status-message', status.status.message, 'error');
+                    hideProgress('update-progress-container');
+                    setButtonLoading('btn-update-data', false, btnUpdateOriginal);
+                } else if (status.status.status === 'running') {
+                    setTimeout(pollUpdateStatus, 2000);
+                }
+            }
+        }
+
+        // Section 2: Calculate Stocks
+                document.getElementById('btn-calculate').addEventListener('click', async () => {
+            const threshold = parseFloat(document.getElementById('calc-threshold').value);
+            const generateImages = document.getElementById('calc-images').checked;
+
+            hideStatus('calc-status-message');
+            showProgress('calc-progress-container', 'calc-progress-fill', 'calc-progress-text', 'calc-progress-percent', 5, 'Starting calculation...');
+            setButtonLoading('btn-calculate', true, btnCalcOriginal);
+
+            const result = await fetchAPI('/api/calculate-stocks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ threshold, generate_images: generateImages })
+            });
+
+            if (result.success) {
+                pollCalculateStatus();
+            } else {
+                showStatus('calc-status-message', result.message || 'Failed to start calculation', 'error');
+                hideProgress('calc-progress-container');
+                setButtonLoading('btn-calculate', false, btnCalcOriginal);
+            }
+        });
+
+        async function pollCalculateStatus() {
+            const status = await fetchAPI('/api/calculate-status');
+
+            if (status.success && status.status) {
+                showProgress('calc-progress-container', 'calc-progress-fill', 'calc-progress-text', 'calc-progress-percent',
+                    status.status.progress, status.status.message);
+
+                if (status.status.status === 'completed') {
+                    showStatus('calc-status-message', status.status.message, 'success');
+                    hideProgress('calc-progress-container');
+                    setButtonLoading('btn-calculate', false, btnCalcOriginal);
+                    
+                    if (status.status.result) {
+                        displayCalculateResults(status.status.result);
+                    }
+                    loadStats();
+                } else if (status.status.status === 'failed') {
+                    showStatus('calc-status-message', status.status.message, 'error');
+                    hideProgress('calc-progress-container');
+                    setButtonLoading('btn-calculate', false, btnCalcOriginal);
+                } else if (status.status.status === 'running') {
+                    setTimeout(pollCalculateStatus, 2000);
+                }
+            }
+        }
+
+        function displayCalculateResults(result) {
+            const card = document.getElementById('calc-results-card');
+            card.style.display = 'block';
+            card.classList.add('fade-in');
+
+            document.getElementById('calc-results-count').textContent = `${result.filtered_stocks} stocks`;
+
+            if (result.thresholds) {
+                document.getElementById('calc-pe-th').textContent = result.thresholds.pe_ttm;
+                document.getElementById('calc-pb-th').textContent = result.thresholds.pb_ttm;
+                document.getElementById('calc-pr-th').textContent = result.thresholds.pr_ttm;
+                document.getElementById('calc-roe-th').textContent = result.thresholds.roe_ttm;
+            }
+
+            const tbody = document.querySelector('#calc-results-table tbody');
+            tbody.innerHTML = '';
+
+            // Collect stock codes for image filtering
+            const stockCodes = result.stocks.map(stock => stock.code);
+
+            result.stocks.forEach(stock => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="code-cell">${stock.code}</td>
+                    <td>${stock.name || '--'}</td>
+                    <td class="value-cell">${stock.close.toFixed(2)}</td>
+                    <td class="value-cell">${stock.pe_ttm.toFixed(2)}</td>
+                    <td class="value-cell">${stock.pb_ttm.toFixed(2)}</td>
+                    <td class="value-cell">${stock.pr_ttm.toFixed(2)}</td>
+                    <td class="value-cell positive">${stock.roe_ttm.toFixed(2)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Load generated images filtered by stock codes
+            loadGeneratedImages(stockCodes);
+        }
+
+        async function loadGeneratedImages(stockCodes) {
+            const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const result = await fetchAPI(`/api/images-list/${today}`);
+
+            if (result.success && result.images && result.images.length > 0) {
+                // Filter images to only show those matching the filtered stock codes
+                const filteredImages = result.images.filter(filename => {
+                    const stockCodeMatch = filename.match(/_(\d{6})_/);
+                    if (stockCodeMatch) {
+                        return stockCodes.includes(stockCodeMatch[1]);
+                    }
+                    return false;
+                });
+                displayImagesGallery(filteredImages, today);
+            }
+        }
+
+        function displayImagesGallery(images, date) {
+            const card = document.getElementById('calc-images-card');
+            card.style.display = 'block';
+            card.classList.add('fade-in');
+
+            document.getElementById('calc-images-count').textContent = `${images.length} images`;
+
+            const gallery = document.getElementById('calc-images-gallery');
+            gallery.innerHTML = '';
+
+            images.forEach(filename => {
+                // Extract stock code from filename
+                const stockCodeMatch = filename.match(/_(\d{6})_/);
+                const stockCode = stockCodeMatch ? stockCodeMatch[1] : filename;
+
+                const imageCard = document.createElement('div');
+                imageCard.className = 'image-card';
+                imageCard.innerHTML = `
+                    <div class="image-card-header">
+                        <span class="image-card-title">${stockCode}</span>
+                        <div class="image-card-actions">
+                            <button class="image-btn" onclick="openImageModal('/api/images/${date}/${filename}')">View</button>
+                            <button class="image-btn" onclick="downloadImage('/api/images/${date}/${filename}', '${filename}')">Download</button>
+                        </div>
+                    </div>
+                    <img src="/api/images/${date}/${filename}" alt="${stockCode} valuation chart" loading="lazy" onclick="openImageModal('/api/images/${date}/${filename}')">
+                `;
+                gallery.appendChild(imageCard);
+            });
+        }
+
+        // Global functions for onclick handlers
+        function openImageModal(src) {
+            const modal = document.getElementById('image-modal');
+            const img = document.getElementById('image-modal-img');
+            img.src = src;
+            modal.classList.add('active');
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.remove('active');
+        }
+
+        function downloadImage(src, filename) {
+            const link = document.createElement('a');
+            link.href = src;
+            link.download = filename;
+            link.click();
+        }
+
+        // Modal close handlers (outside DOMContentLoaded)
+        document.getElementById('image-modal-close').addEventListener('click', closeImageModal);
+        document.getElementById('image-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'image-modal') {
+                closeImageModal();
+            }
+        });
+
+        // Section 3: Top Stocks
+                async function handleQueryTopStocks() {
+            console.log('handleQueryTopStocks called');
+            const indicator = document.getElementById('top-indicator').value;
+            const topN = parseInt(document.getElementById('top-n').value);
+
+            setButtonLoading('btn-query-top', true, btnTopOriginal);
+
+            const result = await fetchAPI(`/api/top-stocks?indicator=${indicator}&top_n=${topN}`);
+
+            setButtonLoading('btn-query-top', false, btnTopOriginal);
+
+            if (result.success) {
+                displayTopResults(result);
+            } else {
+                showStatus('top-status-message', result.message || 'Failed to query top stocks', 'error');
+            }
+        }
+
+        function displayTopResults(result) {
+            const card = document.getElementById('top-results-card');
+            card.style.display = 'block';
+            card.classList.add('fade-in');
+
+            document.getElementById('top-analyzed-count').textContent = `${result.total_analyzed} analyzed`;
+
+            const tbody = document.querySelector('#top-results-table tbody');
+            tbody.innerHTML = '';
+
+            result.stocks.forEach((stock, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="rank-cell">${index + 1}</td>
+                    <td class="code-cell">${stock.code}</td>
+                    <td>${stock.name || '--'}</td>
+                    <td class="value-cell">${stock.close.toFixed(2)}</td>
+                    <td class="value-cell">${stock.pe_ttm.toFixed(2)}</td>
+                    <td class="value-cell">${stock.pb_ttm.toFixed(2)}</td>
+                    <td class="value-cell">${stock.pr_ttm.toFixed(2)}</td>
+                    <td class="value-cell positive">${stock.roe_ttm.toFixed(2)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Section 4: Stock Valuation
+                async function handleQueryValuation() {
+            console.log('handleQueryValuation called');
+            const stockCode = document.getElementById('valuation-search').value.trim();
+            
+            if (!stockCode) {
+                showStatus('valuation-status-message', 'Please enter a stock code', 'error');
+                return;
+            }
+
+            setButtonLoading('btn-query-valuation', true, btnValOriginal);
+
+            const result = await fetchAPI(`/api/stock-valuation/${stockCode}`);
+
+            setButtonLoading('btn-query-valuation', false, btnValOriginal);
+
+            if (result.success) {
+                displayValuationResults(result);
+            } else {
+                showStatus('valuation-status-message', result.detail || result.message || 'Failed to query stock valuation', 'error');
+            }
+        }
+
+        function displayValuationResults(result) {
+            const card = document.getElementById('valuation-results-card');
+            card.style.display = 'block';
+            card.classList.add('fade-in');
+
+            document.getElementById('val-stock-code').textContent = result.stock_code;
+            document.getElementById('val-stock-name').textContent = result.stock_name;
+
+            document.getElementById('val-price').textContent = result.latest_data.close.toFixed(2);
+            document.getElementById('val-pe').textContent = result.latest_data.pe_ttm.toFixed(2);
+            document.getElementById('val-pb').textContent = result.latest_data.pb_ttm.toFixed(2);
+            document.getElementById('val-roe').textContent = result.latest_data.roe_ttm.toFixed(2);
+
+            document.getElementById('val-pe-value').textContent = result.latest_data.pe_ttm.toFixed(2);
+            document.getElementById('val-pb-value').textContent = result.latest_data.pb_ttm.toFixed(2);
+            document.getElementById('val-pr-value').textContent = result.latest_data.pr_ttm.toFixed(2);
+            document.getElementById('val-roe-value').textContent = result.latest_data.roe_ttm.toFixed(2);
+
+            document.getElementById('val-pe-rank').textContent = result.quantiles.pe_ttm || '--';
+            document.getElementById('val-pb-rank').textContent = result.quantiles.pb_ttm || '--';
+            document.getElementById('val-pr-rank').textContent = result.quantiles.pr_ttm || '--';
+            document.getElementById('val-roe-rank').textContent = result.quantiles.roe_ttm || '--';
+
+            document.getElementById('val-target-current').textContent = result.target_prices.current.toFixed(2);
+            document.getElementById('val-target-25').textContent = result.target_prices.pr_25th?.toFixed(2) || '--';
+            document.getElementById('val-target-75').textContent = result.target_prices.pr_75th?.toFixed(2) || '--';
+            
+            if (result.target_prices.upside_25th && result.target_prices.upside_75th) {
+                document.getElementById('val-upside').textContent = 
+                    `${result.target_prices.upside_25th.toFixed(1)}% ~ ${result.target_prices.upside_75th.toFixed(1)}%`;
+            } else {
+                document.getElementById('val-upside').textContent = '--';
+            }
+
+            const tbody = document.querySelector('#val-history-table tbody');
+            tbody.innerHTML = '';
+
+            result.historical_data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="value-cell">${row.report_date}</td>
+                    <td class="value-cell">${row.close?.toFixed(2) || '--'}</td>
+                    <td class="value-cell">${row.pe_ttm?.toFixed(2) || '--'}</td>
+                    <td class="value-cell">${row.pb_ttm?.toFixed(2) || '--'}</td>
+                    <td class="value-cell">${row.pr_ttm?.toFixed(2) || '--'}</td>
+                    <td class="value-cell">${row.roe_ttm?.toFixed(2) || '--'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Initialize on page load
+        loadStats();
+    
+</script>
+
+    <!-- Image Modal -->
+    <div class="image-modal" id="image-modal">
+        <div class="image-modal-content">
+            <button class="image-modal-close" id="image-modal-close">×</button>
+            <img id="image-modal-img" src="" alt="Stock visualization">
+        </div>
+    </div>
+</body>
+</html>
