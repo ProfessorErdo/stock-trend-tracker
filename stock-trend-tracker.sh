@@ -394,7 +394,7 @@ if check_port $PORT; then
 
     # Check if it's our server
     if [ -f "$PID_FILE" ]; then
-        local old_pid=$(cat "$PID_FILE")
+        old_pid=$(cat "$PID_FILE")
         if kill -0 $old_pid 2>/dev/null; then
             log_warning "Server appears to be already running (PID: $old_pid)"
             log_info "Use './stock-trend-tracker.sh restart' to restart, or './stock-trend-tracker.sh stop' to stop"

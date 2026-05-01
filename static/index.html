@@ -958,7 +958,7 @@
             max-height: 90vh;
             background: var(--bg-card);
             border-radius: 12px;
-            overflow: hidden;
+            overflow: visible;
             position: relative;
         }
 
@@ -966,29 +966,34 @@
             max-width: 100%;
             max-height: 85vh;
             display: block;
+            border-radius: 12px;
         }
 
         .image-modal-close {
             position: absolute;
-            top: 1rem;
-            right: 1rem;
+            top: -12px;
+            right: -12px;
             width: 36px;
             height: 36px;
             background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
             color: var(--text-primary);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.25rem;
+            font-weight: bold;
+            z-index: 1001;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             transition: all 0.2s ease;
         }
 
         .image-modal-close:hover {
             background: var(--accent-danger);
             color: var(--bg-primary);
+            transform: scale(1.1);
         }
 
         /* Search Input */
@@ -1078,11 +1083,16 @@
             .main-container {
                 grid-template-columns: 1fr;
             }
-            
+
             .sidebar {
                 display: none;
             }
-            
+
+            /* Show mobile navigation when sidebar is hidden */
+            .mobile-nav {
+                display: flex;
+            }
+
             .header {
                 padding: 1rem 1.5rem;
             }
@@ -1091,28 +1101,29 @@
         @media (max-width: 768px) {
             .content {
                 padding: 1.5rem;
+                padding-bottom: 80px; /* Space for mobile navigation */
             }
-            
+
             .section-title {
                 font-size: 1.5rem;
             }
-            
+
             .form-row {
                 grid-template-columns: 1fr;
             }
-            
+
             .metrics-grid {
                 grid-template-columns: 1fr 1fr;
             }
-            
+
             .quantile-grid {
                 grid-template-columns: 1fr 1fr;
             }
-            
+
             .data-table {
                 font-size: 0.75rem;
             }
-            
+
             .data-table th, .data-table td {
                 padding: 0.75rem;
             }
@@ -1121,20 +1132,21 @@
         @media (max-width: 480px) {
             .content {
                 padding: 1rem;
+                padding-bottom: 80px; /* Space for mobile navigation */
             }
-            
+
             .card {
                 padding: 1.25rem;
             }
-            
+
             .metrics-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .quantile-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .btn {
                 width: 100%;
             }
@@ -1171,6 +1183,59 @@
 
         .content::-webkit-scrollbar-thumb:hover {
             background: oklch(35% 0.02 260);
+        }
+
+        /* Mobile Navigation */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: oklch(12% 0.015 260 / 0.95);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border-subtle);
+            padding: 0.5rem;
+            z-index: 100;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            min-width: 60px;
+        }
+
+        .mobile-nav-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .mobile-nav-item.active {
+            color: var(--accent-primary);
+            background: var(--bg-card);
+        }
+
+        .mobile-nav-item svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 1.75;
+            margin-bottom: 0.25rem;
+        }
+
+        .mobile-nav-item-text {
+            font-size: 0.65rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
         }
     </style>
 </head>
@@ -1622,6 +1687,51 @@
         </div>
     </main>
 
+    <!-- Image Modal (moved before script for proper event binding) -->
+    <div class="image-modal" id="image-modal">
+        <div class="image-modal-content">
+            <button class="image-modal-close" id="image-modal-close">×</button>
+            <img id="image-modal-img" src="" alt="Stock visualization">
+        </div>
+    </div>
+
+    <!-- Mobile Navigation (shown on screens < 1024px) -->
+    <nav class="mobile-nav" id="mobile-nav">
+        <div class="mobile-nav-item active" data-section="update" tabindex="0" role="button" aria-label="Update Data">
+            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                <path d="M16 21h5v-5"></path>
+            </svg>
+            <span class="mobile-nav-item-text">Update</span>
+        </div>
+        <div class="mobile-nav-item" data-section="calculate" tabindex="0" role="button" aria-label="Calculate Stocks">
+            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="8" y1="10" x2="16" y2="10"></line>
+                <line x1="8" y1="14" x2="12" y2="14"></line>
+            </svg>
+            <span class="mobile-nav-item-text">Calculate</span>
+        </div>
+        <div class="mobile-nav-item" data-section="top-stocks" tabindex="0" role="button" aria-label="Top Stocks">
+            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+            </svg>
+            <span class="mobile-nav-item-text">Top</span>
+        </div>
+        <div class="mobile-nav-item" data-section="valuation" tabindex="0" role="button" aria-label="Stock Valuation">
+            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+            <span class="mobile-nav-item-text">Search</span>
+        </div>
+    </nav>
+
     <script>
 const btnUpdateOriginal = `
             <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -1658,22 +1768,39 @@ const btnValOriginal = `
 
         // Navigation
         const navItems = document.querySelectorAll('.nav-item');
+        const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
         const sections = document.querySelectorAll('.section');
 
         function switchSection(sectionId) {
+            // Update sidebar navigation
             navItems.forEach(item => item.classList.remove('active'));
+            // Update mobile navigation
+            mobileNavItems.forEach(item => item.classList.remove('active'));
+            // Update sections
             sections.forEach(s => s.classList.remove('active'));
-            
-            const activeNav = document.querySelector(`[data-section="${sectionId}"]`);
+
+            const activeSidebarNav = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
+            const activeMobileNav = document.querySelector(`.mobile-nav-item[data-section="${sectionId}"]`);
             const activeSection = document.getElementById(`section-${sectionId}`);
-            
-            if (activeNav && activeSection) {
-                activeNav.classList.add('active');
-                activeSection.classList.add('active');
-            }
+
+            if (activeSidebarNav) activeSidebarNav.classList.add('active');
+            if (activeMobileNav) activeMobileNav.classList.add('active');
+            if (activeSection) activeSection.classList.add('active');
         }
 
+        // Sidebar navigation events
         navItems.forEach(item => {
+            item.addEventListener('click', () => switchSection(item.dataset.section));
+            item.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    switchSection(item.dataset.section);
+                }
+            });
+        });
+
+        // Mobile navigation events
+        mobileNavItems.forEach(item => {
             item.addEventListener('click', () => switchSection(item.dataset.section));
             item.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -1939,11 +2066,13 @@ const btnValOriginal = `
             const img = document.getElementById('image-modal-img');
             img.src = src;
             modal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
         }
 
         function closeImageModal() {
             const modal = document.getElementById('image-modal');
             modal.classList.remove('active');
+            document.body.style.overflow = ''; // Restore scrolling
         }
 
         function downloadImage(src, filename) {
@@ -1953,12 +2082,35 @@ const btnValOriginal = `
             link.click();
         }
 
-        // Modal close handlers (outside DOMContentLoaded)
-        document.getElementById('image-modal-close').addEventListener('click', closeImageModal);
-        document.getElementById('image-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'image-modal') {
-                closeImageModal();
+        // Modal close handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            const closeBtn = document.getElementById('image-modal-close');
+            const modal = document.getElementById('image-modal');
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    closeImageModal();
+                });
             }
+
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeImageModal();
+                    }
+                });
+            }
+
+            // Close with ESC key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('image-modal');
+                    if (modal && modal.classList.contains('active')) {
+                        closeImageModal();
+                    }
+                }
+            });
         });
 
         // Section 3: Top Stocks
@@ -2084,13 +2236,5 @@ const btnValOriginal = `
         loadStats();
     
 </script>
-
-    <!-- Image Modal -->
-    <div class="image-modal" id="image-modal">
-        <div class="image-modal-content">
-            <button class="image-modal-close" id="image-modal-close">×</button>
-            <img id="image-modal-img" src="" alt="Stock visualization">
-        </div>
-    </div>
 </body>
 </html>
