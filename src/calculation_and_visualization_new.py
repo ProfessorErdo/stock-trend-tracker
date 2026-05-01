@@ -119,9 +119,15 @@ def find_and_visualize_best_stocks(threshold=0.35):
     stock_values_filtered.to_csv(f"../data/processed/stock-valuation/stocks_values_filtered_{today}.csv", index=False)
 
     ob_stocks = stock_values_filtered.code.tolist()
-    # create the img/{today} folder if it doesn't exist
-    if not os.path.exists(f"../img/{today}"):
-        os.makedirs(f"../img/{today}")
+    # create the img/{today} folder and clear old images
+    img_dir = f"../img/{today}"
+    if os.path.exists(img_dir):
+        # Clear existing images from previous runs
+        for old_img in os.listdir(img_dir):
+            if old_img.endswith('.png'):
+                os.remove(os.path.join(img_dir, old_img))
+    else:
+        os.makedirs(img_dir)
     print(f"The number of stocks that meet the criteria is {len(ob_stocks)} and are {ob_stocks}.")
 
     for stock_code in ob_stocks:
