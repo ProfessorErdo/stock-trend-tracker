@@ -13,3 +13,7 @@ dependencies = [
     "seaborn>=0.13.2",
     "uvicorn>=0.43.0",
 ]
+
+[[tool.uv.index]]
+url = "https://mirrors.aliyun.com/pypi/simple/"
+default = true
