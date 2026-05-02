@@ -51,3 +51,11 @@ wheels/
 !/img/.gitkeep
 !/img/20260501/
 !/img/20260501/*.png
+
+data/input/backtesting/*
+data/processed/backtesting/*
+
+.claude/
+
+doc/
+docs/
