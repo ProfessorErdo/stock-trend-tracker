@@ -44,7 +44,7 @@ def run_performance_only(logger):
     )
 
     logger.info("\n>>> Phase 4: Generating visualizations")
-    generate_all_visualizations(performance, result['equity_curve'])
+    generate_all_visualizations(performance, result['equity_curve'], logger=logger)
 
     logger.info(f"\nResults saved to:")
     logger.info(f"  Holdings: {config.HOLDINGS_DIR}/")
@@ -224,7 +224,7 @@ def main():
 
     # Generate visualizations
     logger.info("\n>>> Phase 4: Generating visualizations")
-    generate_all_visualizations(performance, result['equity_curve'])
+    generate_all_visualizations(performance, result['equity_curve'], logger=logger)
 
     logger.info("\n" + "=" * 60)
     logger.info("  Backtest Complete!")

@@ -136,14 +136,85 @@ def plot_annual_heatmap(annual_returns_df: pd.DataFrame, save_path: str = None):
     plt.close(fig)
 
 
-def generate_all_visualizations(performance_dict: dict, equity_df: pd.DataFrame):
+def _format_value(value, is_pct: bool) -> str:
+    """Format a performance metric value for display."""
+    if value is None:
+        return 'N/A'
+    if is_pct:
+        return f'{value * 100:.2f}%'
+    return str(value)
+
+
+def log_performance_summary(performance_dict: dict, logger):
+    """Log the full performance summary table (same as CSV content)."""
+    p = performance_dict
+    logger.info('========== Performance Summary ==========')
+    logger.info(f"{'Cumulative Return':<22s} {_format_value(p.get('cumulative_return'), True)}")
+    logger.info(f"{'Annual Return':<22s} {_format_value(p.get('annual_return'), True)}")
+    logger.info(f"{'Annual Volatility':<22s} {_format_value(p.get('annual_volatility'), True)}")
+    logger.info(f"{'Sharpe Ratio':<22s} {_format_value(p.get('sharpe_ratio'), False)}")
+    logger.info(f"{'Max Drawdown':<22s} {_format_value(p.get('max_drawdown'), True)}")
+    logger.info(f"{'Max Drawdown Days':<22s} {_format_value(p.get('max_drawdown_duration_days'), False)}")
+    logger.info(f"{'Recovery Days':<22s} {_format_value(p.get('recovery_days'), False)}")
+
+    wr = p.get('win_rate')
+    logger.info(f"{'Win Rate':<22s} {_format_value(wr, True)}")
+
+    plr = p.get('profit_loss_ratio')
+    if plr is not None and plr == float('inf'):
+        logger.info(f"{'Profit/Loss Ratio':<22s} inf")
+    else:
+        logger.info(f"{'Profit/Loss Ratio':<22s} {_format_value(plr, False)}")
+
+    logger.info(f"{'Avg Weekly Turnover':<22s} {_format_value(p.get('avg_weekly_turnover'), True)}")
+    logger.info(f"{'Benchmark Cum Return':<22s} {_format_value(p.get('benchmark_cumulative_return'), True)}")
+    logger.info(f"{'Benchmark Annual Ret':<22s} {_format_value(p.get('benchmark_annual_return'), True)}")
+    logger.info(f"{'Excess Return':<22s} {_format_value(p.get('excess_return'), True)}")
+    logger.info(f"{'Tracking Error':<22s} {_format_value(p.get('tracking_error'), True)}")
+    logger.info(f"{'Information Ratio':<22s} {_format_value(p.get('information_ratio'), False)}")
+    logger.info(f"{'Trading Days':<22s} {_format_value(p.get('trading_days'), False)}")
+    logger.info(f"{'Initial Capital':<22s} {_format_value(p.get('initial_capital'), False)}")
+    logger.info(f"{'Final Equity':<22s} {_format_value(p.get('final_equity'), False)}")
+    logger.info('=========================================\n')
+
+
+def log_annual_returns(performance_dict: dict, logger):
+    """Log the annual returns table."""
+    annual_returns = performance_dict.get('annual_returns')
+    if annual_returns is None or annual_returns.empty:
+        return
+
+    logger.info('========== Annual Returns ==========')
+    header = f"{'Year':>6}  {'Strategy':>10}  {'Benchmark':>10}  {'Excess':>10}"
+    logger.info(header)
+    logger.info('-' * 42)
+
+    for _, row in annual_returns.iterrows():
+        logger.info(
+            f"{int(row['year']):>6}  "
+            f"{row['strategy_return']:>10.2%}  "
+            f"{row['benchmark_return']:>10.2%}  "
+            f"{row['excess_return']:>10.2%}"
+        )
+    logger.info('=========================================\n')
+
+
+def generate_all_visualizations(
+    performance_dict: dict,
+    equity_df: pd.DataFrame,
+    logger=None,
+):
     """
     生成所有可视化图表并输出绩效摘要
 
     Args:
         performance_dict: calculate_performance 返回的指标字典
         equity_df: 权益曲线 DataFrame
+        logger: logger to use for output (falls back to module logger)
     """
+    if logger is None:
+        logger = globals().get('logger') or logging.getLogger("backtest")
+
     config.ensure_dirs()
 
     # 1. 资金曲线图
@@ -162,29 +233,9 @@ def generate_all_visualizations(performance_dict: dict, equity_df: pd.DataFrame)
         annual_returns.to_csv(annual_csv, index=False, encoding='utf-8-sig')
         logger.info(f'Annual returns CSV saved to {annual_csv}')
 
-    # 3. 打印绩效摘要到控制台
-    p = performance_dict
-    logger.info('\n========== Performance Summary ==========')
-    logger.info(f"Cumulative Return:   {p.get('cumulative_return', 0) * 100:.2f}%")
-    logger.info(f"Annual Return:       {p.get('annual_return', 0) * 100:.2f}%")
-    logger.info(f"Annual Volatility:   {p.get('annual_volatility', 0) * 100:.2f}%")
-    logger.info(f"Sharpe Ratio:        {p.get('sharpe_ratio', 0):.4f}")
-    logger.info(f"Max Drawdown:        {p.get('max_drawdown', 0) * 100:.2f}%")
-
-    wr = p.get('win_rate')
-    logger.info(f"Win Rate:            {wr * 100:.2f}%" if wr is not None else "Win Rate:            N/A")
-
-    plr = p.get('profit_loss_ratio')
-    if plr is not None and plr != float('inf'):
-        logger.info(f"Profit/Loss Ratio:   {plr:.2f}")
-    elif plr == float('inf'):
-        logger.info(f"Profit/Loss Ratio:   inf")
-    else:
-        logger.info(f"Profit/Loss Ratio:   N/A")
-
-    logger.info(f"Excess Return:       {p.get('excess_return', 0) * 100:.2f}%")
-    logger.info(f"Information Ratio:   {p.get('information_ratio', 0):.4f}")
-    logger.info('=========================================\n')
+    # 3. 打印绩效摘要 + 年度收益表到日志
+    log_performance_summary(performance_dict, logger)
+    log_annual_returns(performance_dict, logger)
 
     # 4. 保存绩效汇总 CSV
     perf_csv = os.path.join(config.PERFORMANCE_DIR, 'performance_summary.csv')
