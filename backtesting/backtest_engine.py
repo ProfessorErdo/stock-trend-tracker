@@ -348,8 +348,8 @@ def run_backtest(
                 selected, val_df = select_stocks(stock_codes, cutoff, price_cache=price_cache)
                 final_selected = rank_and_limit(selected, val_df, config.MAX_POSITIONS, ranking_method)
 
-            if rebalance is not None:
-                selection_results[(cutoff, rebalance)] = final_selected
+            # Always include the pair — when rebalance is None, use cutoff date close as fill price
+            selection_results[(cutoff, rebalance)] = final_selected
         except Exception as e:
             logger.info(f"\n  Warning: stock selection failed for cutoff {cutoff}: {e}")
             continue
@@ -380,39 +380,52 @@ def run_backtest(
         selection_results.items(), desc="Rebalancing"
     ):
         try:
-            # 获取 rebalance 日的价格
+            # When rebalance is None (latest cutoff, no future trading day yet),
+            # use cutoff date's close as fill price. This represents the realistic
+            # scenario where we select stocks based on available data and execute
+            # at the known closing price.
+            execution_date = rebalance if rebalance is not None else cutoff
+
+            # 获取执行日的价格
             prices = {}
             prev_prices = {}  # 用于涨跌停判断的 prev_close
 
             for code in stock_codes:
                 if code in price_cache:
                     df = price_cache[code]
-                    # rebalance 日价格
-                    row = df[df['trade_date'] == rebalance]
+                    # 执行日价格
+                    row = df[df['trade_date'] == execution_date]
                     if not row.empty:
                         prices[code] = row['close'].iloc[0]
-                    # 找 rebalance 之前的最近一天收盘价作为 prev_close
-                    before = df[df['trade_date'] < rebalance]
+                    # 找执行日之前的最近一天收盘价作为 prev_close
+                    before = df[df['trade_date'] < execution_date]
                     if not before.empty:
                         prev_prices[code] = before['close'].iloc[-1]
 
             if not prices:
                 continue
 
-            # 获取所有已持有股票 + 目标股票的并集，检查涨跌停
-            all_relevant = set(portfolio.positions.keys()) | set(selected_codes)
+            # 涨跌停检查：仅适用于有实际执行日的情况
+            # 当 rebalance is None 时，跳过涨跌停检查（无法预知次日开盘情况）
             can_buy_flags = {}
             can_sell_flags = {}
 
-            for code in all_relevant:
-                if code in price_cache and code in prev_prices:
-                    df = price_cache[code]
-                    result = check_limit_up_down(
-                        code, rebalance, df, prev_prices[code]
-                    )
-                    can_buy_flags[code] = result['can_buy']
-                    can_sell_flags[code] = result['can_sell']
-                else:
+            if rebalance is not None:
+                all_relevant = set(portfolio.positions.keys()) | set(selected_codes)
+                for code in all_relevant:
+                    if code in price_cache and code in prev_prices:
+                        df = price_cache[code]
+                        result = check_limit_up_down(
+                            code, execution_date, df, prev_prices[code]
+                        )
+                        can_buy_flags[code] = result['can_buy']
+                        can_sell_flags[code] = result['can_sell']
+                    else:
+                        can_buy_flags[code] = True
+                        can_sell_flags[code] = True
+            else:
+                # No limit check for latest cutoff — use cutoff close as fill
+                for code in set(portfolio.positions.keys()) | set(selected_codes):
                     can_buy_flags[code] = True
                     can_sell_flags[code] = True
 
@@ -422,7 +435,7 @@ def run_backtest(
             # 生成目标仓位
             plan = portfolio.calculate_target_positions(
                 selected_codes, total_equity, prices,
-                can_buy=True, can_sell=True  # 全局标志由订单级别处理
+                can_buy=True, can_sell=True
             )
 
             # 先执行卖出
@@ -430,8 +443,6 @@ def run_backtest(
                 price = prices.get(code, 0)
                 if price <= 0:
                     continue
-
-                # 检查是否跌停（不能卖）
                 if not can_sell_flags.get(code, True):
                     continue
 
@@ -439,7 +450,7 @@ def run_backtest(
                     code, shares_to_sell, price, reason="调仓卖出"
                 )
                 if trade:
-                    trade['trade_date'] = rebalance
+                    trade['trade_date'] = execution_date
                     trade_records.append(trade)
 
             # 再执行买入
@@ -447,30 +458,28 @@ def run_backtest(
                 price = prices.get(code, 0)
                 if price <= 0:
                     continue
-
-                # 检查是否涨停（不能买）
                 if not can_buy_flags.get(code, True):
                     continue
 
-                # 检查是否新股
+                # 新股检查
                 if code in price_cache:
-                    if is_new_stock(code, price_cache[code], rebalance, config.NEW_STOCK_EXCLUDE_DAYS):
+                    if is_new_stock(code, price_cache[code], execution_date, config.NEW_STOCK_EXCLUDE_DAYS):
                         continue
 
                 trade = portfolio.buy_shares(
                     code, shares_to_buy, price, reason="调仓买入"
                 )
                 if trade:
-                    trade['trade_date'] = rebalance
+                    trade['trade_date'] = execution_date
                     trade_records.append(trade)
 
-            # 记录调仓后的组合价值（关键修复：在调仓后立即记录，此时 portfolio 状态正确）
+            # 记录调仓后的组合价值
             post_rebalance_equity = portfolio.get_total_equity(prices)
-            rebalance_ts = pd.Timestamp(rebalance)
-            strategy_equity_points.append((rebalance_ts, post_rebalance_equity))
+            equity_date = pd.Timestamp(execution_date)
+            strategy_equity_points.append((equity_date, post_rebalance_equity))
 
             # 记录持仓快照
-            snapshot = portfolio.snapshot_holdings(rebalance, prices)
+            snapshot = portfolio.snapshot_holdings(execution_date, prices)
             holding_snapshots.append(snapshot)
             all_cutoffs.append(cutoff)
 

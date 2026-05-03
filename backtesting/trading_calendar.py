@@ -153,9 +153,7 @@ def get_annual_cutoff_dates(trading_days: list) -> list:
         cutoff = month_trades[-1]
         next_start = pd.Timestamp(year, month + 1, 1)
         next_trades = [d for d in sorted_days if d >= next_start]
-        if not next_trades:
-            continue
-        rebalance = next_trades[0]
+        rebalance = next_trades[0] if next_trades else None
         results.append((cutoff, rebalance))
     results.sort(key=lambda x: x[0])
     return results
@@ -186,9 +184,7 @@ def get_semi_annual_cutoff_dates(trading_days: list) -> list:
             cutoff = month_trades[-1]
             next_start = pd.Timestamp(year, month + 1, 1)
             next_trades = [d for d in sorted_days if d >= next_start]
-            if not next_trades:
-                continue
-            rebalance = next_trades[0]
+            rebalance = next_trades[0] if next_trades else None
             results.append((cutoff, rebalance))
     results.sort(key=lambda x: x[0])
     return results
@@ -225,9 +221,7 @@ def get_annual_q3_cutoff_dates(trading_days: list) -> list:
             else:
                 next_start = pd.Timestamp(year, month + 1, 1)
             next_trades = [d for d in sorted_days if d >= next_start]
-            if not next_trades:
-                continue
-            rebalance = next_trades[0]
+            rebalance = next_trades[0] if next_trades else None
             results.append((cutoff, rebalance))
     results.sort(key=lambda x: x[0])
     return results

@@ -101,14 +101,16 @@ def find_latest_cutoff(frequency: str) -> tuple:
     if not cutoffs:
         return None, None
 
-    # Pick the last cutoff that has a valid rebalance date in the future (or near future)
     today = pd.Timestamp(datetime.now())
     latest = cutoffs[-1]
 
-    # If the last rebalance date is before today, it means we need to use it
-    # (the portfolio should have been rebalanced already but we're catching up)
-    # If it's in the future, we use the second-to-last
-    if latest[1] is not None and latest[1] > today:
+    # If rebalance is None (no future trading day yet), use cutoff date as execution date
+    if latest[1] is None:
+        return latest
+
+    # If the last rebalance date is before today, use it (we're catching up)
+    # If it's in the future, use the second-to-last (already executed)
+    if latest[1] > today:
         if len(cutoffs) > 1:
             latest = cutoffs[-2]
 
@@ -413,7 +415,10 @@ def main():
     logger.info("=" * 60)
     logger.info(f"  Frequency:       {freq_labels[frequency]}")
     logger.info(f"  Cutoff date:     {cutoff_date.strftime('%Y-%m-%d')}")
-    logger.info(f"  Rebalance date:  {rebalance_date.strftime('%Y-%m-%d') if rebalance_date else 'N/A'}")
+    if rebalance_date:
+        logger.info(f"  Rebalance date:  {rebalance_date.strftime('%Y-%m-%d')}")
+    else:
+        logger.info(f"  Rebalance date:  (none yet) — will use cutoff date close as fill price")
     logger.info(f"  PE/PB/PR:        <={pe_threshold}/{pb_threshold}/{pr_threshold}")
     logger.info(f"  ROE:             >{roe_threshold}")
     logger.info(f"  Max positions:   {max_positions}")
