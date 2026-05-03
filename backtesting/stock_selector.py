@@ -246,8 +246,8 @@ def select_stocks(
     if step2_df.empty:
         return [], val_df.drop(columns=["pe_winsorized", "pb_winsorized", "pr_winsorized"], errors="ignore")
 
-    # Step 3 - ROE过滤: ROE阈值在全部候选股票上计算(与src一致: quantile(1-threshold))
-    roe_cut = val_df["roe_ttm"].quantile(1 - config.PE_THRESHOLD)
+    # Step 3 - ROE过滤: ROE阈值在全部候选股票上计算
+    roe_cut = val_df["roe_ttm"].quantile(config.ROE_THRESHOLD)
     step3_df = step2_df[step2_df["roe_ttm"] >= roe_cut]
 
     if step3_df.empty:

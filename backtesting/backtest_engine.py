@@ -447,8 +447,9 @@ def run_backtest(
                 if not can_sell_flags.get(code, True):
                     continue
 
+                exec_price = price * (1 - config.SLIPPAGE_RATE)
                 trade = portfolio.sell_shares(
-                    code, shares_to_sell, price, reason="调仓卖出"
+                    code, shares_to_sell, exec_price, reason="调仓卖出"
                 )
                 if trade:
                     trade['trade_date'] = execution_date
@@ -467,8 +468,9 @@ def run_backtest(
                     if is_new_stock(code, price_cache[code], execution_date, config.NEW_STOCK_EXCLUDE_DAYS):
                         continue
 
+                exec_price = price * (1 + config.SLIPPAGE_RATE)
                 trade = portfolio.buy_shares(
-                    code, shares_to_buy, price, reason="调仓买入"
+                    code, shares_to_buy, exec_price, reason="调仓买入"
                 )
                 if trade:
                     trade['trade_date'] = execution_date

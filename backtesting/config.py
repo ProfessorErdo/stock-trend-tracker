@@ -40,13 +40,13 @@ PR_THRESHOLD = 0.25          # PR分位数阈值（保留最低25%）
 ROE_THRESHOLD = 0.75         # ROE分位数阈值（保留最高75%分位以上）
 
 # 极值处理
-WINSORIZE_ENABLED = False    # 是否启用1%/99%截尾（True=启用，False=跳过）
+WINSORIZE_ENABLED = True     # 是否启用1%/99%截尾（True=启用，False=跳过）
 WINSORIZE_LOWER = 0.01       # 极值截尾下限（1%）
 WINSORIZE_UPPER = 0.99       # 极值截尾上限（99%）
 
 # 新股排除
 NEW_STOCK_EXCLUDE_DAYS = 120  # 排除上市不足120天的股票
-MAX_POSITIONS = 10            # 最大持仓股票数量
+MAX_POSITIONS = 5             # 最大持仓股票数量
 
 
 # ============== 调仓参数 ==============
@@ -60,6 +60,7 @@ LOT_SIZE = 100                # 每手股数（A股100股/手）
 COMMISSION_RATE = 0.0003      # 佣金率（0.03%）
 COMMISSION_MIN = 5            # 最低佣金（元）
 STAMP_TAX_RATE = 0.001        # 印花税率（卖出0.1%）
+SLIPPAGE_RATE = 0.001         # 滑点率（0.1%，买入加价、卖出减价）
 
 
 # ============== 涨跌停参数 ==============

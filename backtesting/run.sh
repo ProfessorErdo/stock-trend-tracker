@@ -222,8 +222,8 @@ if $INTERACTIVE; then
 
     # --- [5/10] Max positions ---
     echo "[5/10] Max positions per rebalance:"
-    read -rp "  Number [3-20] (default 10): " MAX_POS
-    MAX_POS=${MAX_POS:-10}
+    read -rp "  Number [3-20] (default 5): " MAX_POS
+    MAX_POS=${MAX_POS:-5}
     POS_FLAG="--max_positions $MAX_POS"
 
     echo ""
