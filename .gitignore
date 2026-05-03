@@ -55,6 +55,10 @@ wheels/
 data/input/backtesting/*
 data/processed/backtesting/*
 
+# Backtesting logs
+backtesting/logs/*.log
+server.log
+
 .claude/
 
 doc/
