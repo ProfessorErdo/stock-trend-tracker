@@ -584,6 +584,9 @@ def run_backtest(
         'trade_records': trade_records,
         'holding_snapshots': holding_snapshots,
         'cutoff_dates': cutoff_dates,
+        'portfolio_states': portfolio_states,
+        'price_cache': price_cache,
+        'trading_days': trading_days,
     }
 
 
