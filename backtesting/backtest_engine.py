@@ -373,8 +373,9 @@ def run_backtest(
         holding_snapshots = []
         all_cutoffs = []
 
-    # Track strategy equity at each rebalance date
+    # Track strategy equity at each rebalance date AND record portfolio state for daily valuation
     strategy_equity_points = []  # [(date_ts, equity), ...]
+    portfolio_states = []  # [(date_ts, cash, {code: shares}), ...] — snapshot after each rebalance
 
     for (cutoff, rebalance), selected_codes in tqdm(
         selection_results.items(), desc="Rebalancing"
@@ -473,10 +474,14 @@ def run_backtest(
                     trade['trade_date'] = execution_date
                     trade_records.append(trade)
 
-            # 记录调仓后的组合价值
+            # 记录调仓后的组合价值（关键修复：在调仓后立即记录，此时 portfolio 状态正确）
             post_rebalance_equity = portfolio.get_total_equity(prices)
             equity_date = pd.Timestamp(execution_date)
             strategy_equity_points.append((equity_date, post_rebalance_equity))
+
+            # 记录调仓后的组合状态（用于每日市值计算）
+            shares_snapshot = {code: pos['shares'] for code, pos in portfolio.positions.items()}
+            portfolio_states.append((equity_date, portfolio.cash, shares_snapshot))
 
             # 记录持仓快照
             snapshot = portfolio.snapshot_holdings(execution_date, prices)
@@ -490,26 +495,50 @@ def run_backtest(
     logger.info(f"  Total trades executed: {len(trade_records)}")
     logger.info(f"  Holding snapshots: {len(holding_snapshots)}")
 
-    # Step 7: 构建每日权益曲线
+    # Step 7: 构建每日权益曲线 — 用真实持仓 × 每日收盘价计算市值
     logger.info("\n[Step 7] Computing daily equity curve...")
     strategy_equity = []
 
-    if strategy_equity_points:
-        first_rebalance = strategy_equity_points[0][0]
-        rebalance_set = {d for d, _ in strategy_equity_points}
-        equity_map = {d: e for d, e in strategy_equity_points}
+    if portfolio_states:
+        # Build price lookup: {code: {date: close}}
+        stock_close_map = {}
+        for code, df in price_cache.items():
+            if 'close' not in df.columns:
+                continue
+            stock_close_map[code] = dict(zip(df['trade_date'], df['close']))
+
+        first_rebalance = portfolio_states[0][0]
+
+        # 将 trading_days 和 portfolio_states 合并遍历
+        state_idx = 0
+        current_cash = portfolio_states[0][1]
+        current_shares = portfolio_states[0][2]
 
         for day in trading_days:
             day_ts = pd.Timestamp(day)
+
+            # 更新到当前日适用的组合状态（最新的调仓前状态）
+            while state_idx + 1 < len(portfolio_states) and portfolio_states[state_idx + 1][0] <= day_ts:
+                state_idx += 1
+                current_cash = portfolio_states[state_idx][1]
+                current_shares = portfolio_states[state_idx][2]
+
             if day_ts < first_rebalance:
                 # 首次调仓前：全部现金
                 equity = config.INITIAL_CAPITAL
-            elif day_ts in rebalance_set:
-                # 调仓日：使用记录的准确价值
-                equity = equity_map[day_ts]
             else:
-                # 非调仓日：前值填充（调仓之间的持仓不变）
-                equity = strategy_equity[-1]['strategy_equity'] if strategy_equity else config.INITIAL_CAPITAL
+                # 用当前持仓 × 当日收盘价计算市值
+                equity = current_cash
+                for code, shares in current_shares.items():
+                    if shares > 0 and code in stock_close_map:
+                        price = stock_close_map[code].get(day_ts)
+                        if price is not None:
+                            equity += shares * price
+                        else:
+                            # 当日无价格（停牌），用最近可用价格
+                            before_prices = {d: p for d, p in stock_close_map[code].items() if d < day_ts}
+                            if before_prices:
+                                equity += shares * before_prices[max(before_prices)]
 
             strategy_equity.append({
                 'date': day_ts,
