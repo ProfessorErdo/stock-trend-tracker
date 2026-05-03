@@ -36,7 +36,8 @@ if $INTERACTIVE; then
     echo "  5) Selection analysis — how many stocks pass each filtering step"
     echo "  6) Threshold sweep — test PE/PB/PR/ROE quantile combinations"
     echo "  7) Data update only — download data without running backtest"
-    read -rp "Choose [1-7] (default 1): " TYPE_CHOICE
+    echo "  8) Next rebalance plan — calculate what to buy for the next trading day"
+    read -rp "Choose [1-8] (default 1): " TYPE_CHOICE
     TYPE_CHOICE=${TYPE_CHOICE:-1}
 
     # ============================================================
@@ -129,6 +130,11 @@ if $INTERACTIVE; then
             echo ">>> Running: $CMD"
             echo ""
             exec $CMD
+            ;;
+        8)
+            echo ""
+            echo ">>> Running next rebalance plan calculator..."
+            exec $VENV_PYTHON next_rebalance.py
             ;;
     esac
 
