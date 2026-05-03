@@ -180,12 +180,18 @@ def main():
     # Run backtest
     logger.info("\n>>> Phase 2: Running backtest")
 
-    # Auto-incremental mode: if intermediate results exist, only run new dates
-    incremental_flag = INTERMEDIATE_RESULTS if os.path.exists(INTERMEDIATE_RESULTS) else None
-
-    if args.incremental and not incremental_flag:
-        logger.error("--incremental specified but no intermediate results found.")
-        exit(1)
+    # Only use incremental mode when explicitly requested via --incremental
+    if args.incremental:
+        if not os.path.exists(INTERMEDIATE_RESULTS):
+            logger.error("--incremental specified but no intermediate results found.")
+            exit(1)
+        incremental_flag = INTERMEDIATE_RESULTS
+    else:
+        incremental_flag = None
+        # Clean up old intermediate results so a full backtest starts fresh
+        if os.path.exists(INTERMEDIATE_RESULTS):
+            os.remove(INTERMEDIATE_RESULTS)
+            logger.info("  Removed old intermediate results for full backtest")
 
     result = run_backtest(
         args.start_date, args.end_date,
