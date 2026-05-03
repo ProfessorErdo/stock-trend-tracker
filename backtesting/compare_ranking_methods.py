@@ -7,8 +7,11 @@
 """
 
 import sys
+import logging
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+logger = logging.getLogger("compare_ranking")
 
 import pandas as pd
 import numpy as np
@@ -240,25 +243,25 @@ def compute_annual_returns(equity_curve: pd.DataFrame) -> dict:
 
 
 def main():
-    print("=" * 80)
-    print("  Ranking Method Comparison - Top-10 Selection After 4-Step Filter")
-    print("=" * 80)
-    print(f"  Max positions: {MAX_POSITIONS}")
-    print(f"  Methods: ROE-highest, PE-lowest, PB-lowest, PR-lowest")
-    print("=" * 80)
+    logger.info("=" * 80)
+    logger.info("  Ranking Method Comparison - Top-10 Selection After 4-Step Filter")
+    logger.info("=" * 80)
+    logger.info(f"  Max positions: {MAX_POSITIONS}")
+    logger.info(f"  Methods: ROE-highest, PE-lowest, PB-lowest, PR-lowest")
+    logger.info("=" * 80)
 
     # Load data
-    print("\n[1/5] Loading stock pool...")
+    logger.info("\n[1/5] Loading stock pool...")
     pool_df = load_stock_pool()
     stock_codes = pool_df["code"].tolist()
-    print(f"  {len(stock_codes)} stocks")
+    logger.info(f"  {len(stock_codes)} stocks")
 
-    print("\n[2/5] Building trading calendar...")
+    logger.info("\n[2/5] Building trading calendar...")
     trading_days = build_trading_calendar()
     cutoffs = get_quarterly_cutoff_dates(trading_days)
-    print(f"  {len(cutoffs)} quarterly cutoffs")
+    logger.info(f"  {len(cutoffs)} quarterly cutoffs")
 
-    print("\n[3/5] Loading price data...")
+    logger.info("\n[3/5] Loading price data...")
     price_cache = {}
     for code in tqdm(stock_codes, desc="Loading"):
         try:
@@ -267,30 +270,30 @@ def main():
                 price_cache[code] = df
         except:
             continue
-    print(f"  {len(price_cache)} stocks loaded")
+    logger.info(f"  {len(price_cache)} stocks loaded")
 
     # Run backtests for each method
-    print("\n[4/5] Running backtests for each ranking method...")
+    logger.info("\n[4/5] Running backtests for each ranking method...")
     results = {}
     for key, spec in RANKING_METHODS.items():
-        print(f"\n  Running: {spec['label']}")
+        logger.info(f"\n  Running: {spec['label']}")
         results[key] = run_ranking_backtest(
             stock_codes, trading_days, cutoffs, price_cache,
             ranking_method=spec["method"]
         )
 
     # Compute performance and compare
-    print("\n[5/5] Computing performance...")
+    logger.info("\n[5/5] Computing performance...")
 
     # --- Summary table ---
-    print("\n" + "=" * 80)
-    print(f"  Performance Comparison (2015-01-01 to present)")
-    print("=" * 80)
+    logger.info("\n" + "=" * 80)
+    logger.info(f"  Performance Comparison (2015-01-01 to present)")
+    logger.info("=" * 80)
     header = f"{'指标':<20}"
     for key, spec in RANKING_METHODS.items():
         header += f"  {spec['label']:>18}"
-    print(header)
-    print("-" * 80)
+    logger.info(header)
+    logger.info("-" * 80)
 
     perf_data = {}
     for key in RANKING_METHODS:
@@ -311,19 +314,19 @@ def main():
         row = f"{name:<20}"
         for key in RANKING_METHODS:
             row += f"  {fmt(perf_data[key]):>18}"
-        print(row)
+        logger.info(row)
 
     # --- Trade counts ---
-    print("-" * 80)
+    logger.info("-" * 80)
     trade_row = f"{'交易次数':<20}"
     for key in RANKING_METHODS:
         trade_row += f"  {len(results[key]['trade_records']):>18}"
-    print(trade_row)
+    logger.info(trade_row)
 
     # --- Annual returns ---
-    print("\n" + "=" * 80)
-    print(f"  Annual Returns by Method")
-    print("=" * 80)
+    logger.info("\n" + "=" * 80)
+    logger.info(f"  Annual Returns by Method")
+    logger.info("=" * 80)
 
     all_years = set()
     annual_data = {}
@@ -335,8 +338,8 @@ def main():
     for key, spec in RANKING_METHODS.items():
         header2 += f"  {spec['label'][:12]:>14}"
     header2 += f"  {'基准':>10}"
-    print(header2)
-    print("-" * 80)
+    logger.info(header2)
+    logger.info("-" * 80)
 
     for year in sorted(all_years):
         row = f"{year:>6}"
@@ -353,17 +356,17 @@ def main():
             row += f"  {avg_bench:>9.2%}"
         else:
             row += f"  {'N/A':>10}"
-        print(row)
+        logger.info(row)
 
     # --- Selection count comparison ---
-    print("\n" + "=" * 80)
-    print(f"  Selection Counts per Cutoff Date")
-    print("=" * 80)
+    logger.info("\n" + "=" * 80)
+    logger.info(f"  Selection Counts per Cutoff Date")
+    logger.info("=" * 80)
     header3 = f"{'截面日期':>12}"
     for key, spec in RANKING_METHODS.items():
         header3 += f"  {spec['label'][:8]:>10}"
-    print(header3)
-    print("-" * 80)
+    logger.info(header3)
+    logger.info("-" * 80)
 
     for i in range(len(cutoffs)):
         cutoff = cutoffs[i][0]
@@ -374,22 +377,24 @@ def main():
                 row += f"  {raw:>4}/{final:>4}"
             else:
                 row += f"  {'N/A':>10}"
-        print(row)
+        logger.info(row)
 
     # --- Summary: best method ---
-    print("\n" + "=" * 80)
-    print("  Conclusion")
-    print("=" * 80)
+    logger.info("\n" + "=" * 80)
+    logger.info("  Conclusion")
+    logger.info("=" * 80)
 
     best_sharpe = max(RANKING_METHODS, key=lambda k: perf_data[k]["sharpe_ratio"])
     best_cum = max(RANKING_METHODS, key=lambda k: perf_data[k]["cumulative_return"])
     best_dd = max(RANKING_METHODS, key=lambda k: perf_data[k]["max_drawdown"])
 
-    print(f"  Best Sharpe Ratio:  {RANKING_METHODS[best_sharpe]['label']} ({perf_data[best_sharpe]['sharpe_ratio']:.4f})")
-    print(f"  Best Cum Return:    {RANKING_METHODS[best_cum]['label']} ({perf_data[best_cum]['cumulative_return']:.2%})")
-    print(f"  Smallest Drawdown:  {RANKING_METHODS[best_dd]['label']} ({perf_data[best_dd]['max_drawdown']:.2%})")
-    print("=" * 80)
+    logger.info(f"  Best Sharpe Ratio:  {RANKING_METHODS[best_sharpe]['label']} ({perf_data[best_sharpe]['sharpe_ratio']:.4f})")
+    logger.info(f"  Best Cum Return:    {RANKING_METHODS[best_cum]['label']} ({perf_data[best_cum]['cumulative_return']:.2%})")
+    logger.info(f"  Smallest Drawdown:  {RANKING_METHODS[best_dd]['label']} ({perf_data[best_dd]['max_drawdown']:.2%})")
+    logger.info("=" * 80)
 
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 if __name__ == "__main__":
     main()

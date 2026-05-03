@@ -7,8 +7,11 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import logging
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+logger = logging.getLogger("performance")
 import config
 
 
@@ -282,4 +285,4 @@ def save_performance_summary(performance: dict, filepath: str):
     result_df = pd.DataFrame(rows, columns=['Metric', 'Value'])
     os.makedirs(os.path.dirname(os.path.abspath(filepath)), exist_ok=True)
     result_df.to_csv(filepath, index=False, encoding='utf-8-sig')
-    print(f'Performance summary saved to {filepath}')
+    logger.info(f'Performance summary saved to {filepath}')

@@ -4,8 +4,11 @@
 """
 
 import sys
+import logging
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+logger = logging.getLogger("analyze_selection")
 
 import pandas as pd
 import numpy as np
@@ -162,25 +165,26 @@ def plot_analysis(df: pd.DataFrame, save_path: str, frequency: str = "weekly"):
     fig.tight_layout()
     os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
     fig.savefig(save_path, dpi=200, bbox_inches="tight")
-    print(f"Analysis chart saved to {save_path}")
+    logger.info(f"Analysis chart saved to {save_path}")
     plt.close(fig)
 
 
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     frequency = sys.argv[1] if len(sys.argv) > 1 else "weekly"
     freq_labels = {"weekly": "Weekly", "monthly": "Monthly", "quarterly": "Quarterly"}
     label = freq_labels.get(frequency, "Weekly")
-    print(f"Analyzing stock selection counts ({label} rebalance)...")
+    logger.info(f"Analyzing stock selection counts ({label} rebalance)...")
 
     # Load stock pool
     pool_df = load_stock_pool()
     stock_codes = pool_df["code"].tolist()
-    print(f"Stock pool: {len(stock_codes)} stocks")
+    logger.info(f"Stock pool: {len(stock_codes)} stocks")
 
     # Build calendar
     trading_days = build_trading_calendar()
     if not trading_days:
-        print("No trading days found.")
+        logger.info("No trading days found.")
         return
 
     if frequency == "monthly":
@@ -189,7 +193,7 @@ def main():
         cutoffs = get_quarterly_cutoff_dates(trading_days)
     else:
         cutoffs = get_weekly_cutoff_dates(trading_days)
-    print(f"Cutoff dates: {len(cutoffs)}")
+    logger.info(f"Cutoff dates: {len(cutoffs)}")
 
     # Load price cache
     price_cache = {}
@@ -201,26 +205,26 @@ def main():
                 price_cache[code] = df
         except Exception:
             continue
-    print(f"Price cache: {len(price_cache)} stocks")
+    logger.info(f"Price cache: {len(price_cache)} stocks")
 
     # Analyze
     df = analyze_selection_counts(stock_codes, trading_days, cutoffs, price_cache, label)
 
     # Print summary stats
-    print("\n" + "=" * 60)
-    print(f"  Selection Count Summary ({label})")
-    print("=" * 60)
+    logger.info("\n" + "=" * 60)
+    logger.info(f"  Selection Count Summary ({label})")
+    logger.info("=" * 60)
     for col in ["step1_valid", "step2_valuation", "step3_roe", "step4_final"]:
-        print(f"  {col:20s}: mean={df[col].mean():.1f},  median={df[col].median():.0f},  "
+        logger.info(f"  {col:20s}: mean={df[col].mean():.1f},  median={df[col].median():.0f},  "
               f"min={df[col].min():.0f},  max={df[col].max():.0f},  std={df[col].std():.1f}")
-    print("=" * 60)
+    logger.info("=" * 60)
 
     # Print extremes
     max_idx = df["step4_final"].idxmax()
     min_idx = df["step4_final"].idxmin()
-    print(f"\n  Most stocks selected: {df.loc[max_idx, 'step4_final']:.0f} "
+    logger.info(f"\n  Most stocks selected: {df.loc[max_idx, 'step4_final']:.0f} "
           f"on {df.loc[max_idx, 'cutoff_date'].date()}")
-    print(f"  Fewest stocks selected: {df.loc[min_idx, 'step4_final']:.0f} "
+    logger.info(f"  Fewest stocks selected: {df.loc[min_idx, 'step4_final']:.0f} "
           f"on {df.loc[min_idx, 'cutoff_date'].date()}")
 
     # Save CSV
@@ -228,7 +232,7 @@ def main():
     os.makedirs(csv_dir, exist_ok=True)
     csv_path = os.path.join(csv_dir, f"selection_counts_{frequency}.csv")
     df.to_csv(csv_path, index=False)
-    print(f"\nCSV saved to {csv_path}")
+    logger.info(f"\nCSV saved to {csv_path}")
 
     # Save chart
     chart_path = os.path.join(config.CHARTS_DIR, f"selection_counts_{frequency}.png")

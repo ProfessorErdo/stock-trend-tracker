@@ -46,6 +46,7 @@ WINSORIZE_UPPER = 0.99       # 极值截尾上限（99%）
 
 # 新股排除
 NEW_STOCK_EXCLUDE_DAYS = 120  # 排除上市不足120天的股票
+MAX_POSITIONS = 10            # 最大持仓股票数量
 
 
 # ============== 调仓参数 ==============
@@ -154,7 +155,6 @@ def ensure_dirs():
     ]
     for d in dirs:
         os.makedirs(d, exist_ok=True)
-    print("All directories ensured.")
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@
 
 import sys
 import os
+import logging
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config
 
@@ -11,6 +12,8 @@ import pandas as pd
 from datetime import datetime, timedelta
 from tqdm import tqdm
 import akshare as ak
+
+logger = logging.getLogger("data_loader")
 
 
 def format_symbol(code: str) -> str:
@@ -46,7 +49,7 @@ def load_stock_pool() -> pd.DataFrame:
 
     for pool_name, file_path in config.EXISTING_STOCK_POOL_FILES.items():
         if not os.path.exists(file_path):
-            print(f"Warning: stock pool file not found: {file_path}")
+            logger.warning(f"Warning: stock pool file not found: {file_path}")
             continue
 
         # zz500 文件是 tab 分隔，其余是逗号分隔
@@ -59,14 +62,14 @@ def load_stock_pool() -> pd.DataFrame:
             codes = df["code"].astype(str).str.strip().str.zfill(6)
             all_codes.update(codes.tolist())
         else:
-            print(f"Warning: 'code' column not found in {file_path}")
+            logger.warning(f"Warning: 'code' column not found in {file_path}")
 
     # Filter out stocks with no data on AkShare API
     SKIP_STOCKS = {"689009"}
     all_codes = {c for c in all_codes if c not in SKIP_STOCKS}
 
     result = pd.DataFrame({"code": sorted(all_codes)})
-    print(f"Loaded {len(result)} unique stocks from {len(config.EXISTING_STOCK_POOL_FILES)} pools.")
+    logger.info(f"Loaded {len(result)} unique stocks from {len(config.EXISTING_STOCK_POOL_FILES)} pools.")
     return result
 
 
@@ -83,7 +86,7 @@ def save_stock_pool(stock_codes: list):
 
     df = pd.DataFrame({"code": stock_codes})
     df.to_csv(file_path, index=False)
-    print(f"Saved {len(stock_codes)} stocks to {file_path}")
+    logger.info(f"Saved {len(stock_codes)} stocks to {file_path}")
 
 
 def query_price_data(
@@ -91,7 +94,8 @@ def query_price_data(
     start_date: str = "20150101",
     end_date: str = None,
     adjust: str = "hfq",
-    incremental: bool = True
+    incremental: bool = True,
+    full: bool = False,
 ) -> int:
     """
     从 AkShare 下载后复权价格数据，保存为每只股票的 CSV
@@ -102,6 +106,7 @@ def query_price_data(
         end_date: end date string (YYYYMMDD), None means today
         adjust: adjustment type, default "hfq" (后复权)
         incremental: 增量更新模式（默认True），只下载已有数据之后的新数据
+        full: 全量下载（忽略已有数据，重新下载全部）
 
     Returns:
         Number of successfully downloaded stocks
@@ -115,7 +120,10 @@ def query_price_data(
     for code in tqdm(stock_codes, desc="Downloading price data"):
         file_path = os.path.join(config.PRICE_DATA_DIR, f"price_{code}.csv")
 
-        if incremental and os.path.exists(file_path):
+        if full and os.path.exists(file_path):
+            os.remove(file_path)
+
+        if incremental and os.path.exists(file_path) and not full:
             # 增量模式：读取已有数据的最后一条日期
             try:
                 existing = pd.read_csv(file_path, parse_dates=["trade_date"])
@@ -185,10 +193,10 @@ def query_price_data(
                 success_count += 1
 
         except Exception as e:
-            print(f"\nError downloading price data for {code}: {e}")
+            logger.warning(f"Error downloading price data for {code}: {e}")
             continue
 
-    print(f"Successfully downloaded price data for {success_count} stocks.")
+    logger.info(f"Successfully downloaded price data for {success_count} stocks.")
     return success_count
 
 
@@ -244,7 +252,8 @@ def _map_financial_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def query_financial_data(
     stock_codes,
-    season_end: str = "2026-04-30"
+    season_end: str = "2026-04-30",
+    full: bool = False,
 ) -> int:
     """
     从 AkShare 下载财务数据（同花顺单季度数据），计算 TTM 指标
@@ -252,23 +261,28 @@ def query_financial_data(
     Args:
         stock_codes: list of stock codes
         season_end: season end date filter
+        full: 全量下载（忽略已有文件，重新下载全部）
 
     Returns:
         Number of successfully downloaded stocks
     """
     os.makedirs(config.FINANCIAL_DATA_DIR, exist_ok=True)
 
-    # Check which stocks are already downloaded
-    existing_files = set()
-    if os.path.exists(config.FINANCIAL_DATA_DIR):
-        for f in os.listdir(config.FINANCIAL_DATA_DIR):
-            if f.startswith("financial_") and f.endswith(".csv"):
-                code = f.replace("financial_", "").replace(".csv", "")
-                existing_files.add(code)
+    if full:
+        to_download = list(stock_codes)
+        logger.info(f"Full download: re-downloading all {len(to_download)} stocks.")
+    else:
+        # Check which stocks are already downloaded
+        existing_files = set()
+        if os.path.exists(config.FINANCIAL_DATA_DIR):
+            for f in os.listdir(config.FINANCIAL_DATA_DIR):
+                if f.startswith("financial_") and f.endswith(".csv"):
+                    code = f.replace("financial_", "").replace(".csv", "")
+                    existing_files.add(code)
 
-    to_download = [c for c in stock_codes if str(c) not in existing_files]
-    print(f"Skipping {len(stock_codes) - len(to_download)} already-downloaded stocks. "
-          f"Downloading {len(to_download)} new stocks.")
+        to_download = [c for c in stock_codes if str(c) not in existing_files]
+        logger.info(f"Skipping {len(stock_codes) - len(to_download)} already-downloaded stocks. "
+              f"Downloading {len(to_download)} new stocks.")
 
     success_count = 0
     for code in tqdm(to_download, desc="Downloading financial data"):
@@ -337,10 +351,10 @@ def query_financial_data(
             success_count += 1
 
         except Exception as e:
-            print(f"\nError downloading financial data for {code}: {e}")
+            logger.warning(f"Error downloading financial data for {code}: {e}")
             continue
 
-    print(f"Successfully downloaded financial data for {success_count} stocks.")
+    logger.info(f"Successfully downloaded financial data for {success_count} stocks.")
     return success_count
 
 
@@ -460,10 +474,10 @@ def query_price_data_no_adjust(
                 success_count += 1
 
         except Exception as e:
-            print(f"\nError downloading non-adjusted price data for {code}: {e}")
+            logger.warning(f"Error downloading non-adjusted price data for {code}: {e}")
             continue
 
-    print(f"Successfully downloaded non-adjusted price data for {success_count} stocks.")
+    logger.info(f"Successfully downloaded non-adjusted price data for {success_count} stocks.")
     return success_count
 
 
@@ -531,7 +545,7 @@ def merge_price_files(stock_codes=None) -> int:
         merged.to_csv(out_path, index=False)
         merged_count += 1
 
-    print(f"Successfully merged {merged_count} price files.")
+    logger.info(f"Successfully merged {merged_count} price files.")
     return merged_count
 
 

@@ -27,33 +27,7 @@ from trading_calendar import build_trading_calendar, get_annual_cutoff_dates, ge
 from stock_selector import select_stocks, is_new_stock, rank_and_limit
 from backtest_engine import compute_benchmark_equity_curve, check_limit_up_down
 from portfolio import Portfolio
-
-# --- Logging setup ---
-LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
-os.makedirs(LOG_DIR, exist_ok=True)
-
-
-def setup_logger(log_file: str) -> logging.Logger:
-    """Setup logger: DEBUG to file, INFO to console."""
-    logger = logging.getLogger("frequency_comparison")
-    logger.setLevel(logging.DEBUG)
-    logger.handlers.clear()
-
-    # File handler: DEBUG level (everything)
-    fh = logging.FileHandler(log_file, encoding="utf-8")
-    fh.setLevel(logging.DEBUG)
-    fh_fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-    fh.setFormatter(fh_fmt)
-    logger.addHandler(fh)
-
-    # Console handler: INFO level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    ch_fmt = logging.Formatter("%(message)s")
-    ch.setFormatter(ch_fmt)
-    logger.addHandler(ch)
-
-    return logger
+from log_util import setup_logger
 
 
 FREQ_METHODS = {
@@ -318,14 +292,11 @@ def print_selection_summary(results: dict, logger: logging.Logger):
 
 
 def main():
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file = os.path.join(LOG_DIR, f"frequency_comparison_{timestamp}.log")
-    logger = setup_logger(log_file)
+    logger = setup_logger("frequency_comparison", "frequency_comparison")
 
     logger.info("=" * 60)
     logger.info("  PB最低 Top-10 策略 - 调仓频率对比回测")
     logger.info("=" * 60)
-    logger.info(f"  日志文件: {log_file}")
     logger.info(f"  回测区间: {config.START_DATE} 至今")
     logger.info(f"  最大持仓: {MAX_POSITIONS} 只")
     logger.info(f"  排名方式: PB最低")

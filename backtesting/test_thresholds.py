@@ -2,8 +2,11 @@
 快速测试不同选股阈值组合下的平均选股数量
 """
 import sys
+import logging
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+logger = logging.getLogger("test_thresholds")
 
 import pandas as pd
 from tqdm import tqdm
@@ -70,7 +73,8 @@ def quick_count(stock_codes, cutoffs, price_cache, pe_t, pb_t, pr_t, roe_t):
 
 
 def main():
-    print("Loading data...")
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logger.info("Loading data...")
     pool_df = load_stock_pool()
     stock_codes = pool_df["code"].tolist()
 
@@ -87,7 +91,7 @@ def main():
         except Exception:
             continue
 
-    print(f"\nTesting {len(cutoffs)} cutoff dates with various threshold combinations...\n")
+    logger.info(f"\nTesting {len(cutoffs)} cutoff dates with various threshold combinations...\n")
 
     # Test combinations
     pe_pb_pr_vals = [0.10, 0.15, 0.20, 0.25, 0.30]
@@ -95,8 +99,8 @@ def main():
 
     total_combos = len(pe_pb_pr_vals) * len(roe_vals)
 
-    print(f"{'PE/PB/PR':>10s}  {'ROE':>6s}  {'Avg Selected':>12s}")
-    print("-" * 35)
+    logger.info(f"{'PE/PB/PR':>10s}  {'ROE':>6s}  {'Avg Selected':>12s}")
+    logger.info("-" * 35)
 
     results = []
     for pe_t in tqdm(pe_pb_pr_vals, desc="Testing PE/PB/PR thresholds", leave=False):
@@ -104,23 +108,23 @@ def main():
             avg = quick_count(stock_codes, cutoffs, price_cache, pe_t, pe_t, pe_t, roe_t)
             results.append((pe_t, roe_t, avg))
             marker = " <--" if 8 <= avg <= 15 else ""
-            print(f"{pe_t:>10.2f}  {roe_t:>6.2f}  {avg:>12.1f}{marker}")
+            logger.info(f"{pe_t:>10.2f}  {roe_t:>6.2f}  {avg:>12.1f}{marker}")
 
-    print("\n" + "=" * 50)
-    print("Combinations that give 8-15 stocks on average:")
-    print(f"{'PE/PB/PR':>10s}  {'ROE':>6s}  {'Avg Selected':>12s}  {'Per-stock (1M)':>15s}")
-    print("-" * 50)
+    logger.info("\n" + "=" * 50)
+    logger.info("Combinations that give 8-15 stocks on average:")
+    logger.info(f"{'PE/PB/PR':>10s}  {'ROE':>6s}  {'Avg Selected':>12s}  {'Per-stock (1M)':>15s}")
+    logger.info("-" * 50)
     for pe_t, roe_t, avg in results:
         if 8 <= avg <= 15:
             per_stock = f"{1_000_000 / avg:,.0f}" if avg > 0 else "N/A"
-            print(f"{pe_t:>10.2f}  {roe_t:>6.2f}  {avg:>12.1f}  {per_stock:>15s} RMB")
+            logger.info(f"{pe_t:>10.2f}  {roe_t:>6.2f}  {avg:>12.1f}  {per_stock:>15s} RMB")
 
-    print("\n" + "=" * 50)
-    print("Top 5 combos near 10 stocks:")
+    logger.info("\n" + "=" * 50)
+    logger.info("Top 5 combos near 10 stocks:")
     near_10 = sorted(results, key=lambda x: abs(x[2] - 10))[:5]
     for pe_t, roe_t, avg in near_10:
         per_stock = f"{1_000_000 / avg:,.0f}" if avg > 0 else "N/A"
-        print(f"  PE/PB/PR={pe_t:.2f}, ROE={roe_t:.2f}  -> avg {avg:.1f} stocks ({per_stock} RMB/stock)")
+        logger.info(f"  PE/PB/PR={pe_t:.2f}, ROE={roe_t:.2f}  -> avg {avg:.1f} stocks ({per_stock} RMB/stock)")
 
 
 if __name__ == "__main__":

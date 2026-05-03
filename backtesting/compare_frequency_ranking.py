@@ -44,31 +44,7 @@ from stock_selector import (
 )
 from backtest_engine import compute_benchmark_equity_curve, check_limit_up_down
 from portfolio import Portfolio
-
-# --- Logging setup ---
-LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
-os.makedirs(LOG_DIR, exist_ok=True)
-
-
-def setup_logger(log_file: str) -> logging.Logger:
-    """Setup logger: DEBUG to file, INFO to console."""
-    logger = logging.getLogger("freq_ranking")
-    logger.setLevel(logging.DEBUG)
-    logger.handlers.clear()
-
-    fh = logging.FileHandler(log_file, encoding="utf-8")
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-    ))
-    logger.addHandler(fh)
-
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    ch.setFormatter(logging.Formatter("%(message)s"))
-    logger.addHandler(ch)
-
-    return logger
+from log_util import setup_logger
 
 
 # --- Configuration ---
@@ -382,14 +358,11 @@ def compute_annual_returns(equity_curve: pd.DataFrame) -> dict:
 
 
 def main():
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file = os.path.join(LOG_DIR, f"freq_ranking_{timestamp}.log")
-    logger = setup_logger(log_file)
+    logger = setup_logger("freq_ranking", "freq_ranking")
 
     logger.info("=" * 60)
     logger.info("  调仓频率 × 排名方式 全面对比回测")
     logger.info("=" * 60)
-    logger.info(f"  日志文件: {log_file}")
     logger.info(f"  回测区间: {config.START_DATE} 至今")
     logger.info(f"  最大持仓: {MAX_POSITIONS} 只")
     logger.info(f"  频率 (2种): 年报后 / 年报+三季报")

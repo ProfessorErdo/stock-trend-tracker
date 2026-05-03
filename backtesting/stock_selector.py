@@ -10,6 +10,9 @@
 """
 
 import pandas as pd
+import logging
+
+logger = logging.getLogger("stock_selector")
 import numpy as np
 import os
 import sys
@@ -302,39 +305,39 @@ def rank_and_limit(selected: list, val_df: pd.DataFrame, max_positions: int = 10
 
 def main():
     """测试函数"""
-    print("=" * 60)
-    print("Stock Selector - Test Run")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("Stock Selector - Test Run")
+    logger.info("=" * 60)
 
     # 测试 winsorize
     test_series = pd.Series([1, 2, 3, 4, 5, 100, -50])
     w = winsorize(test_series, 0.05, 0.95)
-    print(f"\nWinsorize test: {test_series.tolist()}")
-    print(f"  -> {w.tolist()}")
+    logger.info(f"\nWinsorize test: {test_series.tolist()}")
+    logger.info(f"  -> {w.tolist()}")
 
     # 尝试加载股票池
     try:
         from data_loader import load_stock_pool
         pool_df = load_stock_pool()
         stock_codes = pool_df["code"].tolist()[:10]  # 只测试前10只
-        print(f"\nTesting with {len(stock_codes)} stocks from pool")
+        logger.info(f"\nTesting with {len(stock_codes)} stocks from pool")
 
         trade_date = pd.Timestamp("2024-01-19")
         selected, val_df = select_stocks(stock_codes, trade_date)
 
-        print(f"\nTrade date: {trade_date.date()}")
-        print(f"Candidates with valid valuations: {len(val_df)}")
+        logger.info(f"\nTrade date: {trade_date.date()}")
+        logger.info(f"Candidates with valid valuations: {len(val_df)}")
         if not val_df.empty:
-            print(val_df.head().to_string(index=False))
-        print(f"Selected after 4-step filter: {len(selected)}")
+            logger.info(val_df.head().to_string(index=False))
+        logger.info(f"Selected after 4-step filter: {len(selected)}")
         if selected:
-            print(f"  Selected: {selected}")
+            logger.info(f"  Selected: {selected}")
     except Exception as e:
-        print(f"\nFull test skipped: {e}")
-        print("(This is expected if no price/financial data has been downloaded yet.)")
+        logger.info(f"\nFull test skipped: {e}")
+        logger.info("(This is expected if no price/financial data has been downloaded yet.)")
 
         # Minimal test with mock data
-        print("\nRunning minimal mock tests...")
+        logger.info("\nRunning minimal mock tests...")
 
         mock_fin = {"eps_ttm": 1.5, "bps_ttm": 10.0, "roe_ttm": 0.15}
         mock_prices = pd.DataFrame({
@@ -344,14 +347,14 @@ def main():
         td = pd.Timestamp("2024-01-19")
 
         result = calculate_valuation(mock_prices, td, mock_fin)
-        print(f"  calculate_valuation: {result}")
+        logger.info(f"  calculate_valuation: {result}")
 
         result2 = get_latest_financial_data("000001", td)
-        print(f"  get_latest_financial_data: {result2}")
+        logger.info(f"  get_latest_financial_data: {result2}")
 
-    print("\n" + "=" * 60)
-    print("Stock Selector tests complete.")
-    print("=" * 60)
+    logger.info("\n" + "=" * 60)
+    logger.info("Stock Selector tests complete.")
+    logger.info("=" * 60)
 
 
 if __name__ == "__main__":

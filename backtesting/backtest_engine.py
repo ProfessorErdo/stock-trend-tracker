@@ -8,15 +8,21 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import logging
 from datetime import datetime
 from tqdm import tqdm
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config
 from data_loader import load_price_data, load_stock_pool
-from trading_calendar import build_trading_calendar, get_weekly_cutoff_dates, get_monthly_cutoff_dates, get_quarterly_cutoff_dates
-from stock_selector import select_stocks, is_new_stock
+from trading_calendar import (
+    build_trading_calendar, get_weekly_cutoff_dates, get_monthly_cutoff_dates,
+    get_quarterly_cutoff_dates, get_annual_cutoff_dates, get_annual_q3_cutoff_dates,
+)
+from stock_selector import select_stocks, is_new_stock, rank_and_limit
 from portfolio import Portfolio
+
+logger = logging.getLogger("backtest_engine")
 
 
 def check_limit_up_down(
@@ -191,7 +197,8 @@ def run_backtest(
     start_date: str = config.START_DATE,
     end_date: str = None,
     incremental_from: str = None,
-    frequency: str = None
+    frequency: str = None,
+    ranking_method: str = "pb",
 ) -> dict:
     """
     Execute full backtest workflow
@@ -200,7 +207,8 @@ def run_backtest(
         start_date: backtest start date
         end_date: backtest end date
         incremental_from: path to previous intermediate pickle (incremental mode)
-        frequency: rebalance frequency, "weekly" or "monthly" (default from config)
+        frequency: rebalance frequency — "weekly", "monthly", "quarterly", "annual", "annual_q3"
+        ranking_method: ranking when filtered stocks > 10 — "pe", "pb", "pr", "roe", "pure_pb"
 
     Returns:
         {
@@ -214,41 +222,58 @@ def run_backtest(
     if frequency is None:
         frequency = config.REBALANCE_FREQUENCY
 
-    freq_label = "Monthly" if frequency == "monthly" else "Weekly"
-    print("=" * 60)
-    print("Starting backtest...")
-    print(f"Start date: {start_date}, End date: {end_date or 'latest'}")
-    print(f"Rebalance frequency: {freq_label}")
+    freq_labels = {
+        "weekly": "Weekly", "monthly": "Monthly", "quarterly": "Quarterly",
+        "annual": "Annual", "annual_q3": "Annual+Q3",
+    }
+    freq_label = freq_labels.get(frequency, frequency)
+    rank_labels = {
+        "pe": "PE-lowest", "pb": "PB-lowest", "pr": "PR-lowest",
+        "roe": "ROE-highest", "pure_pb": "Pure-PB-lowest",
+    }
+    rank_label = rank_labels.get(ranking_method, ranking_method)
+
+    logger.info("=" * 60)
+    logger.info("Starting backtest...")
+    logger.info(f"Start date: {start_date}, End date: {end_date or 'latest'}")
+    logger.info(f"Rebalance frequency: {freq_label}")
+    logger.info(f"Ranking method: {rank_label}")
     if incremental_from:
-        print(f"Incremental mode, loading from: {incremental_from}")
-    print("=" * 60)
+        logger.info(f"Incremental mode, loading from: {incremental_from}")
+    logger.info("=" * 60)
 
     # Step 1: 加载股票池
-    print("\n[Step 1] Loading stock pool...")
+    logger.info("\n[Step 1] Loading stock pool...")
     pool_df = load_stock_pool()
     stock_codes = pool_df['code'].tolist()
-    print(f"  Total stocks in pool: {len(stock_codes)}")
+    logger.info(f"  Total stocks in pool: {len(stock_codes)}")
 
     # Step 2: 构建交易日历
-    print("\n[Step 2] Building trading calendar...")
+    logger.info("\n[Step 2] Building trading calendar...")
     trading_days = build_trading_calendar(start_date=start_date, end_date=end_date)
     if not trading_days:
-        print("  ERROR: No trading days found. Ensure price data exists.")
+        logger.info("  ERROR: No trading days found. Ensure price data exists.")
         return None
-    print(f"  Total trading days: {len(trading_days)}")
+    logger.info(f"  Total trading days: {len(trading_days)}")
 
     if frequency == "monthly":
         cutoffs = get_monthly_cutoff_dates(trading_days)
-        print(f"  Monthly cutoff/rebalance pairs: {len(cutoffs)}")
+        logger.info(f"  Monthly cutoff/rebalance pairs: {len(cutoffs)}")
     elif frequency == "quarterly":
         cutoffs = get_quarterly_cutoff_dates(trading_days)
-        print(f"  Quarterly cutoff/rebalance pairs: {len(cutoffs)}")
+        logger.info(f"  Quarterly cutoff/rebalance pairs: {len(cutoffs)}")
+    elif frequency == "annual":
+        cutoffs = get_annual_cutoff_dates(trading_days)
+        logger.info(f"  Annual cutoff/rebalance pairs: {len(cutoffs)}")
+    elif frequency == "annual_q3":
+        cutoffs = get_annual_q3_cutoff_dates(trading_days)
+        logger.info(f"  Annual+Q3 cutoff/rebalance pairs: {len(cutoffs)}")
     else:
         cutoffs = get_weekly_cutoff_dates(trading_days)
-        print(f"  Weekly cutoff/rebalance pairs: {len(cutoffs)}")
+        logger.info(f"  Weekly cutoff/rebalance pairs: {len(cutoffs)}")
 
     # Step 3: 预加载所有价格数据到缓存
-    print("\n[Step 3] Pre-loading price data...")
+    logger.info("\n[Step 3] Pre-loading price data...")
     price_cache = {}
     for code in tqdm(stock_codes, desc="Loading prices"):
         try:
@@ -256,9 +281,9 @@ def run_backtest(
             if not df.empty:
                 price_cache[code] = df
         except Exception as e:
-            print(f"\n  Warning: failed to load price data for {code}: {e}")
+            logger.info(f"\n  Warning: failed to load price data for {code}: {e}")
             continue
-    print(f"  Cached price data for {len(price_cache)} stocks.")
+    logger.info(f"  Cached price data for {len(price_cache)} stocks.")
 
     # --- 增量模式：加载历史状态 ---
     old_result = None
@@ -270,40 +295,70 @@ def run_backtest(
                 old_result = pickle.load(f)
             # 找到上次最后一个截面日
             last_cutoff = old_result['cutoff_dates'][-1]
-            print(f"\n  *** Incremental mode: last cutoff was {last_cutoff} ***")
+            logger.info(f"\n  *** Incremental mode: last cutoff was {last_cutoff} ***")
             # 只保留新增的截面日
             cutoffs = [(c, r) for c, r in cutoffs if c > last_cutoff]
-            print(f"  New cutoff/rebalance pairs to process: {len(cutoffs)}")
+            logger.info(f"  New cutoff/rebalance pairs to process: {len(cutoffs)}")
         except Exception as e:
-            print(f"\n  Warning: failed to load incremental data: {e}")
+            logger.info(f"\n  Warning: failed to load incremental data: {e}")
             old_result = None
             last_cutoff = None
 
     # Step 4: 计算基准权益曲线（等权组合，每周再平衡）
-    print("\n[Step 4] Computing benchmark equity curve...")
+    logger.info("\n[Step 4] Computing benchmark equity curve...")
     benchmark_df = compute_benchmark_equity_curve(
         stock_codes, trading_days, cutoffs, price_cache,
         config.INITIAL_CAPITAL
     )
-    print(f"  Benchmark computed for {len(benchmark_df)} days.")
+    logger.info(f"  Benchmark computed for {len(benchmark_df)} days.")
 
     # Step 5: 选股 - 对每个截面日执行选股
-    print("\n[Step 5] Running stock selection for each cutoff date...")
+    logger.info("\n[Step 5] Running stock selection for each cutoff date...")
+    logger.info(f"  Ranking method: {rank_label}")
     selection_results = {}  # {(cutoff_date, rebalance_date): selected_codes}
     for cutoff, rebalance in tqdm(cutoffs, desc="Selecting stocks"):
         try:
-            selected, _ = select_stocks(stock_codes, cutoff, price_cache=price_cache)
+            if ranking_method == "pure_pb":
+                # Pure PB: basic filter only (Step 1), then rank by PB lowest 10
+                from stock_selector import get_latest_financial_data, calculate_valuation
+                all_valuations = []
+                for code in stock_codes:
+                    price_df = price_cache.get(code)
+                    if price_df is None or price_df.empty:
+                        continue
+                    if cutoff not in price_df["trade_date"].values:
+                        continue
+                    fin_data = get_latest_financial_data(code, cutoff)
+                    if fin_data is None:
+                        continue
+                    valuation = calculate_valuation(price_df, cutoff, fin_data)
+                    if valuation is None:
+                        continue
+                    if (valuation["pe_ttm"] <= 0 or valuation["pb_ttm"] <= 0 or
+                            valuation["pr_ttm"] <= 0 or valuation["roe_ttm"] <= 0):
+                        continue
+                    all_valuations.append({"code": code, **valuation})
+                if all_valuations:
+                    val_df = pd.DataFrame(all_valuations)
+                    val_df = val_df.sort_values("pb_ttm").head(config.MAX_POSITIONS)
+                    final_selected = val_df["code"].tolist()
+                else:
+                    final_selected = []
+            else:
+                selected, val_df = select_stocks(stock_codes, cutoff, price_cache=price_cache)
+                final_selected = rank_and_limit(selected, val_df, config.MAX_POSITIONS, ranking_method)
+
             if rebalance is not None:
-                selection_results[(cutoff, rebalance)] = selected
+                selection_results[(cutoff, rebalance)] = final_selected
         except Exception as e:
-            print(f"\n  Warning: stock selection failed for cutoff {cutoff}: {e}")
+            logger.info(f"\n  Warning: stock selection failed for cutoff {cutoff}: {e}")
             continue
 
     valid_pairs = list(selection_results.keys())
-    print(f"  Valid cutoff/rebalance pairs with selections: {len(valid_pairs)}")
+    logger.info(f"  Valid cutoff/rebalance pairs with selections: {len(valid_pairs)}")
 
     # Step 6: 调仓执行
-    print("\n[Step 6] Executing rebalances...")
+    logger.info("\n[Step 6] Executing rebalances...")
 
     if old_result is not None:
         # 增量模式：从上次状态恢复
@@ -311,7 +366,7 @@ def run_backtest(
         trade_records = list(old_result['trade_records'])
         holding_snapshots = list(old_result['holding_snapshots'])
         all_cutoffs = list(old_result['cutoff_dates'])
-        print(f"  Restored portfolio: cash={portfolio.cash:,.0f}, positions={len(portfolio.positions)}")
+        logger.info(f"  Restored portfolio: cash={portfolio.cash:,.0f}, positions={len(portfolio.positions)}")
     else:
         portfolio = Portfolio(initial_capital=config.INITIAL_CAPITAL)
         trade_records = []
@@ -412,14 +467,14 @@ def run_backtest(
             all_cutoffs.append(cutoff)
 
         except Exception as e:
-            print(f"\n  Warning: rebalance failed for {cutoff} -> {rebalance}: {e}")
+            logger.info(f"\n  Warning: rebalance failed for {cutoff} -> {rebalance}: {e}")
             continue
 
-    print(f"  Total trades executed: {len(trade_records)}")
-    print(f"  Holding snapshots: {len(holding_snapshots)}")
+    logger.info(f"  Total trades executed: {len(trade_records)}")
+    logger.info(f"  Holding snapshots: {len(holding_snapshots)}")
 
     # Step 7: 计算每日权益曲线
-    print("\n[Step 7] Computing daily equity curve...")
+    logger.info("\n[Step 7] Computing daily equity curve...")
     # 构建每日收盘价映射
     daily_prices = {}
     for day in trading_days:
@@ -463,11 +518,11 @@ def run_backtest(
     # 收集截面日列表
     cutoff_dates = [cutoff for cutoff, _ in cutoffs]
 
-    print(f"\nBacktest complete.")
-    print(f"  Final strategy equity: {strategy_equity[-1]['strategy_equity']:.2f}" if strategy_equity else "  No equity data.")
+    logger.info(f"\nBacktest complete.")
+    logger.info(f"  Final strategy equity: {strategy_equity[-1]['strategy_equity']:.2f}" if strategy_equity else "  No equity data.")
     if len(benchmark_df) > 0 and len(equity_curve) > 0:
         last_bench = equity_curve['benchmark_equity'].iloc[-1]
-        print(f"  Final benchmark equity: {last_bench:.2f}")
+        logger.info(f"  Final benchmark equity: {last_bench:.2f}")
 
     return {
         'portfolio': portfolio,
@@ -485,9 +540,9 @@ def save_results(result: dict):
     Args:
         result: run_backtest 返回的字典
     """
-    print("\n" + "=" * 60)
-    print("Saving results...")
-    print("=" * 60)
+    logger.info("\n" + "=" * 60)
+    logger.info("Saving results...")
+    logger.info("=" * 60)
 
     config.ensure_dirs()
 
@@ -496,39 +551,39 @@ def save_results(result: dict):
     if result['holding_snapshots']:
         all_holdings = pd.concat(result['holding_snapshots'], ignore_index=True)
         all_holdings.to_csv(holdings_path, index=False)
-        print(f"  Saved holdings summary: {holdings_path} ({len(all_holdings)} rows)")
+        logger.info(f"  Saved holdings summary: {holdings_path} ({len(all_holdings)} rows)")
     else:
         pd.DataFrame(columns=[
             'rebalance_date', 'stock_code', 'shares', 'cost_price',
             'current_price', 'market_value', 'weight'
         ]).to_csv(holdings_path, index=False)
-        print(f"  Saved empty holdings summary: {holdings_path}")
+        logger.info(f"  Saved empty holdings summary: {holdings_path}")
 
     # 2. 保存交易记录 (trades_record.csv)
     trades_path = os.path.join(config.TRADES_DIR, "trades_record.csv")
     if result['trade_records']:
         trades_df = pd.DataFrame(result['trade_records'])
         trades_df.to_csv(trades_path, index=False)
-        print(f"  Saved trades record: {trades_path} ({len(trades_df)} rows)")
+        logger.info(f"  Saved trades record: {trades_path} ({len(trades_df)} rows)")
     else:
         pd.DataFrame(columns=[
             'trade_date', 'stock_code', 'direction', 'shares',
             'price', 'amount', 'commission', 'stamp_tax', 'reason'
         ]).to_csv(trades_path, index=False)
-        print(f"  Saved empty trades record: {trades_path}")
+        logger.info(f"  Saved empty trades record: {trades_path}")
 
     # 3. 保存权益曲线 (equity_curve.csv)
     equity_path = os.path.join(config.PERFORMANCE_DIR, "equity_curve.csv")
     if result['equity_curve'] is not None and not result['equity_curve'].empty:
         result['equity_curve'].to_csv(equity_path, index=False)
-        print(f"  Saved equity curve: {equity_path} ({len(result['equity_curve'])} rows)")
+        logger.info(f"  Saved equity curve: {equity_path} ({len(result['equity_curve'])} rows)")
     else:
         pd.DataFrame(columns=['date', 'strategy_equity', 'benchmark_equity']).to_csv(
             equity_path, index=False
         )
-        print(f"  Saved empty equity curve: {equity_path}")
+        logger.info(f"  Saved empty equity curve: {equity_path}")
 
-    print("Results saved successfully.")
+    logger.info("Results saved successfully.")
 
 
 def main():
@@ -566,7 +621,7 @@ def main():
     )
 
     if result is None:
-        print("Backtest failed. No results to save.")
+        logger.info("Backtest failed. No results to save.")
         return
 
     # 保存结果
@@ -574,9 +629,9 @@ def main():
         save_results(result)
 
     # 打印简要绩效
-    print("\n" + "=" * 60)
-    print("Backtest Summary")
-    print("=" * 60)
+    logger.info("\n" + "=" * 60)
+    logger.info("Backtest Summary")
+    logger.info("=" * 60)
 
     equity_curve = result['equity_curve']
     if equity_curve is not None and not equity_curve.empty:
@@ -587,16 +642,16 @@ def main():
         strategy_return = (final_strategy - initial) / initial
         benchmark_return = (final_benchmark - initial) / initial
 
-        print(f"  Initial capital:     {initial:,.2f}")
-        print(f"  Final strategy:      {final_strategy:,.2f}")
-        print(f"  Final benchmark:     {final_benchmark:,.2f}")
-        print(f"  Strategy return:     {strategy_return:.2%}")
-        print(f"  Benchmark return:    {benchmark_return:.2%}")
-        print(f"  Excess return:       {strategy_return - benchmark_return:.2%}")
-        print(f"  Total trades:        {len(result['trade_records'])}")
-        print(f"  Rebalance times:     {len(result['cutoff_dates'])}")
+        logger.info(f"  Initial capital:     {initial:,.2f}")
+        logger.info(f"  Final strategy:      {final_strategy:,.2f}")
+        logger.info(f"  Final benchmark:     {final_benchmark:,.2f}")
+        logger.info(f"  Strategy return:     {strategy_return:.2%}")
+        logger.info(f"  Benchmark return:    {benchmark_return:.2%}")
+        logger.info(f"  Excess return:       {strategy_return - benchmark_return:.2%}")
+        logger.info(f"  Total trades:        {len(result['trade_records'])}")
+        logger.info(f"  Rebalance times:     {len(result['cutoff_dates'])}")
 
-    print("=" * 60)
+    logger.info("=" * 60)
 
 
 if __name__ == '__main__':

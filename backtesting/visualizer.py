@@ -12,8 +12,11 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import logging
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+logger = logging.getLogger("visualizer")
 import config
 import performance as perf
 
@@ -70,7 +73,7 @@ def plot_equity_curve(equity_df: pd.DataFrame, save_path: str = None):
     if save_path:
         os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
         fig.savefig(save_path, dpi=200, bbox_inches='tight')
-        print(f'Equity curve saved to {save_path}')
+        logger.info(f'Equity curve saved to {save_path}')
 
     plt.close(fig)
 
@@ -128,7 +131,7 @@ def plot_annual_heatmap(annual_returns_df: pd.DataFrame, save_path: str = None):
     if save_path:
         os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
         fig.savefig(save_path, dpi=200, bbox_inches='tight')
-        print(f'Annual heatmap saved to {save_path}')
+        logger.info(f'Annual heatmap saved to {save_path}')
 
     plt.close(fig)
 
@@ -157,31 +160,31 @@ def generate_all_visualizations(performance_dict: dict, equity_df: pd.DataFrame)
         annual_csv = os.path.join(config.PERFORMANCE_DIR, 'annual_returns.csv')
         os.makedirs(os.path.dirname(os.path.abspath(annual_csv)), exist_ok=True)
         annual_returns.to_csv(annual_csv, index=False, encoding='utf-8-sig')
-        print(f'Annual returns CSV saved to {annual_csv}')
+        logger.info(f'Annual returns CSV saved to {annual_csv}')
 
     # 3. 打印绩效摘要到控制台
     p = performance_dict
-    print('\n========== Performance Summary ==========')
-    print(f"Cumulative Return:   {p.get('cumulative_return', 0) * 100:.2f}%")
-    print(f"Annual Return:       {p.get('annual_return', 0) * 100:.2f}%")
-    print(f"Annual Volatility:   {p.get('annual_volatility', 0) * 100:.2f}%")
-    print(f"Sharpe Ratio:        {p.get('sharpe_ratio', 0):.4f}")
-    print(f"Max Drawdown:        {p.get('max_drawdown', 0) * 100:.2f}%")
+    logger.info('\n========== Performance Summary ==========')
+    logger.info(f"Cumulative Return:   {p.get('cumulative_return', 0) * 100:.2f}%")
+    logger.info(f"Annual Return:       {p.get('annual_return', 0) * 100:.2f}%")
+    logger.info(f"Annual Volatility:   {p.get('annual_volatility', 0) * 100:.2f}%")
+    logger.info(f"Sharpe Ratio:        {p.get('sharpe_ratio', 0):.4f}")
+    logger.info(f"Max Drawdown:        {p.get('max_drawdown', 0) * 100:.2f}%")
 
     wr = p.get('win_rate')
-    print(f"Win Rate:            {wr * 100:.2f}%" if wr is not None else "Win Rate:            N/A")
+    logger.info(f"Win Rate:            {wr * 100:.2f}%" if wr is not None else "Win Rate:            N/A")
 
     plr = p.get('profit_loss_ratio')
     if plr is not None and plr != float('inf'):
-        print(f"Profit/Loss Ratio:   {plr:.2f}")
+        logger.info(f"Profit/Loss Ratio:   {plr:.2f}")
     elif plr == float('inf'):
-        print(f"Profit/Loss Ratio:   inf")
+        logger.info(f"Profit/Loss Ratio:   inf")
     else:
-        print(f"Profit/Loss Ratio:   N/A")
+        logger.info(f"Profit/Loss Ratio:   N/A")
 
-    print(f"Excess Return:       {p.get('excess_return', 0) * 100:.2f}%")
-    print(f"Information Ratio:   {p.get('information_ratio', 0):.4f}")
-    print('=========================================\n')
+    logger.info(f"Excess Return:       {p.get('excess_return', 0) * 100:.2f}%")
+    logger.info(f"Information Ratio:   {p.get('information_ratio', 0):.4f}")
+    logger.info('=========================================\n')
 
     # 4. 保存绩效汇总 CSV
     perf_csv = os.path.join(config.PERFORMANCE_DIR, 'performance_summary.csv')
