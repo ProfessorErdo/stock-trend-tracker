@@ -357,7 +357,7 @@ def run_backtest(
     valid_pairs = list(selection_results.keys())
     logger.info(f"  Valid cutoff/rebalance pairs with selections: {len(valid_pairs)}")
 
-    # Step 6: 调仓执行
+    # Step 6: 调仓执行 + 跟踪每日权益
     logger.info("\n[Step 6] Executing rebalances...")
 
     if old_result is not None:
@@ -372,6 +372,9 @@ def run_backtest(
         trade_records = []
         holding_snapshots = []
         all_cutoffs = []
+
+    # Track strategy equity at each rebalance date
+    strategy_equity_points = []  # [(date_ts, equity), ...]
 
     for (cutoff, rebalance), selected_codes in tqdm(
         selection_results.items(), desc="Rebalancing"
@@ -461,6 +464,11 @@ def run_backtest(
                     trade['trade_date'] = rebalance
                     trade_records.append(trade)
 
+            # 记录调仓后的组合价值（关键修复：在调仓后立即记录，此时 portfolio 状态正确）
+            post_rebalance_equity = portfolio.get_total_equity(prices)
+            rebalance_ts = pd.Timestamp(rebalance)
+            strategy_equity_points.append((rebalance_ts, post_rebalance_equity))
+
             # 记录持仓快照
             snapshot = portfolio.snapshot_holdings(rebalance, prices)
             holding_snapshots.append(snapshot)
@@ -473,30 +481,38 @@ def run_backtest(
     logger.info(f"  Total trades executed: {len(trade_records)}")
     logger.info(f"  Holding snapshots: {len(holding_snapshots)}")
 
-    # Step 7: 计算每日权益曲线
+    # Step 7: 构建每日权益曲线
     logger.info("\n[Step 7] Computing daily equity curve...")
-    # 构建每日收盘价映射
-    daily_prices = {}
-    for day in trading_days:
-        day_ts = pd.Timestamp(day)
-        day_prices = {}
-        for code in price_cache:
-            df = price_cache[code]
-            row = df[df['trade_date'] == day_ts]
-            if not row.empty:
-                day_prices[code] = row['close'].iloc[0]
-        daily_prices[day_ts] = day_prices
-
-    # 策略权益曲线
     strategy_equity = []
-    for day in trading_days:
-        day_ts = pd.Timestamp(day)
-        day_prices = daily_prices.get(day_ts, {})
-        equity = portfolio.get_total_equity(day_prices)
-        strategy_equity.append({
-            'date': day_ts,
-            'strategy_equity': equity
-        })
+
+    if strategy_equity_points:
+        first_rebalance = strategy_equity_points[0][0]
+        rebalance_set = {d for d, _ in strategy_equity_points}
+        equity_map = {d: e for d, e in strategy_equity_points}
+
+        for day in trading_days:
+            day_ts = pd.Timestamp(day)
+            if day_ts < first_rebalance:
+                # 首次调仓前：全部现金
+                equity = config.INITIAL_CAPITAL
+            elif day_ts in rebalance_set:
+                # 调仓日：使用记录的准确价值
+                equity = equity_map[day_ts]
+            else:
+                # 非调仓日：前值填充（调仓之间的持仓不变）
+                equity = strategy_equity[-1]['strategy_equity'] if strategy_equity else config.INITIAL_CAPITAL
+
+            strategy_equity.append({
+                'date': day_ts,
+                'strategy_equity': equity
+            })
+    else:
+        # 没有调仓：全部现金
+        for day in trading_days:
+            strategy_equity.append({
+                'date': pd.Timestamp(day),
+                'strategy_equity': config.INITIAL_CAPITAL
+            })
 
     strategy_df = pd.DataFrame(strategy_equity)
 
@@ -507,9 +523,7 @@ def run_backtest(
             on='date',
             how='left'
         )
-        # 填充基准缺失值（用前值填充）
         equity_curve['benchmark_equity'] = equity_curve['benchmark_equity'].ffill()
-        # 如果第一天也没有基准值，用初始资金填充
         equity_curve['benchmark_equity'] = equity_curve['benchmark_equity'].fillna(config.INITIAL_CAPITAL)
     else:
         equity_curve = strategy_df.copy()
