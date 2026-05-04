@@ -227,6 +227,68 @@ def get_annual_q3_cutoff_dates(trading_days: list) -> list:
     return results
 
 
+def get_mid_year_cutoff_dates(trading_days: list) -> list:
+    """
+    中报后调仓：每年仅8月底截止（中报已披露），9月初第一个交易日调仓。每年1次。
+
+    Args:
+        trading_days: sorted list of trading days
+
+    Returns:
+        list of (cutoff_date, rebalance_date) tuples
+    """
+    if not trading_days:
+        return []
+    sorted_days = sorted(set(pd.to_datetime(trading_days)))
+    years = sorted(set(d.year for d in sorted_days))
+    results = []
+    for year in years:
+        month = 8  # 中报8月底可用
+        month_start = pd.Timestamp(year, month, 1)
+        month_end = pd.Timestamp(year, month + 1, 1) - pd.Timedelta(days=1)
+        month_trades = [d for d in sorted_days if month_start <= d <= month_end]
+        if not month_trades:
+            continue
+        cutoff = month_trades[-1]
+        next_start = pd.Timestamp(year, month + 1, 1)
+        next_trades = [d for d in sorted_days if d >= next_start]
+        rebalance = next_trades[0] if next_trades else None
+        results.append((cutoff, rebalance))
+    results.sort(key=lambda x: x[0])
+    return results
+
+
+def get_q3_cutoff_dates(trading_days: list) -> list:
+    """
+    三季报后调仓：每年仅10月底截止（三季报已披露），11月初第一个交易日调仓。每年1次。
+
+    Args:
+        trading_days: sorted list of trading days
+
+    Returns:
+        list of (cutoff_date, rebalance_date) tuples
+    """
+    if not trading_days:
+        return []
+    sorted_days = sorted(set(pd.to_datetime(trading_days)))
+    years = sorted(set(d.year for d in sorted_days))
+    results = []
+    for year in years:
+        month = 10  # 三季报10月底可用
+        month_start = pd.Timestamp(year, month, 1)
+        month_end = pd.Timestamp(year, month + 1, 1) - pd.Timedelta(days=1)
+        month_trades = [d for d in sorted_days if month_start <= d <= month_end]
+        if not month_trades:
+            continue
+        cutoff = month_trades[-1]
+        next_start = pd.Timestamp(year, month + 1, 1)
+        next_trades = [d for d in sorted_days if d >= next_start]
+        rebalance = next_trades[0] if next_trades else None
+        results.append((cutoff, rebalance))
+    results.sort(key=lambda x: x[0])
+    return results
+
+
 def get_monthly_cutoff_dates(trading_days: list) -> list:
     """
     Determine monthly cutoff and rebalance dates.

@@ -37,7 +37,8 @@ if $INTERACTIVE; then
     echo "  6) Threshold sweep — test PE/PB/PR/ROE quantile combinations"
     echo "  7) Data update only — download data without running backtest"
     echo "  8) Next rebalance plan — calculate what to buy for the next trading day"
-    read -rp "Choose [1-8] (default 1): " TYPE_CHOICE
+    echo "  9) Report timing comparison — annual vs mid-year vs Q3 (1×/year each, PB only)"
+    read -rp "Choose [1-9] (default 1): " TYPE_CHOICE
     TYPE_CHOICE=${TYPE_CHOICE:-1}
 
     # ============================================================
@@ -136,6 +137,11 @@ if $INTERACTIVE; then
             echo ">>> Running next rebalance plan calculator..."
             exec $VENV_PYTHON next_rebalance.py
             ;;
+        9)
+            echo ""
+            echo ">>> Running report timing comparison (annual vs mid-year vs Q3, 1×/year each, PB only)..."
+            exec $VENV_PYTHON compare_report_timing.py
+            ;;
     esac
 
     # ============================================================
@@ -172,7 +178,9 @@ if $INTERACTIVE; then
     echo "  3) Quarterly (3×/year: after annual, semi-annual, Q3 reports)"
     echo "  4) Annual only (1×/year: after annual report)"
     echo "  5) Annual + Q3 (2×/year: after annual + Q3 reports)"
-    read -rp "Choose [1-5] (default 1): " FREQ_CHOICE
+    echo "  6) Mid-Year only (1×/year: after mid-year report, Aug cutoff/Sep rebalance)"
+    echo "  7) Q3 only (1×/year: after Q3 report, Oct cutoff/Nov rebalance)"
+    read -rp "Choose [1-7] (default 1): " FREQ_CHOICE
     FREQ_CHOICE=${FREQ_CHOICE:-1}
 
     case $FREQ_CHOICE in
@@ -180,6 +188,8 @@ if $INTERACTIVE; then
         3) FREQ_FLAG="--frequency quarterly" ;;
         4) FREQ_FLAG="--frequency annual" ;;
         5) FREQ_FLAG="--frequency annual_q3" ;;
+        6) FREQ_FLAG="--frequency mid_year" ;;
+        7) FREQ_FLAG="--frequency q3" ;;
         *) FREQ_FLAG="" ;;
     esac
 
@@ -317,6 +327,8 @@ if $INTERACTIVE; then
         3) echo "  Rebalance frequency: Quarterly" ;;
         4) echo "  Rebalance frequency: Annual" ;;
         5) echo "  Rebalance frequency: Annual + Q3" ;;
+        6) echo "  Rebalance frequency: Mid-Year only (Aug/Sep)" ;;
+        7) echo "  Rebalance frequency: Q3 only (Oct/Nov)" ;;
         *) echo "  Rebalance frequency: Weekly" ;;
     esac
     case "$RANK_CHOICE" in

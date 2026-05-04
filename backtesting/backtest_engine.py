@@ -18,6 +18,7 @@ from data_loader import load_price_data, load_stock_pool
 from trading_calendar import (
     build_trading_calendar, get_weekly_cutoff_dates, get_monthly_cutoff_dates,
     get_quarterly_cutoff_dates, get_annual_cutoff_dates, get_annual_q3_cutoff_dates,
+    get_mid_year_cutoff_dates, get_q3_cutoff_dates,
 )
 from stock_selector import select_stocks, is_new_stock, rank_and_limit
 from portfolio import Portfolio
@@ -225,6 +226,7 @@ def run_backtest(
     freq_labels = {
         "weekly": "Weekly", "monthly": "Monthly", "quarterly": "Quarterly",
         "annual": "Annual", "annual_q3": "Annual+Q3",
+        "mid_year": "Mid-Year", "q3": "Q3",
     }
     freq_label = freq_labels.get(frequency, frequency)
     rank_labels = {
@@ -268,6 +270,12 @@ def run_backtest(
     elif frequency == "annual_q3":
         cutoffs = get_annual_q3_cutoff_dates(trading_days)
         logger.info(f"  Annual+Q3 cutoff/rebalance pairs: {len(cutoffs)}")
+    elif frequency == "mid_year":
+        cutoffs = get_mid_year_cutoff_dates(trading_days)
+        logger.info(f"  Mid-Year (Aug/Sep) cutoff/rebalance pairs: {len(cutoffs)}")
+    elif frequency == "q3":
+        cutoffs = get_q3_cutoff_dates(trading_days)
+        logger.info(f"  Q3 (Oct/Nov) cutoff/rebalance pairs: {len(cutoffs)}")
     else:
         cutoffs = get_weekly_cutoff_dates(trading_days)
         logger.info(f"  Weekly cutoff/rebalance pairs: {len(cutoffs)}")

@@ -68,7 +68,7 @@ def main():
     parser.add_argument("--price_start", type=str, default="20150101",
                         help="Price data start date, YYYYMMDD")
     parser.add_argument("--frequency", type=str, default=None,
-                        help="Rebalance frequency: weekly/monthly/quarterly/annual/annual_q3")
+                        help="Rebalance frequency: weekly/monthly/quarterly/annual/annual_q3/mid_year/q3")
     parser.add_argument("--ranking", type=str, default="pb",
                         help="Ranking method when filtered > 10: pe/pb/pr/roe/pure_pb (default: pb)")
     parser.add_argument("--no_winsorize", action="store_true",
@@ -122,6 +122,7 @@ def main():
     freq_labels = {
         "weekly": "Weekly", "monthly": "Monthly", "quarterly": "Quarterly",
         "annual": "Annual", "annual_q3": "Annual+Q3",
+        "mid_year": "Mid-Year (Aug/Sep)", "q3": "Q3 (Oct/Nov)",
     }
     freq_label = freq_labels.get(freq_display, freq_display)
 
