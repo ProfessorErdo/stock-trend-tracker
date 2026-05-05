@@ -194,6 +194,105 @@ def compute_benchmark_equity_curve(
     return pd.DataFrame(benchmark_equity)
 
 
+def check_inter_rebalance_stop_loss(
+    portfolio: Portfolio,
+    peak_equity: float,
+    last_rebalance_date: pd.Timestamp,
+    current_rebalance_date: pd.Timestamp,
+    stock_codes: list,
+    price_cache: dict,
+    trading_days: list,
+    trade_records: list,
+    stop_loss_15_triggered: bool,
+    stop_loss_25_triggered: bool,
+) -> tuple:
+    """
+    Simulate daily equity between rebalances and apply stop-loss if drawdown thresholds are exceeded.
+
+    Args:
+        portfolio: Portfolio object (modified in-place if stop-loss triggers)
+        peak_equity: Peak equity seen so far
+        last_rebalance_date: Date of the last rebalance execution
+        current_rebalance_date: Date of the upcoming rebalance
+        stock_codes: Full stock code list (for price lookups)
+        price_cache: Price data cache
+        trading_days: Sorted list of all trading days
+        trade_records: Trade record list (appended to if stop-loss trades happen)
+        stop_loss_15_triggered: Whether 15% stop-loss has already been applied
+        stop_loss_25_triggered: Whether 25% stop-loss has already been applied
+
+    Returns:
+        (peak_equity, stop_loss_15_triggered, stop_loss_25_triggered)
+    """
+    if not config.STOP_LOSS_ENABLED:
+        return peak_equity, stop_loss_15_triggered, stop_loss_25_triggered
+
+    if stop_loss_25_triggered or portfolio.cash == portfolio.get_total_equity({}):
+        return peak_equity, stop_loss_15_triggered, stop_loss_25_triggered
+
+    inter_days = [
+        d for d in trading_days
+        if last_rebalance_date < pd.Timestamp(d) <= current_rebalance_date
+    ]
+
+    for day in inter_days:
+        day_ts = pd.Timestamp(day)
+
+        day_prices = {}
+        for code in stock_codes:
+            if code in price_cache:
+                row = price_cache[code][price_cache[code]['trade_date'] == day_ts]
+                if not row.empty:
+                    day_prices[code] = row['close'].iloc[0]
+
+        if not day_prices:
+            continue
+
+        day_equity = portfolio.get_total_equity(day_prices)
+        if day_equity > peak_equity:
+            peak_equity = day_equity
+
+        drawdown = (peak_equity - day_equity) / peak_equity
+
+        # 25% full stop-loss
+        if drawdown >= config.STOP_LOSS_FULL_DRAWDOWN and not stop_loss_25_triggered:
+            logger.info(f"  >>> FULL STOP-LOSS triggered at {day_ts.date()}: "
+                        f"drawdown={drawdown:.2%}, equity={day_equity:,.0f}")
+            for code, pos in list(portfolio.positions.items()):
+                price = day_prices.get(code, 0)
+                if price <= 0:
+                    continue
+                exec_price = price * (1 - config.SLIPPAGE_RATE)
+                trade = portfolio.sell_shares(code, pos['shares'], exec_price, reason="止损清仓")
+                if trade:
+                    trade['trade_date'] = day_ts
+                    trade_records.append(trade)
+            stop_loss_25_triggered = True
+            stop_loss_15_triggered = True
+            peak_equity = portfolio.get_total_equity(day_prices)
+            break
+
+        # 15% half stop-loss
+        if drawdown >= config.STOP_LOSS_HALF_DRAWDOWN and not stop_loss_15_triggered:
+            logger.info(f"  >>> HALF STOP-LOSS triggered at {day_ts.date()}: "
+                        f"drawdown={drawdown:.2%}, equity={day_equity:,.0f}")
+            for code, pos in list(portfolio.positions.items()):
+                price = day_prices.get(code, 0)
+                if price <= 0:
+                    continue
+                shares_to_sell = max(int(pos['shares'] / 2 // config.LOT_SIZE) * config.LOT_SIZE, 0)
+                if shares_to_sell <= 0:
+                    continue
+                exec_price = price * (1 - config.SLIPPAGE_RATE)
+                trade = portfolio.sell_shares(code, shares_to_sell, exec_price, reason="止损减半")
+                if trade:
+                    trade['trade_date'] = day_ts
+                    trade_records.append(trade)
+            stop_loss_15_triggered = True
+
+    return peak_equity, stop_loss_15_triggered, stop_loss_25_triggered
+
+
 def run_backtest(
     start_date: str = config.START_DATE,
     end_date: str = None,
@@ -385,6 +484,12 @@ def run_backtest(
     strategy_equity_points = []  # [(date_ts, equity), ...]
     portfolio_states = []  # [(date_ts, cash, {code: shares}), ...] — snapshot after each rebalance
 
+    # Stop-loss tracking
+    peak_equity = config.INITIAL_CAPITAL
+    stop_loss_15_triggered = False
+    stop_loss_25_triggered = False
+    last_execution_date = None
+
     for (cutoff, rebalance), selected_codes in tqdm(
         selection_results.items(), desc="Rebalancing"
     ):
@@ -394,6 +499,26 @@ def run_backtest(
             # scenario where we select stocks based on available data and execute
             # at the known closing price.
             execution_date = rebalance if rebalance is not None else cutoff
+            execution_ts = pd.Timestamp(execution_date)
+
+            # Inter-rebalance stop-loss check
+            if last_execution_date is not None:
+                peak_equity, stop_loss_15_triggered, stop_loss_25_triggered = \
+                    check_inter_rebalance_stop_loss(
+                        portfolio, peak_equity, last_execution_date, execution_ts,
+                        stock_codes, price_cache, trading_days,
+                        trade_records, stop_loss_15_triggered, stop_loss_25_triggered,
+                    )
+                # If full stop-loss just triggered, update peak for cash state
+                if stop_loss_25_triggered:
+                    prices_here = {}
+                    for code in stock_codes:
+                        if code in price_cache:
+                            row = price_cache[code][price_cache[code]['trade_date'] == execution_ts]
+                            if not row.empty:
+                                prices_here[code] = row['close'].iloc[0]
+                    peak_equity = portfolio.get_total_equity(prices_here)
+            last_execution_date = execution_ts
 
             # 获取执行日的价格
             prices = {}

@@ -63,6 +63,12 @@ STAMP_TAX_RATE = 0.001        # 印花税率（卖出0.1%）
 SLIPPAGE_RATE = 0.001         # 滑点率（0.1%，买入加价、卖出减价）
 
 
+# ============== 止损参数 ==============
+STOP_LOSS_ENABLED = False       # 是否启用止损
+STOP_LOSS_HALF_DRAWDOWN = 0.15  # 回撤15%，减半仓位
+STOP_LOSS_FULL_DRAWDOWN = 0.25  # 回撤25%，清仓离场
+
+
 # ============== 涨跌停参数 ==============
 LIMIT_TOLERANCE = 0.001       # 涨跌停判断容差（0.1%）
 DEFAULT_LIMIT_RATIO = 0.10    # 默认涨跌幅（10%）

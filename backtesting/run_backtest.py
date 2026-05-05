@@ -91,6 +91,12 @@ def main():
                         help="ROE quantile threshold (default: from config)")
     parser.add_argument("--max_positions", type=int, default=None,
                         help="Max positions in portfolio (default: from config)")
+    parser.add_argument("--stop_loss", action="store_true",
+                        help="Enable stop-loss: 15% halve, 25% liquidate")
+    parser.add_argument("--stop_loss_half", type=float, default=None,
+                        help="Half stop-loss drawdown threshold (default: 0.15)")
+    parser.add_argument("--stop_loss_full", type=float, default=None,
+                        help="Full stop-loss drawdown threshold (default: 0.25)")
 
     args = parser.parse_args()
 
@@ -132,6 +138,14 @@ def main():
     }
     rank_label = rank_labels.get(args.ranking, args.ranking)
 
+    # Apply stop-loss override
+    if args.stop_loss:
+        config.STOP_LOSS_ENABLED = True
+    if args.stop_loss_half is not None:
+        config.STOP_LOSS_HALF_DRAWDOWN = args.stop_loss_half
+    if args.stop_loss_full is not None:
+        config.STOP_LOSS_FULL_DRAWDOWN = args.stop_loss_full
+
     # Apply winsorize override
     if args.no_winsorize:
         config.WINSORIZE_ENABLED = False
@@ -148,6 +162,12 @@ def main():
     logger.info(f"  ROE threshold: >{config.ROE_THRESHOLD} quantile")
     logger.info(f"  Max positions: {config.MAX_POSITIONS}")
     logger.info(f"  Winsorization: {'Off' if not config.WINSORIZE_ENABLED else 'On (1%/99%)'}")
+    if config.STOP_LOSS_ENABLED:
+        half_pct = f"{config.STOP_LOSS_HALF_DRAWDOWN:.0%}"
+        full_pct = f"{config.STOP_LOSS_FULL_DRAWDOWN:.0%}"
+        logger.info(f"  Stop-loss: On ({half_pct}减半 / {full_pct}清仓)")
+    else:
+        logger.info(f"  Stop-loss: Off")
     logger.info("=" * 60)
 
     # Ensure output directories exist

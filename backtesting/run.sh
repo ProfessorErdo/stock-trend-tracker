@@ -252,14 +252,36 @@ if $INTERACTIVE; then
 
     echo ""
 
-    # --- [7/10] Run mode ---
+    # --- [7/11] Stop-loss ---
+    echo "[7/11] Stop-loss (drawdown-based risk control):"
+    echo "  1) Disabled (default)"
+    echo "  2) Enable — halve at 15% drawdown, liquidate at 25%"
+    echo "  3) Custom thresholds"
+    read -rp "Choose [1-3] (default 1): " SL_CHOICE
+    SL_CHOICE=${SL_CHOICE:-1}
+    SL_FLAG=""
+
+    case $SL_CHOICE in
+        2) SL_FLAG="--stop_loss" ;;
+        3)
+            read -rp "  Half stop-loss drawdown [5-40] (default 15): " SL_HALF
+            SL_HALF=${SL_HALF:-15}
+            read -rp "  Full stop-loss drawdown [10-50] (default 25): " SL_FULL
+            SL_FULL=${SL_FULL:-25}
+            SL_FLAG="--stop_loss --stop_loss_half 0.$(printf '%02d' $SL_HALF) --stop_loss_full 0.$(printf '%02d' $SL_FULL)"
+            ;;
+    esac
+
+    echo ""
+
+    # --- [8/11] Run mode ---
     INTERMEDIATE="$SCRIPT_DIR/../data/processed/backtesting/intermediate.pkl"
     HAS_INTERMEDIATE=false
     if [ -f "$INTERMEDIATE" ]; then
         HAS_INTERMEDIATE=true
     fi
 
-    echo "[7/10] Backtest mode:"
+    echo "[8/11] Backtest mode:"
     echo "  1) Full backtest (run everything from scratch)"
     if $HAS_INTERMEDIATE; then
         echo "  2) Performance only (use existing intermediate results)"
@@ -294,13 +316,13 @@ if $INTERACTIVE; then
 
     echo ""
 
-    # --- [8/10] Date range ---
+    # --- [9/11] Date range ---
     if [ "$RUN_FLAG" = "--results_only" ]; then
-        echo "[8/10] Performance-only mode, no date range needed."
+        echo "[9/11] Performance-only mode, no date range needed."
         START_DATE=""
         END_DATE=""
     else
-        echo "[8/10] Backtest date range:"
+        echo "[9/11] Backtest date range:"
         read -rp "  Start date (YYYY-MM-DD, default 2015-01-01): " START_DATE
         START_DATE=${START_DATE:-2015-01-01}
         read -rp "  End date (YYYY-MM-DD, leave empty for latest): " END_DATE
@@ -308,8 +330,8 @@ if $INTERACTIVE; then
 
     echo ""
 
-    # --- [9/10] Summary of config ---
-    echo "[9/10] Configuration summary:"
+    # --- [10/11] Summary of config ---
+    echo "[10/11] Configuration summary:"
     if [ -n "$DATA_FLAG" ]; then
         case "$DATA_CHOICE" in
             2) echo "  Data update: Incremental price" ;;
@@ -348,6 +370,11 @@ if $INTERACTIVE; then
     else
         echo "  Winsorization: On (1%/99% clipping)"
     fi
+    if [ -n "$SL_FLAG" ]; then
+        echo "  Stop-loss: $SL_FLAG"
+    else
+        echo "  Stop-loss: Off"
+    fi
     if [ -n "$RUN_FLAG" ]; then
         echo "  Backtest mode: $RUN_FLAG"
     else
@@ -361,8 +388,8 @@ if $INTERACTIVE; then
     fi
     echo ""
 
-    # --- [10/10] Confirm ---
-    echo "[10/10] Confirm?"
+    # --- [11/11] Confirm ---
+    echo "[11/11] Confirm?"
     read -rp "Proceed? [Y/n] " CONFIRM
     CONFIRM=${CONFIRM:-Y}
     if [[ "$CONFIRM" =~ ^[Nn] ]]; then
@@ -381,6 +408,9 @@ if $INTERACTIVE; then
     fi
     if [ -n "$WIN_FLAG" ]; then
         CMD="$CMD $WIN_FLAG"
+    fi
+    if [ -n "$SL_FLAG" ]; then
+        CMD="$CMD $SL_FLAG"
     fi
     if [ -n "$FREQ_FLAG" ]; then
         CMD="$CMD $FREQ_FLAG"
