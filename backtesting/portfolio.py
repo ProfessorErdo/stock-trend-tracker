@@ -135,7 +135,8 @@ class Portfolio:
         self.trade_history.append(trade)
         return trade
 
-    def calculate_target_positions(self, target_codes, total_equity, prices, can_buy, can_sell) -> dict:
+    def calculate_target_positions(self, target_codes, total_equity, prices,
+                                   can_buy=True, can_sell=True, weights=None) -> dict:
         """
         生成调仓计划
         target_codes: list of codes to hold
@@ -143,6 +144,10 @@ class Portfolio:
         prices: {code: price}
         can_buy: bool
         can_sell: bool
+        weights: {code: weight} optional, normalized weights (sum=1).
+                 If None, use equal weight.
+                 Total allocation = N * 20% (so N<5 means underinvested).
+                 Each stock's target = total_equity * N * 0.2 * weight
         """
         N = len(target_codes)
         sell_orders = []
@@ -163,10 +168,19 @@ class Portfolio:
                     sell_orders.append((code, pos['shares']))
 
         # Step 2: 计算每只股票目标仓位价值
-        if N >= config.MIN_FULL_POSITION_STOCKS:
+        total_alloc = N * config.MAX_SINGLE_POSITION  # N * 20%
+        if weights is not None and len(weights) > 0:
+            # Weighted: each stock gets total_alloc * weight
+            target_values = {code: total_equity * total_alloc * weights[code]
+                             for code in target_codes}
+        elif N >= config.MIN_FULL_POSITION_STOCKS:
+            # Equal weight, full investment
             target_value = total_equity / N
+            target_values = {code: target_value for code in target_codes}
         else:
+            # Equal weight, underinvested (each gets 20% cap)
             target_value = config.MAX_SINGLE_POSITION * total_equity
+            target_values = {code: target_value for code in target_codes}
 
         # Step 3: 生成买入订单
         if can_buy:
@@ -179,7 +193,7 @@ class Portfolio:
                 if code in self.positions:
                     current_shares = self.positions[code]['shares']
 
-                target_shares = int(target_value / price)
+                target_shares = int(target_values[code] / price)
                 target_shares = (target_shares // config.LOT_SIZE) * config.LOT_SIZE
 
                 diff = target_shares - current_shares

@@ -163,15 +163,84 @@ def execute_rebalance(portfolio, target_codes, rebalance_date, stock_codes,
     return trades, snapshot
 
 
+def compute_weights(method: str, final: list, val_df: pd.DataFrame,
+                     logger=None, cutoff=None) -> dict | None:
+    """
+    计算权重.
+
+    method: "equal" | "softmax" | "temp_0.2" | "temp_0.3" | "rank" | "reciprocal_rank" | "percentile"
+    """
+    if method == "equal":
+        return None
+
+    # Collect PB values for all candidates in val_df (full candidate pool)
+    all_candidate_pbs = {}
+    for _, row in val_df.iterrows():
+        if row["pb_ttm"] > 0:
+            all_candidate_pbs[row["code"]] = row["pb_ttm"]
+
+    # Collect PB values for final stocks
+    pb_vals = {}
+    for code in final:
+        row = val_df[val_df["code"] == code]
+        if not row.empty and row.iloc[0]["pb_ttm"] > 0:
+            pb_vals[code] = row.iloc[0]["pb_ttm"]
+    if not pb_vals or len(pb_vals) != len(final):
+        return None
+
+    inv_pb = {code: 1.0 / pb for code, pb in pb_vals.items()}
+
+    if method == "softmax":
+        exp_vals = {code: np.exp(v) for code, v in inv_pb.items()}
+        total = sum(exp_vals.values())
+        return {code: v / total for code, v in exp_vals.items()}
+
+    elif method.startswith("temp_"):
+        T = float(method.split("_")[1])
+        exp_vals = {code: np.exp(v / T) for code, v in inv_pb.items()}
+        total = sum(exp_vals.values())
+        return {code: v / total for code, v in exp_vals.items()}
+
+    elif method == "rank":
+        sorted_codes = sorted(pb_vals.keys(), key=lambda c: pb_vals[c])
+        n = len(sorted_codes)
+        rank_weights = {code: (n - i) / (n * (n + 1) / 2) for i, code in enumerate(sorted_codes)}
+        return rank_weights
+
+    elif method == "reciprocal_rank":
+        sorted_codes = sorted(pb_vals.keys(), key=lambda c: pb_vals[c])
+        n = len(sorted_codes)
+        rr = {code: 1.0 / (i + 1) for i, code in enumerate(sorted_codes)}
+        total = sum(rr.values())
+        return {code: v / total for code, v in rr.items()}
+
+    elif method == "percentile":
+        if not all_candidate_pbs:
+            return None
+        all_pbs_sorted = sorted(all_candidate_pbs.values())
+        n_all = len(all_pbs_sorted)
+        weights = {}
+        for code in final:
+            pb = pb_vals[code]
+            pct = sum(1 for p in all_pbs_sorted if p <= pb) / n_all
+            weights[code] = 1.0 - pct
+        total = sum(weights.values())
+        if total <= 0:
+            return None
+        return {code: v / total for code, v in weights.items()}
+
+    return None
+
+
 def run_backtest(stock_codes, cutoffs_with_rebalance, price_cache, trading_days,
                  pe_cache, use_pe_trend=False, logger=None, lookback_years: int = 3,
-                 use_pb_weighting: bool = False):
+                 weighting_method: str = "equal"):
     """
     运行完整回测.
 
     use_pe_trend: True=三步筛选(PE预筛→PB+ROE→PB排序), False=原两步(PB+ROE→PB排序)
     lookback_years: PE_ratio 分母的回溯年数
-    use_pb_weighting: True=1/PB归一化权重, False=等权
+    weighting_method: "equal" | "softmax" | "temp_0.2" | "temp_0.3" | "rank" | "reciprocal_rank" | "percentile"
     注意：cutoff 日做筛选，rebalance 日执行交易.
     """
     portfolio = Portfolio(initial_capital=config.INITIAL_CAPITAL)
@@ -213,19 +282,8 @@ def run_backtest(stock_codes, cutoffs_with_rebalance, price_cache, trading_days,
             for p in pbs:
                 logger.info(p)
 
-        # Compute 1/PB normalized weights if enabled
-        weights = None
-        if use_pb_weighting and final:
-            pb_inv = {}
-            for code in final:
-                row = val_df[val_df["code"] == code]
-                if not row.empty and row.iloc[0]['pb_ttm'] > 0:
-                    pb_inv[code] = 1.0 / row.iloc[0]['pb_ttm']
-            total = sum(pb_inv.values())
-            if total > 0 and len(pb_inv) == len(final):
-                weights = {code: v / total for code, v in pb_inv.items()}
-                if logger:
-                    logger.info(f"  {cutoff}: 1/PB weights: {[(c, f'{w:.3f}') for c, w in sorted(weights.items(), key=lambda x: x[1], reverse=True)[:5]]}")
+        # Compute weights based on method
+        weights = compute_weights(weighting_method, final, val_df, logger, cutoff)
 
         # 在 rebalance 日执行交易；若无下一个交易日，用 cutoff 日价格
         exec_date = rebalance if rebalance is not None else cutoff
@@ -307,9 +365,8 @@ def run_test():
 
     logger = setup_logger("test_pb_weight", "test_pb_weight")
     logger.info("=" * 60)
-    logger.info("Test: 1/PB Normalized Weighting vs Equal Weight")
-    logger.info(f"  Total allocation = N * 20%")
-    logger.info(f"  Each stock: total_alloc * (1/PB_i) / sum(1/PB)")
+    logger.info("Test: Weighting Strategy Comparison")
+    logger.info("  Strategies: equal, softmax, temp_0.2, temp_0.3, rank, reciprocal_rank, percentile")
     logger.info("=" * 60)
 
     # Load data
@@ -345,17 +402,25 @@ def run_test():
         rebalance = next_days[0] if next_days else None
         cutoffs_with_rebalance.append((c_ts, rebalance))
 
-    # Original backtest (equal weight)
-    logger.info("\n[3] Running original strategy (PB+ROE → PB rank, equal weight)...")
-    result_orig = run_backtest(stock_codes, cutoffs_with_rebalance, price_cache, trading_days,
-                               pe_cache, use_pe_trend=False, logger=logger, use_pb_weighting=False)
-    logger.info(f"  Trades: {len(result_orig['trade_records'])}")
+    # Define strategies
+    strategies = [
+        ("equal", "Equal Weight"),
+        ("softmax", "Softmax(1/PB)"),
+        ("temp_0.2", "Temp-Scaled T=0.2"),
+        ("temp_0.3", "Temp-Scaled T=0.3"),
+        ("rank", "Rank-Based"),
+        ("reciprocal_rank", "Reciprocal Rank"),
+        ("percentile", "PB Percentile"),
+    ]
 
-    # 1/PB weighted strategy
-    logger.info("\n[4] Running original strategy with 1/PB weighting...")
-    result_pbw = run_backtest(stock_codes, cutoffs_with_rebalance, price_cache, trading_days,
-                              pe_cache, use_pe_trend=False, logger=logger, use_pb_weighting=True)
-    logger.info(f"  Trades: {len(result_pbw['trade_records'])}")
+    # Run backtests
+    results = {}
+    for method, label in strategies:
+        logger.info(f"\n[{label}] Running backtest...")
+        result = run_backtest(stock_codes, cutoffs_with_rebalance, price_cache, trading_days,
+                              pe_cache, use_pe_trend=False, logger=logger, weighting_method=method)
+        results[method] = result
+        logger.info(f"  Trades: {len(result['trade_records'])}")
 
     # Performance comparison
     logger.info("\n" + "=" * 60)
@@ -364,29 +429,27 @@ def run_test():
 
     from performance import save_performance_summary
 
-    strategies = [
-        ("EqualWeight", result_orig["performance"]),
-        ("1/PB_weight", result_pbw["performance"]),
-    ]
-
     output_dir = os.path.join(config.DATA_OUTPUT_DIR, "pb_weight_test")
     os.makedirs(output_dir, exist_ok=True)
 
-    for name, perf in strategies:
-        save_performance_summary(perf, os.path.join(output_dir, f"{name}_perf.csv"))
+    strat_list = [(method, label, results[method]["performance"]) for method, label in strategies]
+
+    for method, label, perf in strat_list:
+        save_performance_summary(perf, os.path.join(output_dir, f"{method}_perf.csv"))
 
     perf_maps = {}
-    for name, _ in strategies:
-        df = pd.read_csv(os.path.join(output_dir, f"{name}_perf.csv"))
-        perf_maps[name] = dict(zip(df["Metric"], df["Value"]))
+    for method, label, _ in strat_list:
+        df = pd.read_csv(os.path.join(output_dir, f"{method}_perf.csv"))
+        perf_maps[method] = dict(zip(df["Metric"], df["Value"]))
 
-    w0 = 25
-    w = 22
+    w0 = 22
+    w = 18
+    col_labels = [label for _, label, _ in strat_list]
     header = f"{'Metric':<{w0}}"
-    for name, _ in strategies:
-        header += f"{name:<{w}}"
+    for label in col_labels:
+        header += f"{label:<{w}}"
     logger.info(header)
-    logger.info("-" * (w0 + w * 2))
+    logger.info("-" * (w0 + w * len(col_labels)))
 
     metrics = [
         "Cumulative Return", "Annual Return", "Annual Volatility",
@@ -395,37 +458,38 @@ def run_test():
     ]
     for m in metrics:
         row = f"{m:<{w0}}"
-        for name, _ in strategies:
-            val = str(perf_maps[name].get(m, "N/A"))
+        for method, _, _ in strat_list:
+            val = str(perf_maps[method].get(m, "N/A"))
             row += f"{val:<{w}}"
         logger.info(row)
 
     logger.info("")
     for m in ["Final Equity", "Benchmark Cumulative Return", "Excess Return", "Information Ratio"]:
         row = f"{m:<{w0}}"
-        for name, _ in strategies:
-            val = str(perf_maps[name].get(m, "N/A"))
+        for method, _, _ in strat_list:
+            val = str(perf_maps[method].get(m, "N/A"))
             row += f"{val:<{w}}"
         logger.info(row)
 
     # Save results
-    logger.info("\n[5] Saving results...")
-    for name, result in [("equal_weight", result_orig), ("pb_weighted", result_pbw)]:
+    logger.info("\n[4] Saving results...")
+    for method, label, _ in strat_list:
+        result = results[method]
         if result["equity_curve"] is not None and not result["equity_curve"].empty:
-            result["equity_curve"].to_csv(os.path.join(output_dir, f"{name}_equity.csv"), index=False)
+            result["equity_curve"].to_csv(os.path.join(output_dir, f"{method}_equity.csv"), index=False)
         if result["trade_records"]:
-            pd.DataFrame(result["trade_records"]).to_csv(os.path.join(output_dir, f"{name}_trades.csv"), index=False)
+            pd.DataFrame(result["trade_records"]).to_csv(os.path.join(output_dir, f"{method}_trades.csv"), index=False)
         if result["holding_snapshots"]:
             valid = [h for h in result["holding_snapshots"] if h is not None]
             if valid:
-                pd.concat(valid, ignore_index=True).to_csv(os.path.join(output_dir, f"{name}_holdings.csv"), index=False)
+                pd.concat(valid, ignore_index=True).to_csv(os.path.join(output_dir, f"{method}_holdings.csv"), index=False)
 
     logger.info(f"\nResults saved to: {output_dir}/")
     logger.info("\n" + "=" * 60)
     logger.info("Test complete!")
     logger.info("=" * 60)
 
-    return result_orig["performance"], result_pbw["performance"]
+    return {method: perf for method, _, perf in strat_list}
 
 
 if __name__ == "__main__":
