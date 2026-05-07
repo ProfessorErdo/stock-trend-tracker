@@ -167,7 +167,8 @@ def is_new_stock(
 def select_stocks(
     stock_codes: list,
     trade_date: pd.Timestamp,
-    price_cache: dict = None
+    price_cache: dict = None,
+    filter_indicators: list = None
 ) -> tuple:
     """
     执行完整的四步选股流程
@@ -176,6 +177,8 @@ def select_stocks(
         stock_codes: 候选股票代码列表
         trade_date: 截面日/调仓日
         price_cache: 价格数据缓存 {code: DataFrame}，传入可避免重复读取文件
+        filter_indicators: Step 2 估值过滤使用的指标列表，如 ["pe","pb"]。
+                          None 时使用 config.FILTER_INDICATORS.
 
     Returns:
         (selected_codes, all_valuations)
@@ -223,35 +226,43 @@ def select_stocks(
 
     val_df = pd.DataFrame(all_valuations)
 
-    # Step 2 - Valuation filter: winsorize if enabled, then 25th percentile
+    # Step 2 - Valuation filter: dynamic based on filter_indicators
+    if filter_indicators is None:
+        filter_indicators = list(config.FILTER_INDICATORS)
+
+    indicator_col_map = {"pe": "pe_ttm", "pb": "pb_ttm", "pr": "pr_ttm"}
+    threshold_map = {"pe": config.PE_THRESHOLD, "pb": config.PB_THRESHOLD, "pr": config.PR_THRESHOLD}
+
+    # Winsorize ALL three indicators (needed for quantile stability)
+    winsorize_cols = []
     if config.WINSORIZE_ENABLED:
-        val_df["pe_winsorized"] = winsorize(val_df["pe_ttm"], config.WINSORIZE_LOWER, config.WINSORIZE_UPPER)
-        val_df["pb_winsorized"] = winsorize(val_df["pb_ttm"], config.WINSORIZE_LOWER, config.WINSORIZE_UPPER)
-        val_df["pr_winsorized"] = winsorize(val_df["pr_ttm"], config.WINSORIZE_LOWER, config.WINSORIZE_UPPER)
+        for ind in ["pe", "pb", "pr"]:
+            wcol = f"{ind}_winsorized"
+            val_df[wcol] = winsorize(val_df[indicator_col_map[ind]], config.WINSORIZE_LOWER, config.WINSORIZE_UPPER)
+            winsorize_cols.append(wcol)
 
-        pe_cut = val_df["pe_winsorized"].quantile(config.PE_THRESHOLD)
-        pb_cut = val_df["pb_winsorized"].quantile(config.PB_THRESHOLD)
-        pr_cut = val_df["pr_winsorized"].quantile(config.PR_THRESHOLD)
-    else:
-        pe_cut = val_df["pe_ttm"].quantile(config.PE_THRESHOLD)
-        pb_cut = val_df["pb_ttm"].quantile(config.PB_THRESHOLD)
-        pr_cut = val_df["pr_ttm"].quantile(config.PR_THRESHOLD)
+    # Build filter mask using only active indicators
+    mask = None
+    for ind in filter_indicators:
+        col = indicator_col_map[ind]
+        if config.WINSORIZE_ENABLED:
+            cut = val_df[f"{ind}_winsorized"].quantile(threshold_map[ind])
+        else:
+            cut = val_df[col].quantile(threshold_map[ind])
+        ind_mask = val_df[col] <= cut
+        mask = ind_mask if mask is None else (mask & ind_mask)
 
-    step2_df = val_df[
-        (val_df["pe_ttm"] <= pe_cut) &
-        (val_df["pb_ttm"] <= pb_cut) &
-        (val_df["pr_ttm"] <= pr_cut)
-    ]
+    step2_df = val_df[mask] if mask is not None else val_df.copy()
 
     if step2_df.empty:
-        return [], val_df.drop(columns=["pe_winsorized", "pb_winsorized", "pr_winsorized"], errors="ignore")
+        return [], val_df.drop(columns=winsorize_cols, errors="ignore")
 
     # Step 3 - ROE过滤: ROE阈值在全部候选股票上计算
     roe_cut = val_df["roe_ttm"].quantile(config.ROE_THRESHOLD)
     step3_df = step2_df[step2_df["roe_ttm"] >= roe_cut]
 
     if step3_df.empty:
-        return [], val_df.drop(columns=["pe_winsorized", "pb_winsorized", "pr_winsorized"], errors="ignore")
+        return [], val_df.drop(columns=winsorize_cols, errors="ignore")
 
     # Step 4 - 新股排除
     selected = []
@@ -266,7 +277,7 @@ def select_stocks(
             selected.append(code)
 
     # 清理辅助列
-    clean_df = val_df.drop(columns=["pe_winsorized", "pb_winsorized", "pr_winsorized"], errors="ignore")
+    clean_df = val_df.drop(columns=winsorize_cols, errors="ignore")
 
     return selected, clean_df
 

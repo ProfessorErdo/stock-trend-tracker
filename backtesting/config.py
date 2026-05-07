@@ -33,6 +33,9 @@ RISK_FREE_RATE = 0.02        # 无风险利率（用于夏普比率）
 
 
 # ============== 选股参数 ==============
+# Step 2 估值过滤使用的指标（支持任意组合: ["pe"], ["pe","pb"], ["pe","pb","pr"] 等）
+FILTER_INDICATORS = ["pe", "pb", "pr"]  # 默认三者 AND 过滤
+
 # 分位数阈值
 PE_THRESHOLD = 0.25          # PE分位数阈值（保留最低25%）
 PB_THRESHOLD = 0.25          # PB分位数阈值（保留最低25%）

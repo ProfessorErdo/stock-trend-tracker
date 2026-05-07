@@ -29,7 +29,7 @@ if $INTERACTIVE; then
     # Main menu: choose backtest type
     # ============================================================
     echo "Select backtest type:"
-    echo "  1) Single backtest — run one strategy (configurable)"
+    echo "  1) Single backtest — run one strategy (configurable filter, ranking, thresholds)"
     echo "  2) Ranking comparison — 4 ranking methods (PE/PB/PR/ROE) with quarterly frequency"
     echo "  3) Frequency comparison — annual vs annual+semi-annual, PB only"
     echo "  4) Full matrix — 2 frequencies × 5 ranking methods (10 combinations)"
@@ -215,8 +215,39 @@ if $INTERACTIVE; then
 
     echo ""
 
-    # --- [4/10] Valuation thresholds ---
-    echo "[4/10] Valuation thresholds (quantile cutoffs):"
+    # --- [4/11] Step 2 filter indicators ---
+    echo "[4/11] Step 2 valuation filter indicators (lower-is-better, AND logic):"
+    echo "  1) PE + PB + PR (default, all three AND)"
+    echo "  2) PE only"
+    echo "  3) PB only"
+    echo "  4) PR only"
+    echo "  5) PE + PB"
+    echo "  6) PE + PR"
+    echo "  7) PB + PR"
+    echo "  8) Custom (enter your own: pe, pb, pr)"
+    read -rp "Choose [1-8] (default 1): " FILTER_CHOICE
+    FILTER_CHOICE=${FILTER_CHOICE:-1}
+
+    FILTER_FLAG=""
+    case $FILTER_CHOICE in
+        2) FILTER_FLAG="--filter_indicators pe" ;;
+        3) FILTER_FLAG="--filter_indicators pb" ;;
+        4) FILTER_FLAG="--filter_indicators pr" ;;
+        5) FILTER_FLAG="--filter_indicators pe,pb" ;;
+        6) FILTER_FLAG="--filter_indicators pe,pr" ;;
+        7) FILTER_FLAG="--filter_indicators pb,pr" ;;
+        8)
+            read -rp "  Enter indicators (comma-separated, e.g. pe,pb): " CUSTOM_FILTER
+            CUSTOM_FILTER=${CUSTOM_FILTER:-pe,pb,pr}
+            FILTER_FLAG="--filter_indicators $CUSTOM_FILTER"
+            ;;
+        *) FILTER_FLAG="" ;;
+    esac
+
+    echo ""
+
+    # --- [5/11] Valuation thresholds ---
+    echo "[5/11] Valuation thresholds (quantile cutoffs):"
     read -rp "  PE threshold [1-50] (default 25): " PE_INPUT
     PE_INPUT=${PE_INPUT:-25}
     read -rp "  PB threshold [1-50] (default 25): " PB_INPUT
@@ -230,16 +261,16 @@ if $INTERACTIVE; then
 
     echo ""
 
-    # --- [5/10] Max positions ---
-    echo "[5/10] Max positions per rebalance:"
+    # --- [6/11] Max positions ---
+    echo "[6/11] Max positions per rebalance:"
     read -rp "  Number [3-20] (default 5): " MAX_POS
     MAX_POS=${MAX_POS:-5}
     POS_FLAG="--max_positions $MAX_POS"
 
     echo ""
 
-    # --- [6/10] Winsorization ---
-    echo "[6/10] Extreme value handling (winsorization):"
+    # --- [7/11] Winsorization ---
+    echo "[7/11] Extreme value handling (winsorization):"
     echo "  1) Enable 1%/99% clipping (default)"
     echo "  2) Disable (use raw quantiles)"
     read -rp "Choose [1-2] (default 1): " WIN_CHOICE
@@ -252,8 +283,8 @@ if $INTERACTIVE; then
 
     echo ""
 
-    # --- [7/11] Stop-loss ---
-    echo "[7/11] Stop-loss (drawdown-based risk control):"
+    # --- [8/11] Stop-loss ---
+    echo "[8/11] Stop-loss (drawdown-based risk control):"
     echo "  1) Disabled (default)"
     echo "  2) Enable — halve at 15% drawdown, liquidate at 25%"
     echo "  3) Custom thresholds"
@@ -281,7 +312,7 @@ if $INTERACTIVE; then
         HAS_INTERMEDIATE=true
     fi
 
-    echo "[8/11] Backtest mode:"
+    echo "[9/11] Backtest mode:"
     echo "  1) Full backtest (run everything from scratch)"
     if $HAS_INTERMEDIATE; then
         echo "  2) Performance only (use existing intermediate results)"
@@ -318,11 +349,11 @@ if $INTERACTIVE; then
 
     # --- [9/11] Date range ---
     if [ "$RUN_FLAG" = "--results_only" ]; then
-        echo "[9/11] Performance-only mode, no date range needed."
+        echo "[10/11] Performance-only mode, no date range needed."
         START_DATE=""
         END_DATE=""
     else
-        echo "[9/11] Backtest date range:"
+        echo "[10/11] Backtest date range:"
         read -rp "  Start date (YYYY-MM-DD, default 2015-01-01): " START_DATE
         START_DATE=${START_DATE:-2015-01-01}
         read -rp "  End date (YYYY-MM-DD, leave empty for latest): " END_DATE
@@ -330,8 +361,8 @@ if $INTERACTIVE; then
 
     echo ""
 
-    # --- [10/11] Summary of config ---
-    echo "[10/11] Configuration summary:"
+    # --- [11/11] Summary of config ---
+    echo "[11/11] Configuration summary:"
     if [ -n "$DATA_FLAG" ]; then
         case "$DATA_CHOICE" in
             2) echo "  Data update: Incremental price" ;;
@@ -359,6 +390,16 @@ if $INTERACTIVE; then
         4) echo "  Ranking method: ROE highest" ;;
         5) echo "  Ranking method: Pure PB lowest (no 4-step filter)" ;;
         *) echo "  Ranking method: PB lowest" ;;
+    esac
+    case "$FILTER_CHOICE" in
+        2) echo "  Step 2 filter: PE only" ;;
+        3) echo "  Step 2 filter: PB only" ;;
+        4) echo "  Step 2 filter: PR only" ;;
+        5) echo "  Step 2 filter: PE + PB" ;;
+        6) echo "  Step 2 filter: PE + PR" ;;
+        7) echo "  Step 2 filter: PB + PR" ;;
+        8) echo "  Step 2 filter: ${CUSTOM_FILTER:-pe,pb,pr}" ;;
+        *) echo "  Step 2 filter: PE + PB + PR" ;;
     esac
     echo "  PE threshold: <= ${PE_INPUT}%"
     echo "  PB threshold: <= ${PB_INPUT}%"
@@ -388,8 +429,8 @@ if $INTERACTIVE; then
     fi
     echo ""
 
-    # --- [11/11] Confirm ---
-    echo "[11/11] Confirm?"
+    # --- [12/12] Confirm ---
+    echo "[12/12] Confirm?"
     read -rp "Proceed? [Y/n] " CONFIRM
     CONFIRM=${CONFIRM:-Y}
     if [[ "$CONFIRM" =~ ^[Nn] ]]; then
@@ -417,6 +458,9 @@ if $INTERACTIVE; then
     fi
     if [ -n "$RANK_FLAG" ]; then
         CMD="$CMD $RANK_FLAG"
+    fi
+    if [ -n "$FILTER_FLAG" ]; then
+        CMD="$CMD $FILTER_FLAG"
     fi
     if [ -n "$THRESH_FLAGS" ]; then
         CMD="$CMD $THRESH_FLAGS"

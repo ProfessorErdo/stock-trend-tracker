@@ -97,6 +97,8 @@ def main():
                         help="Half stop-loss drawdown threshold (default: 0.15)")
     parser.add_argument("--stop_loss_full", type=float, default=None,
                         help="Full stop-loss drawdown threshold (default: 0.25)")
+    parser.add_argument("--filter_indicators", type=str, default=None,
+                        help="Step 2 filter indicators, comma-separated: pe,pb  or  pb  or  pe,pb,pr (default: from config)")
 
     args = parser.parse_args()
 
@@ -114,6 +116,8 @@ def main():
         config.ROE_THRESHOLD = args.roe_threshold
     if args.max_positions is not None:
         config.MAX_POSITIONS = args.max_positions
+    if args.filter_indicators is not None:
+        config.FILTER_INDICATORS = [x.strip() for x in args.filter_indicators.split(",")]
 
     # Run performance only mode
     if args.results_only:
@@ -158,6 +162,8 @@ def main():
     logger.info(f"  Stock pools: {len(config.STOCK_POOLS)} lists")
     logger.info(f"  Rebalance frequency: {freq_label}")
     logger.info(f"  Ranking method: {rank_label}")
+    filter_display = "+".join(ind.upper() for ind in config.FILTER_INDICATORS)
+    logger.info(f"  Step 2 filter: {filter_display}")
     logger.info(f"  Valuation thresholds: PE<={config.PE_THRESHOLD}, PB<={config.PB_THRESHOLD}, PR<={config.PR_THRESHOLD}")
     logger.info(f"  ROE threshold: >{config.ROE_THRESHOLD} quantile")
     logger.info(f"  Max positions: {config.MAX_POSITIONS}")
@@ -219,6 +225,7 @@ def main():
         incremental_from=incremental_flag,
         frequency=args.frequency,
         ranking_method=args.ranking,
+        filter_indicators=config.FILTER_INDICATORS,
     )
 
     if result is None:
@@ -266,6 +273,8 @@ def main():
     logger.info(f"  Annual, PB rank:      ./run.sh --frequency annual --ranking pb")
     logger.info(f"  Annual+Q3, PE rank:   ./run.sh --frequency annual_q3 --ranking pe")
     logger.info(f"  Pure PB ranking:      ./run.sh --ranking pure_pb")
+    logger.info(f"  PB-only filter:       ./run.sh --filter_indicators pb --ranking pb")
+    logger.info(f"  PE+ROE filter:        ./run.sh --filter_indicators pe,roe --ranking pb")
     logger.info(f"  Comparison scripts:")
     logger.info(f"    python compare_ranking_methods.py        (4 rankings, quarterly)")
     logger.info(f"    python compare_rebalance_frequency.py    (annual vs semi-annual, PB)")

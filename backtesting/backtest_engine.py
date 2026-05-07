@@ -299,6 +299,7 @@ def run_backtest(
     incremental_from: str = None,
     frequency: str = None,
     ranking_method: str = "pb",
+    filter_indicators: list = None,
 ) -> dict:
     """
     Execute full backtest workflow
@@ -309,6 +310,7 @@ def run_backtest(
         incremental_from: path to previous intermediate pickle (incremental mode)
         frequency: rebalance frequency — "weekly", "monthly", "quarterly", "annual", "annual_q3"
         ranking_method: ranking when filtered stocks > 10 — "pe", "pb", "pr", "roe", "pure_pb"
+        filter_indicators: Step 2 valuation filter indicators — e.g. ["pe","pb"], ["pb"], ["pe","pb","pr"]
 
     Returns:
         {
@@ -452,7 +454,8 @@ def run_backtest(
                 else:
                     final_selected = []
             else:
-                selected, val_df = select_stocks(stock_codes, cutoff, price_cache=price_cache)
+                selected, val_df = select_stocks(stock_codes, cutoff, price_cache=price_cache,
+                                                  filter_indicators=filter_indicators)
                 final_selected = rank_and_limit(selected, val_df, config.MAX_POSITIONS, ranking_method)
 
             # Always include the pair — when rebalance is None, use cutoff date close as fill price
