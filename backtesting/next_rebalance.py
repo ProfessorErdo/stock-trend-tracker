@@ -142,6 +142,7 @@ def run_selection(
     max_positions: int,
     ranking_method: str,
     winsorize_enabled: bool,
+    filter_indicators: list = None,
 ) -> list:
     """
     Run the 4-step stock selection with custom thresholds.
@@ -149,6 +150,12 @@ def run_selection(
     Returns:
         List of selected stock codes
     """
+    if filter_indicators is None:
+        filter_indicators = ["pe", "pb", "pr"]
+
+    indicator_col_map = {"pe": "pe_ttm", "pb": "pb_ttm", "pr": "pr_ttm"}
+    threshold_map = {"pe": pe_threshold, "pb": pb_threshold, "pr": pr_threshold}
+
     all_valuations = []
 
     for code in stock_codes:
@@ -180,25 +187,28 @@ def run_selection(
     val_df = pd.DataFrame(all_valuations)
     logger.info(f"Step 1: {len(val_df)} candidates with valid valuations")
 
-    # Step 2 - Valuation filter
+    # Step 2 - Valuation filter (dynamic indicators)
+    winsorize_cols = []
     if winsorize_enabled:
-        val_df["pe_w"] = winsorize(val_df["pe_ttm"], config.WINSORIZE_LOWER, config.WINSORIZE_UPPER)
-        val_df["pb_w"] = winsorize(val_df["pb_ttm"], config.WINSORIZE_LOWER, config.WINSORIZE_UPPER)
-        val_df["pr_w"] = winsorize(val_df["pr_ttm"], config.WINSORIZE_LOWER, config.WINSORIZE_UPPER)
-        pe_cut = val_df["pe_w"].quantile(pe_threshold)
-        pb_cut = val_df["pb_w"].quantile(pb_threshold)
-        pr_cut = val_df["pr_w"].quantile(pr_threshold)
-    else:
-        pe_cut = val_df["pe_ttm"].quantile(pe_threshold)
-        pb_cut = val_df["pb_ttm"].quantile(pb_threshold)
-        pr_cut = val_df["pr_ttm"].quantile(pr_threshold)
+        for ind in ["pe", "pb", "pr"]:
+            wcol = f"{ind}_w"
+            val_df[wcol] = winsorize(val_df[indicator_col_map[ind]], config.WINSORIZE_LOWER, config.WINSORIZE_UPPER)
+            winsorize_cols.append(wcol)
 
-    step2 = val_df[
-        (val_df["pe_ttm"] <= pe_cut) &
-        (val_df["pb_ttm"] <= pb_cut) &
-        (val_df["pr_ttm"] <= pr_cut)
-    ]
-    logger.info(f"Step 2: {len(step2)} after valuation filter (PE<={pe_cut:.1f}, PB<={pb_cut:.1f}, PR<={pr_cut:.1f})")
+    mask = None
+    filter_desc_parts = []
+    for ind in filter_indicators:
+        col = indicator_col_map[ind]
+        if winsorize_enabled:
+            cut = val_df[f"{ind}_w"].quantile(threshold_map[ind])
+        else:
+            cut = val_df[col].quantile(threshold_map[ind])
+        ind_mask = val_df[col] <= cut
+        mask = ind_mask if mask is None else (mask & ind_mask)
+        filter_desc_parts.append(f"{ind.upper()}<={cut:.1f}")
+
+    step2 = val_df[mask] if mask is not None else val_df.copy()
+    logger.info(f"Step 2: {len(step2)} after valuation filter ({', '.join(filter_desc_parts)})")
 
     if step2.empty:
         return []
@@ -394,8 +404,32 @@ def main():
     logger.info(f"  Max positions: {max_positions}, Ranking: {rank_labels[ranking_method]}")
     logger.info("")
 
-    # --- 5. Winsorization ---
-    win_input = input(f"[5/6] Winsorization 1%/99%? [Y/n] (default {'Y' if config.WINSORIZE_ENABLED else 'n'}): ").strip()
+    # --- 5. Filter indicators ---
+    logger.info("[5/7] Step 2 valuation filter indicators:")
+    logger.info("  1) PE + PB + PR (default, all three AND)")
+    logger.info("  2) PE only")
+    logger.info("  3) PB only")
+    logger.info("  4) PR only")
+    logger.info("  5) PE + PB")
+    logger.info("  6) PE + PR")
+    logger.info("  7) PB + PR")
+    filter_input = input("  Choose [1-7] (default 1): ").strip()
+    filter_map = {
+        "2": ["pe"], "3": ["pb"], "4": ["pr"],
+        "5": ["pe", "pb"], "6": ["pe", "pr"], "7": ["pb", "pr"],
+    }
+    filter_indicators = filter_map.get(filter_input, ["pe", "pb", "pr"])
+    filter_label_map = {
+        ("pe",): "PE only", ("pb",): "PB only", ("pr",): "PR only",
+        ("pe", "pb"): "PE + PB", ("pe", "pr"): "PE + PR", ("pb", "pr"): "PB + PR",
+        ("pe", "pb", "pr"): "PE + PB + PR",
+    }
+    filter_label = filter_label_map.get(tuple(filter_indicators), "+".join(i.upper() for i in filter_indicators))
+    logger.info(f"  Selected: {filter_label}")
+    logger.info("")
+
+    # --- 6. Winsorization ---
+    win_input = input(f"[6/7] Winsorization 1%/99%? [Y/n] (default {'Y' if config.WINSORIZE_ENABLED else 'n'}): ").strip()
     if win_input:
         winsorize_enabled = win_input.lower() != "n"
     else:
@@ -404,7 +438,7 @@ def main():
     logger.info("")
 
     # --- 6. Capital ---
-    capital_input = input(f"[6/6] Total capital (RMB) (default {config.INITIAL_CAPITAL:,}): ").strip()
+    capital_input = input(f"[7/7] Total capital (RMB) (default {config.INITIAL_CAPITAL:,}): ").strip()
     total_capital = float(capital_input.replace(",", "")) if capital_input else config.INITIAL_CAPITAL
     logger.info(f"  Total capital: {total_capital:,.0f} RMB")
     logger.info("")
@@ -419,6 +453,7 @@ def main():
         logger.info(f"  Rebalance date:  {rebalance_date.strftime('%Y-%m-%d')}")
     else:
         logger.info(f"  Rebalance date:  (none yet) — will use cutoff date close as fill price")
+    logger.info(f"  Step 2 filter:   {filter_label}")
     logger.info(f"  PE/PB/PR:        <={pe_threshold}/{pb_threshold}/{pr_threshold}")
     logger.info(f"  ROE:             >{roe_threshold}")
     logger.info(f"  Max positions:   {max_positions}")
@@ -448,6 +483,7 @@ def main():
         stock_codes, cutoff_date, price_cache,
         pe_threshold, pb_threshold, pr_threshold, roe_threshold,
         max_positions, ranking_method, winsorize_enabled,
+        filter_indicators,
     )
 
     if not selected:
