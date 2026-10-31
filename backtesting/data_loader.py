@@ -5,6 +5,7 @@
 import sys
 import os
 import logging
+import json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config
 
@@ -14,6 +15,63 @@ from tqdm import tqdm
 import akshare as ak
 
 logger = logging.getLogger("data_loader")
+
+
+def load_update_metadata() -> dict:
+    """Load per-stock update timestamps for backtesting data."""
+    if not os.path.exists(config.UPDATE_METADATA_FILE):
+        return {"financial": {}, "price": {}}
+
+    try:
+        with open(config.UPDATE_METADATA_FILE, "r") as f:
+            metadata = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning(f"Could not read update metadata: {e}")
+        return {"financial": {}, "price": {}}
+
+    metadata.setdefault("financial", {})
+    metadata.setdefault("price", {})
+    return metadata
+
+
+def save_update_metadata(metadata: dict):
+    """Persist per-stock update timestamps for backtesting data."""
+    os.makedirs(os.path.dirname(config.UPDATE_METADATA_FILE), exist_ok=True)
+    with open(config.UPDATE_METADATA_FILE, "w") as f:
+        json.dump(metadata, f, indent=2)
+
+
+def should_update_data(
+    metadata: dict,
+    data_type: str,
+    stock_code: str,
+    max_age_days: int,
+    force: bool = False,
+) -> bool:
+    """
+    Return whether a stock is due for an incremental data refresh.
+
+    Missing or invalid timestamps are treated as due. A full refresh bypasses
+    the timestamp check.
+    """
+    if force:
+        return True
+
+    last_date_str = metadata.get(data_type, {}).get(str(stock_code))
+    if not last_date_str:
+        return True
+
+    try:
+        last_date = datetime.strptime(last_date_str, "%Y-%m-%d")
+    except (TypeError, ValueError):
+        return True
+
+    return (datetime.now() - last_date).days >= max_age_days
+
+
+def mark_data_updated(metadata: dict, data_type: str, stock_code: str):
+    """Record a successful refresh for a stock and data type."""
+    metadata.setdefault(data_type, {})[str(stock_code)] = datetime.now().strftime("%Y-%m-%d")
 
 
 def format_symbol(code: str) -> str:
@@ -115,10 +173,30 @@ def query_price_data(
         end_date = datetime.now().strftime("%Y%m%d")
 
     os.makedirs(config.PRICE_DATA_DIR, exist_ok=True)
+    metadata = load_update_metadata()
+    if full:
+        to_download = list(stock_codes)
+        logger.info(f"Full download: re-downloading price data for all {len(to_download)} stocks.")
+    else:
+        to_download = [
+            code for code in stock_codes
+            if should_update_data(
+                metadata,
+                "price",
+                code,
+                config.PRICE_UPDATE_INTERVAL_DAYS,
+            )
+        ]
+        logger.info(
+            f"Skipping {len(stock_codes) - len(to_download)} price stocks updated "
+            f"within {config.PRICE_UPDATE_INTERVAL_DAYS} day(s). "
+            f"Downloading {len(to_download)} stocks."
+        )
 
     success_count = 0
-    for code in tqdm(stock_codes, desc="Downloading price data"):
+    for code in tqdm(to_download, desc="Downloading price data"):
         file_path = os.path.join(config.PRICE_DATA_DIR, f"price_{code}.csv")
+        hfq_path = os.path.join(config.PRICE_DATA_DIR, f"price_{code}_hfq.csv")
 
         if full and os.path.exists(file_path):
             os.remove(file_path)
@@ -132,6 +210,11 @@ def query_price_data(
                     last_date_str = last_date.strftime("%Y%m%d")
                     if last_date_str >= end_date:
                         success_count += 1  # 数据已是最新
+                        existing[["trade_date", "open", "high", "low", "close", "volume"]].to_csv(
+                            hfq_path,
+                            index=False,
+                        )
+                        mark_data_updated(metadata, "price", code)
                         continue
                     # 下载 last_date 之后的数据（保留一天重叠，避免缺失）
                     dl_start = (last_date - pd.Timedelta(days=2)).strftime("%Y%m%d")
@@ -143,6 +226,11 @@ def query_price_data(
                     )
                     if df_new is None or df_new.empty:
                         success_count += 1
+                        existing[["trade_date", "open", "high", "low", "close", "volume"]].to_csv(
+                            hfq_path,
+                            index=False,
+                        )
+                        mark_data_updated(metadata, "price", code)
                         continue
                     df_new = df_new.rename(columns={"date": "trade_date"})
                     df_new["trade_date"] = pd.to_datetime(df_new["trade_date"])
@@ -150,10 +238,17 @@ def query_price_data(
                     combined = pd.concat([existing, df_new], ignore_index=True)
                     combined = combined.drop_duplicates(subset=["trade_date"], keep="last")
                     required_cols = ["trade_date", "open", "high", "low", "close", "volume"]
-                    combined = combined[[c for c in required_cols if c in combined.columns]]
+                    na_cols = [
+                        "open_na", "high_na", "low_na", "close_na", "volume_na"
+                    ]
+                    combined = combined[
+                        [c for c in required_cols + na_cols if c in combined.columns]
+                    ]
                     combined = combined.sort_values("trade_date").reset_index(drop=True)
                     combined.to_csv(file_path, index=False)
+                    combined[required_cols].to_csv(hfq_path, index=False)
                     success_count += 1
+                    mark_data_updated(metadata, "price", code)
                     continue
             except Exception:
                 pass  # 文件有问题，走全量下载路径
@@ -190,12 +285,15 @@ def query_price_data(
 
                 output_path = os.path.join(config.PRICE_DATA_DIR, f"price_{code}.csv")
                 df.to_csv(output_path, index=False)
+                df[required_cols].to_csv(hfq_path, index=False)
                 success_count += 1
+                mark_data_updated(metadata, "price", code)
 
         except Exception as e:
             logger.warning(f"Error downloading price data for {code}: {e}")
             continue
 
+    save_update_metadata(metadata)
     logger.info(f"Successfully downloaded price data for {success_count} stocks.")
     return success_count
 
@@ -267,22 +365,26 @@ def query_financial_data(
         Number of successfully downloaded stocks
     """
     os.makedirs(config.FINANCIAL_DATA_DIR, exist_ok=True)
+    metadata = load_update_metadata()
 
     if full:
         to_download = list(stock_codes)
         logger.info(f"Full download: re-downloading all {len(to_download)} stocks.")
     else:
-        # Check which stocks are already downloaded
-        existing_files = set()
-        if os.path.exists(config.FINANCIAL_DATA_DIR):
-            for f in os.listdir(config.FINANCIAL_DATA_DIR):
-                if f.startswith("financial_") and f.endswith(".csv"):
-                    code = f.replace("financial_", "").replace(".csv", "")
-                    existing_files.add(code)
-
-        to_download = [c for c in stock_codes if str(c) not in existing_files]
-        logger.info(f"Skipping {len(stock_codes) - len(to_download)} already-downloaded stocks. "
-              f"Downloading {len(to_download)} new stocks.")
+        to_download = [
+            code for code in stock_codes
+            if should_update_data(
+                metadata,
+                "financial",
+                code,
+                config.FINANCIAL_UPDATE_INTERVAL_DAYS,
+            )
+        ]
+        logger.info(
+            f"Skipping {len(stock_codes) - len(to_download)} financial stocks updated "
+            f"within {config.FINANCIAL_UPDATE_INTERVAL_DAYS} days. "
+            f"Downloading {len(to_download)} stocks."
+        )
 
     success_count = 0
     for code in tqdm(to_download, desc="Downloading financial data"):
@@ -349,11 +451,13 @@ def query_financial_data(
             output_path = os.path.join(config.FINANCIAL_DATA_DIR, f"financial_{code}.csv")
             df.to_csv(output_path, index=False)
             success_count += 1
+            mark_data_updated(metadata, "financial", code)
 
         except Exception as e:
             logger.warning(f"Error downloading financial data for {code}: {e}")
             continue
 
+    save_update_metadata(metadata)
     logger.info(f"Successfully downloaded financial data for {success_count} stocks.")
     return success_count
 
@@ -389,7 +493,8 @@ def query_price_data_no_adjust(
     stock_codes,
     start_date: str = "20150101",
     end_date: str = None,
-    incremental: bool = True
+    incremental: bool = True,
+    full: bool = False,
 ) -> int:
     """
     从 AkShare 下载不复权价格数据，保存为 price_{code}_na.csv
@@ -399,6 +504,7 @@ def query_price_data_no_adjust(
         start_date: start date string (YYYYMMDD)
         end_date: end date string (YYYYMMDD), None means today
         incremental: 增量更新模式（默认True）
+        full: 全量下载（忽略已有文件，重新下载全部）
 
     Returns:
         Number of successfully downloaded stocks
@@ -412,7 +518,10 @@ def query_price_data_no_adjust(
     for code in tqdm(stock_codes, desc="Downloading non-adjusted price data"):
         na_path = os.path.join(config.PRICE_DATA_DIR, f"price_{code}_na.csv")
 
-        if incremental and os.path.exists(na_path):
+        if full and os.path.exists(na_path):
+            os.remove(na_path)
+
+        if incremental and os.path.exists(na_path) and not full:
             try:
                 existing = pd.read_csv(na_path, parse_dates=["trade_date"])
                 if not existing.empty:

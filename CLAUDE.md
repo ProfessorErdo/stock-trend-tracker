@@ -63,7 +63,7 @@ stock-trend-tracker/
 
 ```bash
 cd backtesting
-./run.sh                        # Interactive menu (8 options)
+./run.sh                        # Interactive menu (9 options)
 ```
 
 Non-interactive mode (pass any arguments to skip the menu):
@@ -72,8 +72,8 @@ Non-interactive mode (pass any arguments to skip the menu):
 ./run.sh --frequency weekly --max_positions 5 --pe_threshold 0.3
 ./run.sh --results_only           # Recompute performance from saved intermediate
 ./run.sh --incremental            # Only run new dates since last backtest
-./run.sh --update_price           # Incremental price update
-./run.sh --update_all --full      # Full re-download of all data
+./run.sh --update_price --update_only      # Incremental price update only
+./run.sh --update_all --full --update_only # Full re-download only
 ```
 
 Direct script execution (bypass run.sh):

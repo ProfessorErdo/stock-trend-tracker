@@ -84,7 +84,7 @@ if $INTERACTIVE; then
         7)
             echo ""
             echo "[Data Update Only] Choose data type:"
-            echo "  1) Financial data only"
+            echo "  1) Financial data only (due per 30-day update metadata)"
             echo "  2) Price data only (incremental — new days)"
             echo "  3) Price data only (full — re-download all)"
             echo "  4) All data (incremental — price + financial)"
@@ -105,23 +105,23 @@ if $INTERACTIVE; then
             case $DU_CHOICE in
                 1)
                     echo ">>> Updating financial data only..."
-                    CMD="$VENV_PYTHON run_backtest.py --update_financial"
+                    CMD="$VENV_PYTHON run_backtest.py --update_financial --update_only"
                     ;;
                 2)
                     echo ">>> Updating price data (incremental)..."
-                    CMD="$VENV_PYTHON run_backtest.py --update_price"
+                    CMD="$VENV_PYTHON run_backtest.py --update_price --update_only"
                     ;;
                 3)
                     echo ">>> Updating price data (full re-download)..."
-                    CMD="$VENV_PYTHON run_backtest.py --update_price --full"
+                    CMD="$VENV_PYTHON run_backtest.py --update_price --full --update_only"
                     ;;
                 4)
                     echo ">>> Updating all data (incremental)..."
-                    CMD="$VENV_PYTHON run_backtest.py --update_all"
+                    CMD="$VENV_PYTHON run_backtest.py --update_all --update_only"
                     ;;
                 5)
                     echo ">>> Updating all data (full re-download)..."
-                    CMD="$VENV_PYTHON run_backtest.py --update_all --full"
+                    CMD="$VENV_PYTHON run_backtest.py --update_all --full --update_only"
                     ;;
                 *)
                     echo "Invalid choice, exiting."

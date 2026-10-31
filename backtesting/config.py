@@ -10,6 +10,12 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_INPUT_DIR = os.path.join(BASE_DIR, "data", "input", "backtesting")
 DATA_OUTPUT_DIR = os.path.join(BASE_DIR, "data", "processed", "backtesting")
+UPDATE_METADATA_FILE = os.path.join(DATA_INPUT_DIR, "query_metadata.json")
+
+# 增量数据更新间隔（与 src/query_data_new.py 保持一致）
+FINANCIAL_UPDATE_INTERVAL_DAYS = 30
+PRICE_UPDATE_INTERVAL_DAYS = 1
+FINANCIAL_SEASON_END = f"{datetime.now().year}-12-31"
 
 # 价格数据目录
 PRICE_DATA_DIR = os.path.join(DATA_INPUT_DIR, "price")

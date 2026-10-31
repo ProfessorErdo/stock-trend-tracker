@@ -18,8 +18,8 @@ Non-interactive (any arguments bypass the menu and pass through to `run_backtest
 ./run.sh --frequency weekly --max_positions 5 --pe_threshold 0.3
 ./run.sh --results_only           # Recompute performance from saved intermediate results
 ./run.sh --incremental            # Only run new cutoff dates since last backtest
-./run.sh --update_price           # Incremental price update only
-./run.sh --update_all --full      # Full re-download of all data, then backtest
+./run.sh --update_price --update_only      # Incremental price update only
+./run.sh --update_all --full --update_only # Full re-download only, no backtest
 ```
 
 Direct execution (bypass `run.sh`):
@@ -48,7 +48,15 @@ Option 1 walks through 12 configuration steps: data update mode → rebalance fr
 
 Note: the menu's filter-indicator choices only cover PE/PB/PR combinations. Use `--filter_indicators pe,roe` on the command line for arbitrary combinations (e.g. the PE+ROE variant, see Research Notes).
 
-Option 7 offers: financial only / price incremental / price full / all incremental / all full. There is **no full financial re-download** option in the menu — use `./run.sh --update_financial --full` on the command line.
+Option 7 always exits after updating; none of its choices run a backtest. It offers:
+
+- Financial only: refresh stocks due under the 30-day update interval.
+- Price only incremental: refresh stocks due under the 1-day update interval.
+- Price only full: ignore update timestamps and re-download all price history.
+- All data incremental: apply the financial and price intervals independently.
+- All data full: ignore update timestamps and re-download both datasets.
+
+Backtesting has its own update metadata at `data/input/backtesting/query_metadata.json`. This keeps its refresh state independent from the `src/` pipeline.
 
 ## Strategy Logic
 
@@ -78,23 +86,27 @@ Option 7 offers: financial only / price incremental / price full / all increment
 | `--start_date` / `--end_date` | Backtest date range (default 2015-01-01 → latest) |
 | `--results_only` | Recompute performance from existing `intermediate.pkl` |
 | `--incremental` | Only run cutoff dates after the last saved one |
-| `--full` | Full re-download (price from 2015; also clears `intermediate.pkl`) |
-| `--update_price` | Update price data only, then backtest (incremental by default) |
-| `--update_financial` | Update financial data only, then backtest (incremental by default) |
-| `--update_all` (alias `--fetch_data`) | Update price + financial data, then backtest |
+| `--full` | Bypass update timestamps and re-download selected data; if a backtest follows, it starts fresh |
+| `--update_price` | Update price data; then backtest unless `--update_only` |
+| `--update_financial` | Update financial data; then backtest unless `--update_only` |
+| `--update_all` (alias `--fetch_data`) | Update price + financial data; then backtest unless `--update_only` |
+| `--update_only` | Exit after data update without running a backtest |
+| `--financial_season_end` | Latest report date to include (default: current year-end) |
 | `--price_start` | Price download start date (default `20150101`) |
 
-`--update_financial` and `--update_all`/`--update_price` are mutually exclusive branches. To do a **full financial re-download + incremental price update**, run two commands:
+Incremental updates use per-stock timestamps. Financial data is due after 30 days and price data after 1 day. `--full` bypasses these timestamps.
+
+`--update_financial` and `--update_all`/`--update_price` are mutually exclusive branches. To do a **full financial re-download without a backtest**, run:
 
 ```bash
-./run.sh --update_financial --full   # full financial re-download
-./run.sh --update_price              # incremental price catch-up to latest trading day
+./run.sh --update_financial --full --update_only
 ```
 
 ## Data Model
 
 - **Price data**: per-stock CSVs in `data/input/backtesting/price/` with `trade_date`, `open`, `high`, `low`, `close` (HFQ/adjusted) + `close_na` (non-adjusted).
 - **Financial data**: per-stock CSVs in `data/input/backtesting/financial/` with `report_date`, `ann_available_date`, `eps_ttm`, `bps_ttm`, `roe_ttm`.
+- **Update metadata**: `data/input/backtesting/query_metadata.json` stores each stock's last successful financial/price refresh.
 - **Valuation uses non-adjusted close** (`close_na`); **portfolio valuation uses HFQ close** (`close`).
 - **Disclosure delay**: annual reports available end of April, semi-annual end of August, Q3 end of October (configurable in `REPORT_AVAILABLE_MONTHS`).
 

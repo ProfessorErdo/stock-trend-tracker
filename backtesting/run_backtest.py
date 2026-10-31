@@ -11,7 +11,13 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config
-from data_loader import load_stock_pool, query_price_data, query_financial_data
+from data_loader import (
+    load_stock_pool,
+    query_price_data,
+    query_price_data_no_adjust,
+    merge_price_files,
+    query_financial_data,
+)
 from backtest_engine import run_backtest, save_results
 from performance import calculate_performance, save_performance_summary
 from visualizer import generate_all_visualizations
@@ -53,14 +59,63 @@ def run_performance_only(logger):
     logger.info(f"  Charts: {config.CHARTS_DIR}/")
 
 
+def update_data(args, logger):
+    """Update selected backtesting datasets without invoking the backtest."""
+    stock_codes = load_stock_pool()["code"].tolist()
+    fetch_data = args.fetch_data or args.update_all
+    full_label = " (full re-download)" if args.full else ""
+
+    if args.update_financial:
+        logger.info(f"\n>>> Updating financial data only{full_label}...")
+        query_financial_data(
+            stock_codes,
+            season_end=args.financial_season_end,
+            full=args.full,
+        )
+        return
+
+    if not fetch_data and not args.update_price:
+        return
+
+    if args.update_price:
+        logger.info(f"\n>>> Updating price data only{full_label}...")
+    else:
+        logger.info(f"\n>>> Fetching all data{full_label}...")
+
+    logger.info("\n[1] Updating adjusted price data...")
+    query_price_data(
+        stock_codes,
+        start_date=args.price_start,
+        full=args.full,
+    )
+
+    logger.info("\n[2] Updating non-adjusted price data...")
+    query_price_data_no_adjust(
+        stock_codes,
+        start_date=args.price_start,
+        full=args.full,
+    )
+
+    logger.info("\n[3] Merging price data...")
+    merge_price_files(stock_codes)
+
+    if fetch_data:
+        logger.info("\n[4] Updating financial data...")
+        query_financial_data(
+            stock_codes,
+            season_end=args.financial_season_end,
+            full=args.full,
+        )
+
+
 def main():
     parser = argparse.ArgumentParser(description="选股策略回测系统")
     parser.add_argument("--fetch_data", action="store_true",
-                        help="Download price/financial data, then backtest (same as --update_all)")
+                        help="Download price/financial data (same as --update_all)")
     parser.add_argument("--update_price", action="store_true",
-                        help="Download price data only (skip financial), then backtest")
+                        help="Download price data (skip financial)")
     parser.add_argument("--update_all", action="store_true",
-                        help="Download all data (price + financial), then backtest")
+                        help="Download all data (price + financial)")
     parser.add_argument("--start_date", type=str, default=config.START_DATE,
                         help="Backtest start date, YYYY-MM-DD")
     parser.add_argument("--end_date", type=str, default=None,
@@ -80,7 +135,12 @@ def main():
     parser.add_argument("--full", action="store_true",
                         help="Full data download (re-download everything, not incremental)")
     parser.add_argument("--update_financial", action="store_true",
-                        help="Download financial data only (skip already downloaded)")
+                        help="Download financial data only; continue to backtest unless --update_only is set")
+    parser.add_argument("--update_only", action="store_true",
+                        help="Only update the selected data and exit without running a backtest")
+    parser.add_argument("--financial_season_end", type=str,
+                        default=config.FINANCIAL_SEASON_END,
+                        help="Latest financial report date to include, YYYY-MM-DD")
     parser.add_argument("--pe_threshold", type=float, default=None,
                         help="PE quantile threshold (default: from config)")
     parser.add_argument("--pb_threshold", type=float, default=None,
@@ -92,7 +152,7 @@ def main():
     parser.add_argument("--max_positions", type=int, default=None,
                         help="Max positions in portfolio (default: from config)")
     parser.add_argument("--stop_loss", action="store_true",
-                        help="Enable stop-loss: 15% halve, 25% liquidate")
+                        help="Enable stop-loss: 15%% halve, 25%% liquidate")
     parser.add_argument("--stop_loss_half", type=float, default=None,
                         help="Half stop-loss drawdown threshold (default: 0.15)")
     parser.add_argument("--stop_loss_full", type=float, default=None,
@@ -119,14 +179,31 @@ def main():
     if args.filter_indicators is not None:
         config.FILTER_INDICATORS = [x.strip() for x in args.filter_indicators.split(",")]
 
+    data_update_requested = (
+        args.update_financial
+        or args.update_price
+        or args.update_all
+        or args.fetch_data
+    )
+    if args.update_only and not data_update_requested:
+        parser.error("--update_only requires --update_financial, --update_price, or --update_all")
+    if args.update_only and args.results_only:
+        parser.error("--update_only and --results_only cannot be used together")
+
     # Run performance only mode
     if args.results_only:
         run_performance_only(logger)
         return
 
-    # Compatibility: --fetch_data == --update_all
-    fetch_data = args.fetch_data or args.update_all
-    update_price_only = args.update_price
+    if data_update_requested:
+        config.ensure_dirs()
+        update_data(args, logger)
+        if args.update_only:
+            logger.info("\n" + "=" * 60)
+            logger.info("  Data Update Complete")
+            logger.info("=" * 60)
+            logger.info("  Backtest skipped because --update_only was specified.")
+            return
 
     freq_display = args.frequency or config.REBALANCE_FREQUENCY
     freq_labels = {
@@ -178,31 +255,6 @@ def main():
 
     # Ensure output directories exist
     config.ensure_dirs()
-
-    # Handle financial-only data update
-    if args.update_financial:
-        logger.info("\n>>> Phase 1: Updating financial data only...")
-        stock_df = load_stock_pool()
-        stock_codes = stock_df['code'].tolist()
-        query_financial_data(stock_codes, full=args.full)
-
-    # Fetch data if needed
-    elif fetch_data or update_price_only:
-        stock_df = load_stock_pool()
-        stock_codes = stock_df['code'].tolist()
-
-        full_label = " (full re-download)" if args.full else ""
-        if update_price_only:
-            logger.info(f"\n>>> Phase 1: Updating price data only{full_label}...")
-            logger.info("\n[1a] Updating price data...")
-            query_price_data(stock_codes, start_date=args.price_start, full=args.full)
-        else:
-            logger.info(f"\n>>> Phase 1: Fetching data{full_label}")
-            logger.info("\n[1a] Downloading price data...")
-            query_price_data(stock_codes, start_date=args.price_start, full=args.full)
-
-            logger.info("\n[1b] Downloading financial data...")
-            query_financial_data(stock_codes, full=args.full)
 
     # Run backtest
     logger.info("\n>>> Phase 2: Running backtest")
@@ -267,7 +319,8 @@ def main():
     logger.info(f"  Performance only:     ./run.sh --results_only")
     logger.info(f"  Update price + run:   ./run.sh --update_price")
     logger.info(f"  Full re-download:     ./run.sh --update_all --full")
-    logger.info(f"  Financial only:       ./run.sh --update_financial")
+    logger.info(f"  Update all only:      ./run.sh --update_all --update_only")
+    logger.info(f"  Financial only:       ./run.sh --update_financial --update_only")
     logger.info(f"  Custom thresholds:    ./run.sh --pe_threshold 0.3 --pb_threshold 0.3")
     logger.info(f"  Fewer positions:      ./run.sh --max_positions 5")
     logger.info(f"  Annual, PB rank:      ./run.sh --frequency annual --ranking pb")
