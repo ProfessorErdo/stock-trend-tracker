@@ -115,14 +115,37 @@ STOCK_POOLS = [
 ]
 
 # 现有股票池文件映射（使用data/input/下的现有文件）
+# 每个池子对应多个文件：历史各期清单 + 最新一期，回测时取并集，
+# 这样被调出指数的股票仍保留在池子里，避免幸存者偏差。
 EXISTING_STOCK_POOL_FILES = {
-    "hs300": os.path.join(BASE_DIR, "data", "input", "hs300_list_20261030.csv"),
-    "zz500": os.path.join(BASE_DIR, "data", "input", "zz500_list_20261030.csv"),
-    "hongli": os.path.join(BASE_DIR, "data", "input", "hongli_list_20260930.csv"),
-    "honglidibo": os.path.join(BASE_DIR, "data", "input", "honglidibo_list_20260930.csv"),
-    "gz100": os.path.join(BASE_DIR, "data", "input", "gz100_list_20261030.csv"),
-    "gzfc": os.path.join(BASE_DIR, "data", "input", "gzfc_list_20261030.csv"),
-    "zzfc": os.path.join(BASE_DIR, "data", "input", "zzfc_list_20260930.csv"),
+    "hs300": [
+        os.path.join(BASE_DIR, "data", "input", "hs300_list_20251213.csv"),
+        os.path.join(BASE_DIR, "data", "input", "hs300_list_20261030.csv"),
+    ],
+    "zz500": [
+        os.path.join(BASE_DIR, "data", "input", "zz500_list_20251216.csv"),
+        os.path.join(BASE_DIR, "data", "input", "zz500_list_20261030.csv"),
+    ],
+    "hongli": [
+        os.path.join(BASE_DIR, "data", "input", "hongli_list_20251213.csv"),
+        os.path.join(BASE_DIR, "data", "input", "hongli_list_20260930.csv"),
+    ],
+    "honglidibo": [
+        os.path.join(BASE_DIR, "data", "input", "honglidibo_list_20251213.csv"),
+        os.path.join(BASE_DIR, "data", "input", "honglidibo_list_20260930.csv"),
+    ],
+    "gz100": [
+        os.path.join(BASE_DIR, "data", "input", "gz100_list_20260227.csv"),
+        os.path.join(BASE_DIR, "data", "input", "gz100_list_20261030.csv"),
+    ],
+    "gzfc": [
+        os.path.join(BASE_DIR, "data", "input", "gzfc_list_20260227.csv"),
+        os.path.join(BASE_DIR, "data", "input", "gzfc_list_20261030.csv"),
+    ],
+    "zzfc": [
+        os.path.join(BASE_DIR, "data", "input", "zzfc_list_20260316.csv"),
+        os.path.join(BASE_DIR, "data", "input", "zzfc_list_20260930.csv"),
+    ],
 }
 
 

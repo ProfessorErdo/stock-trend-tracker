@@ -13,15 +13,18 @@ import config
 def load_stock_names() -> dict:
     """从所有 stock pool CSV 中合并 code -> name 映射."""
     name_map = {}
-    for pool_name, file_path in config.EXISTING_STOCK_POOL_FILES.items():
-        if not os.path.exists(file_path):
-            continue
+    for pool_name, file_paths in config.EXISTING_STOCK_POOL_FILES.items():
+        if isinstance(file_paths, (str, os.PathLike)):
+            file_paths = [file_paths]
         sep = "\t" if pool_name == "zz500" else ","
-        df = pd.read_csv(file_path, sep=sep)
-        if "code" in df.columns and "name" in df.columns:
-            for _, row in df.iterrows():
-                code = str(row["code"]).strip().zfill(6)
-                name_map[code] = row["name"]
+        for file_path in file_paths:
+            if not os.path.exists(file_path):
+                continue
+            df = pd.read_csv(file_path, sep=sep)
+            if "code" in df.columns and "name" in df.columns:
+                for _, row in df.iterrows():
+                    code = str(row["code"]).strip().zfill(6)
+                    name_map[code] = row["name"]
     return name_map
 
 

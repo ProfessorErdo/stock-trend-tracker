@@ -346,15 +346,25 @@ def write_csv(df: pd.DataFrame, pool: str, data_date: str, out_dir: str) -> str:
 
 
 def update_config(new_files: dict[str, str]) -> None:
+    """把新文件追加进对应池子的文件列表，保留历史各期（回测取并集），按日期排序。"""
     with open(CONFIG_PATH, "r", encoding="utf-8") as fh:
         text = fh.read()
+
     for pool, path in new_files.items():
-        rel = os.path.relpath(path, ROOT)
-        parts = ", ".join(f'"{p}"' for p in rel.split(os.sep))
-        pattern = rf'("{pool}":\s*os\.path\.join\()[^)]*(\))'
-        text, n = re.subn(pattern, rf"\1BASE_DIR, {parts}\2", text)
-        if n == 0:
-            raise RuntimeError(f"config.py 中找不到 {pool} 的路径配置")
+        new_name = os.path.basename(path)
+        block = re.search(rf'"{pool}":\s*\[(.*?)\n    \]', text, re.S)
+        if block is None:
+            raise RuntimeError(f"config.py 中找不到 {pool} 的文件列表")
+
+        names = set(re.findall(r'"([^"\\/]+_list_\d{8}\.csv)"', block.group(1)))
+        names.add(new_name)
+        names = sorted(names, key=lambda n: re.search(r"_(\d{8})\.csv$", n).group(1))
+
+        body = "\n".join(
+            f'        os.path.join(BASE_DIR, "data", "input", "{name}"),' for name in names
+        )
+        text = text[: block.start()] + f'"{pool}": [\n{body}\n    ]' + text[block.end() :]
+
     with open(CONFIG_PATH, "w", encoding="utf-8") as fh:
         fh.write(text)
 

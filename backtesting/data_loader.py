@@ -98,36 +98,48 @@ def format_symbol(code: str) -> str:
 
 def load_stock_pool() -> pd.DataFrame:
     """
-    从 config.EXISTING_STOCK_POOL_FILES 加载并合并所有股票池，去重
+    从 config.EXISTING_STOCK_POOL_FILES 加载并合并所有股票池，去重。
+
+    每个池子可以配置一个文件列表（历史各期 + 最新一期），这里逐文件读取后取并集，
+    使被调出指数的股票仍留在池子里，避免幸存者偏差。
 
     Returns:
         DataFrame with ['code'] column, deduplicated
     """
     all_codes = set()
+    file_count = 0
 
-    for pool_name, file_path in config.EXISTING_STOCK_POOL_FILES.items():
-        if not os.path.exists(file_path):
-            logger.warning(f"Warning: stock pool file not found: {file_path}")
-            continue
+    for pool_name, file_paths in config.EXISTING_STOCK_POOL_FILES.items():
+        # 兼容旧的单文件写法（字符串）
+        if isinstance(file_paths, (str, os.PathLike)):
+            file_paths = [file_paths]
 
         # zz500 文件是 tab 分隔，其余是逗号分隔
-        if pool_name == "zz500":
-            df = pd.read_csv(file_path, sep="\t")
-        else:
-            df = pd.read_csv(file_path, sep=",")
+        sep = "\t" if pool_name == "zz500" else ","
 
-        if "code" in df.columns:
-            codes = df["code"].astype(str).str.strip().str.zfill(6)
-            all_codes.update(codes.tolist())
-        else:
-            logger.warning(f"Warning: 'code' column not found in {file_path}")
+        for file_path in file_paths:
+            if not os.path.exists(file_path):
+                logger.warning(f"Warning: stock pool file not found: {file_path}")
+                continue
+            file_count += 1
+
+            df = pd.read_csv(file_path, sep=sep)
+
+            if "code" in df.columns:
+                codes = df["code"].astype(str).str.strip().str.zfill(6)
+                all_codes.update(codes.tolist())
+            else:
+                logger.warning(f"Warning: 'code' column not found in {file_path}")
 
     # Filter out stocks with no data on AkShare API
     SKIP_STOCKS = {"689009"}
     all_codes = {c for c in all_codes if c not in SKIP_STOCKS}
 
     result = pd.DataFrame({"code": sorted(all_codes)})
-    logger.info(f"Loaded {len(result)} unique stocks from {len(config.EXISTING_STOCK_POOL_FILES)} pools.")
+    logger.info(
+        f"Loaded {len(result)} unique stocks from "
+        f"{len(config.EXISTING_STOCK_POOL_FILES)} pools ({file_count} files)."
+    )
     return result
 
 
