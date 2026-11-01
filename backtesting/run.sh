@@ -269,9 +269,9 @@ if $INTERACTIVE; then
 
     echo ""
 
-    # --- [7/11] Winsorization ---
-    echo "[7/11] Extreme value handling (winsorization):"
-    echo "  1) Enable 1%/99% clipping (default)"
+    # --- [7/11] Threshold tail trimming ---
+    echo "[7/11] Quantile threshold tail trimming:"
+    echo "  1) Trim adverse 1% tail before quantiles (default)"
     echo "  2) Disable (use raw quantiles)"
     read -rp "Choose [1-2] (default 1): " WIN_CHOICE
     WIN_CHOICE=${WIN_CHOICE:-1}
@@ -407,9 +407,9 @@ if $INTERACTIVE; then
     echo "  ROE threshold: > ${ROE_INPUT}% quantile"
     echo "  Max positions: $MAX_POS"
     if [ -n "$WIN_FLAG" ]; then
-        echo "  Winsorization: Off (raw quantiles)"
+        echo "  Threshold trimming: Off (raw quantiles)"
     else
-        echo "  Winsorization: On (1%/99% clipping)"
+        echo "  Threshold trimming: On (PE/PB/PR low 1%, ROE high 1%)"
     fi
     if [ -n "$SL_FLAG" ]; then
         echo "  Stop-loss: $SL_FLAG"

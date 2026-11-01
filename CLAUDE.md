@@ -152,7 +152,8 @@ run_backtest.py
 | PR_THRESHOLD | 0.25 |
 | ROE_THRESHOLD | 0.75 |
 | MAX_POSITIONS | 5 |
-| WINSORIZE_ENABLED | True (1%/99% clipping) |
+| WINSORIZE_ENABLED | True (compatibility flag for threshold-tail trimming) |
+| THRESHOLD_TRIM_RATIO | 0.01 (PE/PB/PR trim low tail; ROE trims high tail) |
 | REBALANCE_FREQUENCY | "weekly" |
 | INITIAL_CAPITAL | 1,000,000 RMB |
 | COMMISSION_RATE | 0.0003 |

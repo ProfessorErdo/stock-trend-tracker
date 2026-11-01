@@ -44,7 +44,7 @@ Select backtest type:
   9) Report timing comparison — annual vs mid-year vs Q3 (1×/year each, PB only)
 ```
 
-Option 1 walks through 12 configuration steps: data update mode → rebalance frequency → ranking method → Step 2 filter indicators → 4 quantile thresholds → max positions → winsorization → stop-loss → backtest mode → date range → summary → confirm.
+Option 1 walks through 12 configuration steps: data update mode → rebalance frequency → ranking method → Step 2 filter indicators → 4 quantile thresholds → max positions → threshold-tail trimming → stop-loss → backtest mode → date range → summary → confirm.
 
 Note: the menu's filter-indicator choices only cover PE/PB/PR combinations. On the command line `--filter_indicators` also only accepts `pe`/`pb`/`pr` — ROE is always applied as Step 3, so the "PE+ROE" variant from the Research Notes is simply `--filter_indicators pe`.
 
@@ -81,7 +81,7 @@ Backtesting has its own update metadata at `data/input/backtesting/query_metadat
 | `--pe_threshold` / `--pb_threshold` / `--pr_threshold` | Quantile cutoff 0–1 (default 0.25) |
 | `--roe_threshold` | Quantile cutoff 0–1 (default 0.75) |
 | `--max_positions` | Max stocks per rebalance (default 5) |
-| `--no_winsorize` | Disable 1%/99% extreme-value clipping |
+| `--no_winsorize` | Disable one-sided adverse-tail trimming when calculating quantile thresholds |
 | `--stop_loss` | Enable drawdown stop-loss (default 15% halve / 25% liquidate) |
 | `--stop_loss_half` / `--stop_loss_full` | Custom stop-loss drawdowns |
 | `--start_date` / `--end_date` | Backtest date range (default 2015-01-01 → latest) |
@@ -96,6 +96,12 @@ Backtesting has its own update metadata at `data/input/backtesting/query_metadat
 | `--price_start` | Price download start date (default `20150101`) |
 
 Incremental updates use per-stock timestamps. Financial data is due after 30 days and price data after 1 day. `--full` bypasses these timestamps.
+
+When threshold trimming is enabled, each indicator is handled independently on the full candidate pool:
+
+- PE/PB/PR: discard the lowest 1% only while calculating each 25th-percentile cutoff.
+- ROE: discard the highest 1% only while calculating the 75th-percentile cutoff.
+- No stocks are removed; every stock is still tested against the resulting cutoffs.
 
 `--update_financial` and `--update_all`/`--update_price` are mutually exclusive branches. To do a **full financial re-download without a backtest**, run:
 
@@ -127,7 +133,8 @@ Incremental updates use per-stock timestamps. Financial data is due after 30 day
 | `FILTER_INDICATORS` | `["pe", "pb", "pr"]` | Step 2 AND filter |
 | `PE/PB/PR_THRESHOLD` | 0.25 | Keep lowest 25% |
 | `ROE_THRESHOLD` | 0.75 | Keep highest 25% |
-| `WINSORIZE_ENABLED` | True | 1%/99% clipping |
+| `WINSORIZE_ENABLED` | True | Compatibility flag for threshold-tail trimming |
+| `THRESHOLD_TRIM_RATIO` | 0.01 | One-sided trim ratio used per indicator |
 | `MAX_POSITIONS` | 5 | Max holdings |
 | `NEW_STOCK_EXCLUDE_DAYS` | 120 | Min trading days since listing |
 | `REBALANCE_FREQUENCY` | `"weekly"` | |

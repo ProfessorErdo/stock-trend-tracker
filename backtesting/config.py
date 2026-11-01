@@ -48,10 +48,13 @@ PB_THRESHOLD = 0.25          # PB分位数阈值（保留最低25%）
 PR_THRESHOLD = 0.25          # PR分位数阈值（保留最低25%）
 ROE_THRESHOLD = 0.75         # ROE分位数阈值（保留最高75%分位以上）
 
-# 极值处理
-WINSORIZE_ENABLED = True     # 是否启用1%/99%截尾（True=启用，False=跳过）
-WINSORIZE_LOWER = 0.01       # 极值截尾下限（1%）
-WINSORIZE_UPPER = 0.99       # 极值截尾上限（99%）
+# 分位阈值处理
+# 启用后分别裁掉各指标的不利尾部，再计算分位阈值：
+# PE/PB/PR 去掉最低 1%，ROE 去掉最高 1%；股票本身不会被删除。
+WINSORIZE_ENABLED = True     # 兼容旧参数名；实际控制分位阈值裁尾
+THRESHOLD_TRIM_RATIO = 0.01  # 每条指标阈值计算的单边裁尾比例
+WINSORIZE_LOWER = 0.01       # 保留给其他分析脚本的标准 winsorization
+WINSORIZE_UPPER = 0.99       # 保留给其他分析脚本的标准 winsorization
 
 # 新股排除
 NEW_STOCK_EXCLUDE_DAYS = 120  # 排除上市不足120天的股票

@@ -128,6 +128,32 @@ def winsorize(series: pd.Series, lower: float = 0.01, upper: float = 0.99) -> pd
     return series.clip(lower=lower_val, upper=upper_val)
 
 
+def adverse_tail_quantile(
+    series: pd.Series,
+    quantile: float,
+    trim_ratio: float = 0.01,
+    drop_tail: str = "low",
+) -> float:
+    """
+    先裁掉不利尾部，再计算分位阈值。
+
+    PE/PB/PR 越低越好，因此裁掉最低端；ROE 越高越好，因此裁掉最高端。
+    裁尾只用于计算阈值，冻结后的阈值仍会作用到完整股票池。
+    """
+    values = series.dropna().sort_values()
+    trim_count = min(int(len(values) * trim_ratio), max(len(values) - 1, 0))
+
+    if trim_count > 0:
+        if drop_tail == "low":
+            values = values.iloc[trim_count:]
+        elif drop_tail == "high":
+            values = values.iloc[:len(values) - trim_count]
+        else:
+            raise ValueError("drop_tail must be 'low' or 'high'")
+
+    return float(values.quantile(quantile))
+
+
 def is_new_stock(
     stock_code: str,
     price_df: pd.DataFrame,
@@ -240,20 +266,17 @@ def select_stocks(
             "（ROE 是第 3 步，始终启用）"
         )
 
-    # Winsorize ALL three indicators (needed for quantile stability)
-    winsorize_cols = []
-    if config.WINSORIZE_ENABLED:
-        for ind in ["pe", "pb", "pr"]:
-            wcol = f"{ind}_winsorized"
-            val_df[wcol] = winsorize(val_df[indicator_col_map[ind]], config.WINSORIZE_LOWER, config.WINSORIZE_UPPER)
-            winsorize_cols.append(wcol)
-
     # Build filter mask using only active indicators
     mask = None
     for ind in filter_indicators:
         col = indicator_col_map[ind]
         if config.WINSORIZE_ENABLED:
-            cut = val_df[f"{ind}_winsorized"].quantile(threshold_map[ind])
+            cut = adverse_tail_quantile(
+                val_df[col],
+                threshold_map[ind],
+                config.THRESHOLD_TRIM_RATIO,
+                drop_tail="low",
+            )
         else:
             cut = val_df[col].quantile(threshold_map[ind])
         ind_mask = val_df[col] <= cut
@@ -262,14 +285,22 @@ def select_stocks(
     step2_df = val_df[mask] if mask is not None else val_df.copy()
 
     if step2_df.empty:
-        return [], val_df.drop(columns=winsorize_cols, errors="ignore")
+        return [], val_df
 
     # Step 3 - ROE过滤: ROE阈值在全部候选股票上计算
-    roe_cut = val_df["roe_ttm"].quantile(config.ROE_THRESHOLD)
+    if config.WINSORIZE_ENABLED:
+        roe_cut = adverse_tail_quantile(
+            val_df["roe_ttm"],
+            config.ROE_THRESHOLD,
+            config.THRESHOLD_TRIM_RATIO,
+            drop_tail="high",
+        )
+    else:
+        roe_cut = val_df["roe_ttm"].quantile(config.ROE_THRESHOLD)
     step3_df = step2_df[step2_df["roe_ttm"] >= roe_cut]
 
     if step3_df.empty:
-        return [], val_df.drop(columns=winsorize_cols, errors="ignore")
+        return [], val_df
 
     # Step 4 - 新股排除
     selected = []
@@ -283,10 +314,7 @@ def select_stocks(
         if not is_new_stock(code, p_df, trade_date, config.NEW_STOCK_EXCLUDE_DAYS):
             selected.append(code)
 
-    # 清理辅助列
-    clean_df = val_df.drop(columns=winsorize_cols, errors="ignore")
-
-    return selected, clean_df
+    return selected, val_df
 
 
 def rank_and_limit(selected: list, val_df: pd.DataFrame, max_positions: int = 10,

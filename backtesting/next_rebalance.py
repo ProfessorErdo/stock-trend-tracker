@@ -24,7 +24,7 @@ from log_util import setup_logger
 from data_loader import load_stock_pool, load_price_data
 from stock_selector import (
     select_stocks, get_latest_financial_data, calculate_valuation,
-    winsorize, is_new_stock, rank_and_limit,
+    adverse_tail_quantile, is_new_stock, rank_and_limit,
 )
 from trading_calendar import (
     build_trading_calendar,
@@ -188,19 +188,17 @@ def run_selection(
     logger.info(f"Step 1: {len(val_df)} candidates with valid valuations")
 
     # Step 2 - Valuation filter (dynamic indicators)
-    winsorize_cols = []
-    if winsorize_enabled:
-        for ind in ["pe", "pb", "pr"]:
-            wcol = f"{ind}_w"
-            val_df[wcol] = winsorize(val_df[indicator_col_map[ind]], config.WINSORIZE_LOWER, config.WINSORIZE_UPPER)
-            winsorize_cols.append(wcol)
-
     mask = None
     filter_desc_parts = []
     for ind in filter_indicators:
         col = indicator_col_map[ind]
         if winsorize_enabled:
-            cut = val_df[f"{ind}_w"].quantile(threshold_map[ind])
+            cut = adverse_tail_quantile(
+                val_df[col],
+                threshold_map[ind],
+                config.THRESHOLD_TRIM_RATIO,
+                drop_tail="low",
+            )
         else:
             cut = val_df[col].quantile(threshold_map[ind])
         ind_mask = val_df[col] <= cut
@@ -214,7 +212,15 @@ def run_selection(
         return []
 
     # Step 3 - ROE filter
-    roe_cut = val_df["roe_ttm"].quantile(roe_threshold)
+    if winsorize_enabled:
+        roe_cut = adverse_tail_quantile(
+            val_df["roe_ttm"],
+            roe_threshold,
+            config.THRESHOLD_TRIM_RATIO,
+            drop_tail="high",
+        )
+    else:
+        roe_cut = val_df["roe_ttm"].quantile(roe_threshold)
     step3 = step2[step2["roe_ttm"] >= roe_cut]
     logger.info(f"Step 3: {len(step3)} after ROE filter (ROE>={roe_cut:.1%})")
 
@@ -428,13 +434,16 @@ def main():
     logger.info(f"  Selected: {filter_label}")
     logger.info("")
 
-    # --- 6. Winsorization ---
-    win_input = input(f"[6/7] Winsorization 1%/99%? [Y/n] (default {'Y' if config.WINSORIZE_ENABLED else 'n'}): ").strip()
+    # --- 6. Quantile threshold tail trimming ---
+    win_input = input(
+        f"[6/7] Trim adverse 1% tail before quantiles? [Y/n] "
+        f"(default {'Y' if config.WINSORIZE_ENABLED else 'n'}): "
+    ).strip()
     if win_input:
         winsorize_enabled = win_input.lower() != "n"
     else:
         winsorize_enabled = config.WINSORIZE_ENABLED
-    logger.info(f"  Winsorization: {'On' if winsorize_enabled else 'Off'}")
+    logger.info(f"  Threshold trimming: {'On' if winsorize_enabled else 'Off'}")
     logger.info("")
 
     # --- 6. Capital ---
@@ -458,7 +467,7 @@ def main():
     logger.info(f"  ROE:             >{roe_threshold}")
     logger.info(f"  Max positions:   {max_positions}")
     logger.info(f"  Ranking:         {rank_labels[ranking_method]}")
-    logger.info(f"  Winsorization:   {'On' if winsorize_enabled else 'Off'}")
+    logger.info(f"  Threshold trim:  {'On' if winsorize_enabled else 'Off'}")
     logger.info(f"  Total capital:   {total_capital:,.0f} RMB")
     logger.info("=" * 60)
     logger.info("")

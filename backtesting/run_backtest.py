@@ -127,7 +127,7 @@ def main():
     parser.add_argument("--ranking", type=str, default="pb",
                         help="Ranking method when filtered > 10: pe/pb/pr/roe/pure_pb (default: pb)")
     parser.add_argument("--no_winsorize", action="store_true",
-                        help="Disable 1%%/99%% winsorization (use raw quantiles)")
+                        help="Disable one-sided 1%% threshold-tail trimming (use raw quantiles)")
     parser.add_argument("--results_only", action="store_true",
                         help="Skip backtest, compute performance from saved intermediate results")
     parser.add_argument("--incremental", action="store_true",
@@ -257,7 +257,10 @@ def main():
     logger.info(f"  Valuation thresholds: PE<={config.PE_THRESHOLD}, PB<={config.PB_THRESHOLD}, PR<={config.PR_THRESHOLD}")
     logger.info(f"  ROE threshold: >{config.ROE_THRESHOLD} quantile")
     logger.info(f"  Max positions: {config.MAX_POSITIONS}")
-    logger.info(f"  Winsorization: {'Off' if not config.WINSORIZE_ENABLED else 'On (1%/99%)'}")
+    logger.info(
+        f"  Threshold trimming: "
+        f"{'Off' if not config.WINSORIZE_ENABLED else 'On (adverse 1% tail)'}"
+    )
     if config.STOP_LOSS_ENABLED:
         half_pct = f"{config.STOP_LOSS_HALF_DRAWDOWN:.0%}"
         full_pct = f"{config.STOP_LOSS_FULL_DRAWDOWN:.0%}"
