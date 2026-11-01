@@ -233,6 +233,13 @@ def select_stocks(
     indicator_col_map = {"pe": "pe_ttm", "pb": "pb_ttm", "pr": "pr_ttm"}
     threshold_map = {"pe": config.PE_THRESHOLD, "pb": config.PB_THRESHOLD, "pr": config.PR_THRESHOLD}
 
+    unknown = [ind for ind in filter_indicators if ind not in indicator_col_map]
+    if unknown:
+        raise ValueError(
+            f"不支持的第 2 步过滤指标 {unknown}；只允许 pe/pb/pr"
+            "（ROE 是第 3 步，始终启用）"
+        )
+
     # Winsorize ALL three indicators (needed for quantile stability)
     winsorize_cols = []
     if config.WINSORIZE_ENABLED:

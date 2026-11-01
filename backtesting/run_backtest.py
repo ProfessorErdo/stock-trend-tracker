@@ -177,7 +177,14 @@ def main():
     if args.max_positions is not None:
         config.MAX_POSITIONS = args.max_positions
     if args.filter_indicators is not None:
-        config.FILTER_INDICATORS = [x.strip() for x in args.filter_indicators.split(",")]
+        indicators = [x.strip() for x in args.filter_indicators.split(",") if x.strip()]
+        unknown = [x for x in indicators if x not in {"pe", "pb", "pr"}]
+        if unknown or not indicators:
+            parser.error(
+                "--filter_indicators 只接受 pe/pb/pr 的组合（ROE 固定为第 3 步，"
+                f"不需要也不允许写进 Step 2）；收到: {args.filter_indicators!r}"
+            )
+        config.FILTER_INDICATORS = indicators
 
     data_update_requested = (
         args.update_financial
@@ -327,7 +334,7 @@ def main():
     logger.info(f"  Annual+Q3, PE rank:   ./run.sh --frequency annual_q3 --ranking pe")
     logger.info(f"  Pure PB ranking:      ./run.sh --ranking pure_pb")
     logger.info(f"  PB-only filter:       ./run.sh --filter_indicators pb --ranking pb")
-    logger.info(f"  PE+ROE filter:        ./run.sh --filter_indicators pe,roe --ranking pb")
+    logger.info(f"  PE+ROE filter:        ./run.sh --filter_indicators pe --ranking pb")
     logger.info(f"  Comparison scripts:")
     logger.info(f"    python compare_ranking_methods.py        (4 rankings, quarterly)")
     logger.info(f"    python compare_rebalance_frequency.py    (annual vs semi-annual, PB)")

@@ -46,7 +46,7 @@ Select backtest type:
 
 Option 1 walks through 12 configuration steps: data update mode → rebalance frequency → ranking method → Step 2 filter indicators → 4 quantile thresholds → max positions → winsorization → stop-loss → backtest mode → date range → summary → confirm.
 
-Note: the menu's filter-indicator choices only cover PE/PB/PR combinations. Use `--filter_indicators pe,roe` on the command line for arbitrary combinations (e.g. the PE+ROE variant, see Research Notes).
+Note: the menu's filter-indicator choices only cover PE/PB/PR combinations. On the command line `--filter_indicators` also only accepts `pe`/`pb`/`pr` — ROE is always applied as Step 3, so the "PE+ROE" variant from the Research Notes is simply `--filter_indicators pe`.
 
 Option 7 always exits after updating; none of its choices run a backtest. It offers:
 
@@ -76,7 +76,7 @@ Backtesting has its own update metadata at `data/input/backtesting/query_metadat
 |------|-------------|
 | `--frequency` | `weekly` \| `monthly` \| `quarterly` \| `annual` \| `annual_q3` \| `mid_year` \| `q3` |
 | `--ranking` | `pb` (default) \| `pe` \| `pr` \| `roe` \| `pure_pb` |
-| `--filter_indicators` | Comma-separated Step 2 indicators, e.g. `pe,pb`, `pe,roe` (default `pe,pb,pr`) |
+| `--filter_indicators` | Comma-separated Step 2 indicators among `pe`/`pb`/`pr`, e.g. `pe,pb`, `pb` (default `pe,pb,pr`). ROE is always Step 3 |
 | `--pe_threshold` / `--pb_threshold` / `--pr_threshold` | Quantile cutoff 0–1 (default 0.25) |
 | `--roe_threshold` | Quantile cutoff 0–1 (default 0.75) |
 | `--max_positions` | Max stocks per rebalance (default 5) |
@@ -153,7 +153,7 @@ Limit up/down rules are also in `config.py` (`LIMIT_RATIO_RULES`): 10% main boar
 
 `next_rebalance.py` finds the latest cutoff date, interactively configures frequency / thresholds / max positions / ranking / filter indicators, runs the 4-step selection, and outputs a buy plan (code, name, price, shares, amount) optionally saved as CSV. It is **pure local computation** — it never downloads data. Run an update first (`./run.sh --update_price`) if the local data is stale.
 
-Note: its filter-indicator menu only offers PE/PB/PR combinations (no `pe,roe`).
+Note: its filter-indicator menu only offers PE/PB/PR combinations (ROE is not a Step 2 option).
 
 ## Analysis & Experiment Scripts
 
@@ -185,7 +185,7 @@ Note: its filter-indicator menu only offers PE/PB/PR combinations (no `pe,roe`).
 Findings from the comparison experiments are documented in `../doc/backtesting-issues.md`. Summary:
 
 - The original strategy (PE+PB+PR+ROE hard thresholds + PB rank, annual, N=5) achieves ~11.37% annualized (2015–2026) with a −40% max drawdown.
-- The only variant that beat it: **PE+ROE filter + PB rank** (~11.90%), run as `--filter_indicators pe,roe --ranking pb --frequency annual --no_winsorize`.
+- The only variant that beat it: **PE+ROE filter + PB rank** (~11.90%), run as `--filter_indicators pe --ranking pb --frequency annual` (Step 2 = PE quantile, Step 3 = ROE quantile, rank by PB).
 - Simplification: PB+ROE alone reproduces the original results exactly; PR and PE are redundant.
 - Stop-loss, score-based ranking, momentum and PE-trend variants all underperformed in annual-rebalance mode.
 - The 11.37% figure is likely inflated by survivorship bias; expected true range ~8–10%.
