@@ -128,6 +128,8 @@ def main():
                         help="Ranking method when filtered > 10: pe/pb/pr/roe/pure_pb (default: pb)")
     parser.add_argument("--no_winsorize", action="store_true",
                         help="Disable one-sided 1%% threshold-tail trimming (use raw quantiles)")
+    parser.add_argument("--threshold_trim_ratio", type=float, default=None,
+                        help="One-sided adverse-tail trim ratio before quantiles, e.g. 0.02-0.05")
     parser.add_argument("--results_only", action="store_true",
                         help="Skip backtest, compute performance from saved intermediate results")
     parser.add_argument("--incremental", action="store_true",
@@ -189,6 +191,10 @@ def main():
                 f"不需要也不允许写进 Step 2）；收到: {args.filter_indicators!r}"
             )
         config.FILTER_INDICATORS = indicators
+    if args.threshold_trim_ratio is not None:
+        if not 0 <= args.threshold_trim_ratio < 0.5:
+            parser.error("--threshold_trim_ratio must be in [0, 0.5)")
+        config.THRESHOLD_TRIM_RATIO = args.threshold_trim_ratio
 
     data_update_requested = (
         args.update_financial
@@ -259,7 +265,7 @@ def main():
     logger.info(f"  Max positions: {config.MAX_POSITIONS}")
     logger.info(
         f"  Threshold trimming: "
-        f"{'Off' if not config.WINSORIZE_ENABLED else 'On (adverse 1% tail)'}"
+        f"{'Off' if not config.WINSORIZE_ENABLED else f'On (adverse {config.THRESHOLD_TRIM_RATIO:.1%} tail)'}"
     )
     if config.STOP_LOSS_ENABLED:
         half_pct = f"{config.STOP_LOSS_HALF_DRAWDOWN:.0%}"

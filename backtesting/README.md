@@ -82,6 +82,7 @@ Backtesting has its own update metadata at `data/input/backtesting/query_metadat
 | `--roe_threshold` | Quantile cutoff 0–1 (default 0.75) |
 | `--max_positions` | Max stocks per rebalance (default 5) |
 | `--no_winsorize` | Disable one-sided adverse-tail trimming when calculating quantile thresholds |
+| `--threshold_trim_ratio` | Adverse-tail trim ratio per indicator, e.g. `0.02` for 2% |
 | `--stop_loss` | Enable drawdown stop-loss (default 15% halve / 25% liquidate) |
 | `--stop_loss_half` / `--stop_loss_full` | Custom stop-loss drawdowns |
 | `--start_date` / `--end_date` | Backtest date range (default 2015-01-01 → latest) |
