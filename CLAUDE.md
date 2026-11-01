@@ -104,7 +104,7 @@ python query_top_stocks.py --indicator roe_ttm --top_n 20
 
 The backtest implements a **low-valuation + high-ROE** stock selection strategy:
 
-1. **Stock pool**: ~930 stocks from 7 indices (HS300, ZZ500, Hongli, HongliDibo, GZ100, GZFC, ZZFC)
+1. **Stock pool**: ~950 stocks from 7 indices (HS300, ZZ500, Hongli, HongliDibo, GZ100, GZFC, ZZFC)
 2. **4-step filter** (each cutoff date):
    - Step 1: Basic filter — exclude suspended stocks, missing financial data, negative valuations
    - Step 2: Valuation filter — PE/PB/PR all below 25th percentile (AND logic)
@@ -118,7 +118,7 @@ The backtest implements a **low-valuation + high-ROE** stock selection strategy:
 
 ```
 run_backtest.py
-  → load_stock_pool()              # 7 CSV files → ~930 codes
+  → load_stock_pool()              # 7 CSV files → ~950 codes
   → build_trading_calendar()       # From price data, filtered by date range
   → get_*_cutoff_dates()           # (cutoff, rebalance) pairs per frequency
   → pre-load all price data

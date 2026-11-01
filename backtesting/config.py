@@ -109,20 +109,20 @@ STOCK_POOLS = [
     "zz500",       # 中证500
     "hongli",      # 红利
     "honglidibo",  # 红利低波
-    "gz100",       # 国证2000（项目现有命名）
+    "gz100",       # 国证价值100（980081，历史命名保留）
     "gzfc",        # 国证自由现金流
     "zzfc",        # 中证自由现金流
 ]
 
 # 现有股票池文件映射（使用data/input/下的现有文件）
 EXISTING_STOCK_POOL_FILES = {
-    "hs300": os.path.join(BASE_DIR, "data", "input", "hs300_list_20251213.csv"),
-    "zz500": os.path.join(BASE_DIR, "data", "input", "zz500_list_20251216.csv"),
-    "hongli": os.path.join(BASE_DIR, "data", "input", "hongli_list_20251213.csv"),
-    "honglidibo": os.path.join(BASE_DIR, "data", "input", "honglidibo_list_20251213.csv"),
-    "gz100": os.path.join(BASE_DIR, "data", "input", "gz100_list_20260227.csv"),
-    "gzfc": os.path.join(BASE_DIR, "data", "input", "gzfc_list_20260227.csv"),
-    "zzfc": os.path.join(BASE_DIR, "data", "input", "zzfc_list_20260316.csv"),
+    "hs300": os.path.join(BASE_DIR, "data", "input", "hs300_list_20261030.csv"),
+    "zz500": os.path.join(BASE_DIR, "data", "input", "zz500_list_20261030.csv"),
+    "hongli": os.path.join(BASE_DIR, "data", "input", "hongli_list_20260930.csv"),
+    "honglidibo": os.path.join(BASE_DIR, "data", "input", "honglidibo_list_20260930.csv"),
+    "gz100": os.path.join(BASE_DIR, "data", "input", "gz100_list_20261030.csv"),
+    "gzfc": os.path.join(BASE_DIR, "data", "input", "gzfc_list_20261030.csv"),
+    "zzfc": os.path.join(BASE_DIR, "data", "input", "zzfc_list_20260930.csv"),
 }
 
 

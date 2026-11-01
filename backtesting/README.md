@@ -60,7 +60,7 @@ Backtesting has its own update metadata at `data/input/backtesting/query_metadat
 
 ## Strategy Logic
 
-1. **Stock pool**: ~930 stocks from 7 index lists (HS300, ZZ500, Hongli, HongliDibo, GZ100, GZFC, ZZFC — files in `data/input/`).
+1. **Stock pool**: ~950 stocks from 7 index lists (HS300, ZZ500, Hongli, HongliDibo, GZ100, GZFC, ZZFC — files in `data/input/`).
 2. **4-step filter** (at each cutoff date):
    - Step 1: Basic filter — exclude suspended stocks, missing financial data, negative valuations
    - Step 2: Valuation filter — PE/PB/PR below the 25th percentile (AND logic; indicator set configurable via `--filter_indicators`)
