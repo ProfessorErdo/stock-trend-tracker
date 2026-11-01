@@ -69,6 +69,9 @@ RECEIVER_EMAIL=recipient@example.com
 
 ## Usage
 
+Practical backtesting instructions, data/list refresh workflows, and troubleshooting are collected in
+[`docs/backtesting-operations-qa.md`](docs/backtesting-operations-qa.md).
+
 ### Quick Start
 
 Run the complete pipeline:

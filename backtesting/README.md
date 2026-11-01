@@ -2,6 +2,9 @@
 
 Backtesting engine for a **low-valuation + high-ROE** A-share stock selection strategy. Part of the Stock Trend Tracker project (active development on the `dev/backtest` branch).
 
+For the practical, recurring operational checklist and FAQ, see
+[`docs/backtesting-operations-qa.md`](../docs/backtesting-operations-qa.md).
+
 > Note: this module has its **own data directory** (`data/input/backtesting/`, HFQ-adjusted prices) and is independent of the `src/` data pipeline (`data/input/price-data/all`, unadjusted prices). Running `src/run_new.sh` does **not** update backtesting data, and vice versa.
 
 ## Quick Start
