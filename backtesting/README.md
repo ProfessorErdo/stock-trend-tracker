@@ -60,7 +60,7 @@ Backtesting has its own update metadata at `data/input/backtesting/query_metadat
 
 ## Strategy Logic
 
-1. **Stock pool**: ~1050 stocks — each of the 7 index lists (HS300, ZZ500, Hongli, HongliDibo, GZ100, GZFC, ZZFC) maps to *all* its historical CSV files in `data/input/`, merged and deduplicated, so stocks that left an index stay in the pool (no survivorship bias).
+1. **Stock pool**: ~1050 stocks — each of the 7 index lists (HS300, ZZ500, Hongli, HongliDibo, GZ100, GZFC, ZZFC) maps to *all* its historical CSV files in `data/input/`, merged and deduplicated, so stocks that left an index stay in the pool (no survivorship bias). Pass `--latest_pools_only` to fall back to the current constituents only (re-introduces survivorship bias, for comparison runs).
 2. **4-step filter** (at each cutoff date):
    - Step 1: Basic filter — exclude suspended stocks, missing financial data, negative valuations
    - Step 2: Valuation filter — PE/PB/PR below the 25th percentile (AND logic; indicator set configurable via `--filter_indicators`)
@@ -77,6 +77,7 @@ Backtesting has its own update metadata at `data/input/backtesting/query_metadat
 | `--frequency` | `weekly` \| `monthly` \| `quarterly` \| `annual` \| `annual_q3` \| `mid_year` \| `q3` |
 | `--ranking` | `pb` (default) \| `pe` \| `pr` \| `roe` \| `pure_pb` |
 | `--filter_indicators` | Comma-separated Step 2 indicators among `pe`/`pb`/`pr`, e.g. `pe,pb`, `pb` (default `pe,pb,pr`). ROE is always Step 3 |
+| `--latest_pools_only` | Use only the newest list per pool (current constituents ⇒ survivorship bias). Default merges every historical snapshot |
 | `--pe_threshold` / `--pb_threshold` / `--pr_threshold` | Quantile cutoff 0–1 (default 0.25) |
 | `--roe_threshold` | Quantile cutoff 0–1 (default 0.75) |
 | `--max_positions` | Max stocks per rebalance (default 5) |

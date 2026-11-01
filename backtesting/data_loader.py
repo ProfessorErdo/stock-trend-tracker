@@ -4,6 +4,7 @@
 
 import sys
 import os
+import re
 import logging
 import json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -96,12 +97,22 @@ def format_symbol(code: str) -> str:
         return f"sh{code}"
 
 
+def _latest_file_only(file_paths) -> list:
+    """只保留文件名日期最新的一份清单。"""
+    def date_key(path: str) -> str:
+        match = re.search(r"_(\d{8})\.csv$", os.path.basename(path))
+        return match.group(1) if match else ""
+
+    return [max(file_paths, key=date_key)]
+
+
 def load_stock_pool() -> pd.DataFrame:
     """
     从 config.EXISTING_STOCK_POOL_FILES 加载并合并所有股票池，去重。
 
     每个池子可以配置一个文件列表（历史各期 + 最新一期），这里逐文件读取后取并集，
     使被调出指数的股票仍留在池子里，避免幸存者偏差。
+    config.STOCK_POOL_LATEST_ONLY = True 时只取每个池子最新的一期（当前成分股）。
 
     Returns:
         DataFrame with ['code'] column, deduplicated
@@ -113,6 +124,8 @@ def load_stock_pool() -> pd.DataFrame:
         # 兼容旧的单文件写法（字符串）
         if isinstance(file_paths, (str, os.PathLike)):
             file_paths = [file_paths]
+        if config.STOCK_POOL_LATEST_ONLY:
+            file_paths = _latest_file_only(list(file_paths))
 
         # zz500 文件是 tab 分隔，其余是逗号分隔
         sep = "\t" if pool_name == "zz500" else ","

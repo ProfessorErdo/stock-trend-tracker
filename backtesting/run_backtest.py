@@ -159,6 +159,8 @@ def main():
                         help="Full stop-loss drawdown threshold (default: 0.25)")
     parser.add_argument("--filter_indicators", type=str, default=None,
                         help="Step 2 filter indicators, comma-separated: pe,pb  or  pb  or  pe,pb,pr (default: from config)")
+    parser.add_argument("--latest_pools_only", action="store_true",
+                        help="每个池子只用最新一期清单（当前成分股，含幸存者偏差；默认合并历史各期）")
 
     args = parser.parse_args()
 
@@ -166,6 +168,8 @@ def main():
     logger = setup_logger("run_backtest", "backtest")
 
     # Apply CLI overrides
+    if args.latest_pools_only:
+        config.STOCK_POOL_LATEST_ONLY = True
     if args.pe_threshold is not None:
         config.PE_THRESHOLD = args.pe_threshold
     if args.pb_threshold is not None:
@@ -243,7 +247,9 @@ def main():
     logger.info("=" * 60)
     logger.info(f"  Backtest period: {args.start_date} ~ {args.end_date or 'latest'}")
     logger.info(f"  Initial capital: {config.INITIAL_CAPITAL:,.0f} RMB")
-    logger.info(f"  Stock pools: {len(config.STOCK_POOLS)} lists")
+    logger.info(f"  Stock pools: {len(config.STOCK_POOLS)} lists"
+                + (" (latest snapshot only)" if config.STOCK_POOL_LATEST_ONLY
+                   else " (all historical snapshots, merged)"))
     logger.info(f"  Rebalance frequency: {freq_label}")
     logger.info(f"  Ranking method: {rank_label}")
     filter_display = "+".join(ind.upper() for ind in config.FILTER_INDICATORS)
