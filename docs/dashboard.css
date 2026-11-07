@@ -590,6 +590,100 @@ a {
   color: var(--red);
 }
 
+.watchlist-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.watchlist-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.watchlist-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.watchlist-card-head strong {
+  display: block;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.watchlist-card-head small {
+  display: block;
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.watchlist-pass-count {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.watchlist-pass-count.all-pass {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.watchlist-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.kpi-cell {
+  min-width: 0;
+  padding: 8px 9px;
+  border-radius: 11px;
+  background: var(--surface-soft);
+}
+
+.kpi-label {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.kpi-cell b {
+  display: block;
+  margin-top: 1px;
+  color: var(--green);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.kpi-cell small {
+  display: block;
+  margin-top: 1px;
+  color: var(--green);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.kpi-cell.fail b,
+.kpi-cell.fail small {
+  color: var(--red);
+}
+
 .rules {
   margin-top: 25px;
   padding: 15px;
@@ -696,6 +790,33 @@ a {
 
   .screen-summary strong {
     font-size: 22px;
+  }
+
+  .watchlist-grid {
+    gap: 8px;
+  }
+
+  .watchlist-card {
+    padding: 11px;
+    border-radius: 15px;
+  }
+
+  .watchlist-card-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .watchlist-kpis {
+    gap: 5px;
+  }
+
+  .kpi-cell {
+    padding: 7px;
+  }
+
+  .kpi-cell b {
+    font-size: 14px;
   }
 }
 

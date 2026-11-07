@@ -45,6 +45,13 @@ function compareMetric(label, holding, thresholds, includeThresholdWord = true) 
   return `${label} ${metricText(label, value)} ${operator} ${prefix}${metricText(label, threshold)}`;
 }
 
+function metricOperator(label, passes) {
+  const direction = METRIC_CONFIG[label].direction;
+  return passes
+    ? (direction === "max" ? "≤" : "≥")
+    : (direction === "max" ? ">" : "<");
+}
+
 function compactDate(isoDate) {
   if (!isoDate) return "—";
   const [, month, day] = isoDate.split("-");
@@ -317,6 +324,59 @@ function renderConditions(holdings, thresholds) {
   });
 }
 
+function renderWatchlist(watchlist) {
+  const container = $("#watchlist-grid");
+  container.replaceChildren();
+  const thresholds = watchlist.thresholds;
+
+  $("#watchlist-caption").textContent =
+    `${watchlist.as_of} · ${watchlist.fully_qualifying_count}/${watchlist.stock_count} 四项全通过`;
+
+  watchlist.stocks.forEach((stock) => {
+    const card = document.createElement("article");
+    card.className = "watchlist-card";
+
+    const header = document.createElement("div");
+    header.className = "watchlist-card-head";
+    const name = document.createElement("div");
+    const strong = document.createElement("strong");
+    strong.textContent = stock.name;
+    const code = document.createElement("small");
+    code.textContent = stock.code;
+    name.append(strong, code);
+
+    const passCount = document.createElement("span");
+    passCount.className = `watchlist-pass-count${stock.qualifies ? " all-pass" : ""}`;
+    passCount.textContent = `${stock.passing_count}/4 通过`;
+    header.append(name, passCount);
+
+    const kpis = document.createElement("div");
+    kpis.className = "watchlist-kpis";
+    METRIC_LABELS.forEach((label) => {
+      const config = METRIC_CONFIG[label];
+      const value = stock.metrics[config.metric];
+      const threshold = thresholds[config.threshold];
+      const passes = metricPasses(label, value, thresholds);
+      const cell = document.createElement("div");
+      cell.className = `kpi-cell ${passes ? "pass" : "fail"}`;
+
+      const kpiLabel = document.createElement("span");
+      kpiLabel.className = "kpi-label";
+      kpiLabel.textContent = label;
+      const kpiValue = document.createElement("b");
+      kpiValue.textContent = metricText(label, value);
+      const comparison = document.createElement("small");
+      comparison.textContent =
+        `${metricOperator(label, passes)} 阈值 ${metricText(label, threshold)}`;
+      cell.append(kpiLabel, kpiValue, comparison);
+      kpis.appendChild(cell);
+    });
+
+    card.append(header, kpis);
+    container.appendChild(card);
+  });
+}
+
 function renderDashboard(data) {
   const summary = data.summary;
   const dateChip = $("#data-date");
@@ -361,6 +421,7 @@ function renderDashboard(data) {
   renderHoldings(data.holdings, data.screen.thresholds);
   renderCandidates(data.screen.candidates);
   renderConditions(data.holdings, data.screen.thresholds);
+  renderWatchlist(data.watchlist);
   drawMainChart(data.history);
 
   $("#loading").hidden = true;

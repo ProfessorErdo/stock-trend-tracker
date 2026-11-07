@@ -26,6 +26,8 @@ import config  # noqa: E402
 from data_loader import load_price_data, load_stock_pool  # noqa: E402
 from stock_selector import (  # noqa: E402
     adverse_tail_quantile,
+    calculate_valuation,
+    get_latest_financial_data,
     is_new_stock,
     rank_and_limit,
     select_stocks,
@@ -52,6 +54,14 @@ EXPECTED_HOLDINGS = {"600926", "601838", "601156", "601319", "601601"}
 PORTFOLIO_CUTOFF_DATE = pd.Timestamp("2026-04-30")
 PORTFOLIO_REBALANCE_DATE = pd.Timestamp("2026-05-06")
 SKIP_STOCKS = {"689009"}
+WATCHLIST = [
+    ("600519", "贵州茅台"),
+    ("601318", "中国平安"),
+    ("000333", "美的集团"),
+    ("000651", "格力电器"),
+    ("600036", "招商银行"),
+    ("600938", "中国海油"),
+]
 
 
 def clean_number(value: float, digits: int = 4) -> float | None:
@@ -392,6 +402,52 @@ def failed_labels(conditions: dict[str, bool | None]) -> list[str]:
     return failed
 
 
+def build_watchlist(
+    as_of: pd.Timestamp,
+    price_cache: dict[str, pd.DataFrame],
+    thresholds: dict[str, float],
+) -> dict:
+    stocks = []
+    fully_qualifying = 0
+    for code, name in WATCHLIST:
+        frame = price_cache.get(code, pd.DataFrame())
+        financial = get_latest_financial_data(code, as_of) if not frame.empty else None
+        valuation = (
+            calculate_valuation(frame, as_of, financial)
+            if financial is not None
+            else None
+        )
+        row = pd.Series(valuation) if valuation is not None else None
+        conditions = metric_conditions(row, thresholds)
+        failed = failed_labels(conditions)
+        passing_count = sum(1 for value in conditions.values() if value is True)
+        if not failed:
+            fully_qualifying += 1
+        stocks.append(
+            {
+                "code": code,
+                "name": name,
+                "metrics": public_metrics(row),
+                "conditions": conditions,
+                "failed_metrics": failed,
+                "passing_count": passing_count,
+                "qualifies": not failed,
+            }
+        )
+    return {
+        "as_of": as_of.strftime("%Y-%m-%d"),
+        "thresholds": {
+            "pe": clean_number(thresholds.get("pe_ttm"), 2),
+            "pb": clean_number(thresholds.get("pb_ttm"), 2),
+            "pr": clean_number(thresholds.get("pr_ttm"), 2),
+            "roe": clean_number(thresholds.get("roe_ttm"), 2),
+        },
+        "stock_count": len(WATCHLIST),
+        "fully_qualifying_count": fully_qualifying,
+        "stocks": stocks,
+    }
+
+
 def public_metrics(row: pd.Series | None) -> dict[str, float | None]:
     if row is None:
         return {"pe": None, "pb": None, "pr": None, "roe": None}
@@ -506,7 +562,8 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
     screen_codes = (
         screen_pool["code"].astype(str).str.zfill(6).drop_duplicates().tolist()
     )
-    all_codes = sorted(set(holding_codes) | set(screen_codes))
+    watchlist_codes = [code for code, _ in WATCHLIST]
+    all_codes = sorted(set(holding_codes) | set(screen_codes) | set(watchlist_codes))
     price_frames = load_price_cache(all_codes)
 
     fixed_holdings, holding_thresholds, _ = select_legacy_932_holdings(
@@ -543,6 +600,11 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
         latest_market_date,
         names,
         price_frames,
+    )
+    watchlist = build_watchlist(
+        latest_market_date,
+        price_frames,
+        raw_thresholds,
     )
 
     holding_payload = []
@@ -630,6 +692,7 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
         },
         "history": history,
         "holdings": holding_payload,
+        "watchlist": watchlist,
         "screen": screen,
         "rules": {
             "holding_universe_size": len(holding_codes),

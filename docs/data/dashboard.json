@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-07T10:14:13+08:00",
+  "generated_at": "2026-11-07T10:36:23+08:00",
   "data_as_of": "2026-11-06",
   "data_quality": {
     "latest_price_date": "2026-11-06",
@@ -409,6 +409,147 @@
       ]
     }
   ],
+  "watchlist": {
+    "as_of": "2026-11-06",
+    "thresholds": {
+      "pe": 13.52,
+      "pb": 1.14,
+      "pr": 1.05,
+      "roe": 14.3
+    },
+    "stock_count": 6,
+    "fully_qualifying_count": 0,
+    "stocks": [
+      {
+        "code": "600519",
+        "name": "贵州茅台",
+        "metrics": {
+          "pe": 22.13,
+          "pb": 7.01,
+          "pr": 0.68,
+          "roe": 32.36
+        },
+        "conditions": {
+          "pe": false,
+          "pb": false,
+          "pr": true,
+          "roe": true
+        },
+        "failed_metrics": [
+          "PE",
+          "PB"
+        ],
+        "passing_count": 2,
+        "qualifies": false
+      },
+      {
+        "code": "601318",
+        "name": "中国平安",
+        "metrics": {
+          "pe": 9.61,
+          "pb": 0.96,
+          "pr": 0.99,
+          "roe": 9.7
+        },
+        "conditions": {
+          "pe": true,
+          "pb": true,
+          "pr": true,
+          "roe": false
+        },
+        "failed_metrics": [
+          "ROE"
+        ],
+        "passing_count": 3,
+        "qualifies": false
+      },
+      {
+        "code": "000333",
+        "name": "美的集团",
+        "metrics": {
+          "pe": 14.09,
+          "pb": 3.07,
+          "pr": 0.67,
+          "roe": 20.97
+        },
+        "conditions": {
+          "pe": false,
+          "pb": false,
+          "pr": true,
+          "roe": true
+        },
+        "failed_metrics": [
+          "PE",
+          "PB"
+        ],
+        "passing_count": 2,
+        "qualifies": false
+      },
+      {
+        "code": "000651",
+        "name": "格力电器",
+        "metrics": {
+          "pe": 8.81,
+          "pb": 1.46,
+          "pr": 0.53,
+          "roe": 16.57
+        },
+        "conditions": {
+          "pe": true,
+          "pb": false,
+          "pr": true,
+          "roe": true
+        },
+        "failed_metrics": [
+          "PB"
+        ],
+        "passing_count": 3,
+        "qualifies": false
+      },
+      {
+        "code": "600036",
+        "name": "招商银行",
+        "metrics": {
+          "pe": 7.34,
+          "pb": 0.95,
+          "pr": 0.56,
+          "roe": 13.09
+        },
+        "conditions": {
+          "pe": true,
+          "pb": true,
+          "pr": true,
+          "roe": false
+        },
+        "failed_metrics": [
+          "ROE"
+        ],
+        "passing_count": 3,
+        "qualifies": false
+      },
+      {
+        "code": "600938",
+        "name": "中国海油",
+        "metrics": {
+          "pe": 10.64,
+          "pb": 1.78,
+          "pr": 0.64,
+          "roe": 16.75
+        },
+        "conditions": {
+          "pe": true,
+          "pb": false,
+          "pr": true,
+          "roe": true
+        },
+        "failed_metrics": [
+          "PB"
+        ],
+        "passing_count": 3,
+        "qualifies": false
+      }
+    ]
+  },
   "screen": {
     "as_of": "2026-11-06",
     "universe_size": 1052,
