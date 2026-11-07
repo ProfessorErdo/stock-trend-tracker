@@ -2,11 +2,47 @@ const NS = "http://www.w3.org/2000/svg";
 
 const $ = (selector) => document.querySelector(selector);
 
+const METRIC_LABELS = ["PE", "PB", "PR", "ROE"];
+const METRIC_CONFIG = {
+  PE: { metric: "pe", threshold: "pe", direction: "max" },
+  PB: { metric: "pb", threshold: "pb", direction: "max" },
+  PR: { metric: "pr", threshold: "pr", direction: "max" },
+  ROE: { metric: "roe", threshold: "roe", direction: "min" },
+};
+
 function percent(value, signed = true) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
   const number = Number(value);
   const sign = signed && number > 0 ? "+" : "";
   return `${sign}${number.toFixed(2)}%`;
+}
+
+function metricText(label, value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
+  return label === "ROE" ? `${Number(value).toFixed(2)}%` : Number(value).toFixed(2);
+}
+
+function metricPasses(label, value, thresholds) {
+  const config = METRIC_CONFIG[label];
+  const threshold = thresholds?.[config.threshold];
+  if (value === null || value === undefined || threshold === null || threshold === undefined) {
+    return null;
+  }
+  return config.direction === "max"
+    ? Number(value) <= Number(threshold)
+    : Number(value) >= Number(threshold);
+}
+
+function compareMetric(label, holding, thresholds, includeThresholdWord = true) {
+  const config = METRIC_CONFIG[label];
+  const value = holding.metrics?.[config.metric];
+  const threshold = thresholds?.[config.threshold];
+  const passes = metricPasses(label, value, thresholds);
+  const operator = passes
+    ? (config.direction === "max" ? "≤" : "≥")
+    : (config.direction === "max" ? ">" : "<");
+  const prefix = includeThresholdWord ? "阈值 " : "";
+  return `${label} ${metricText(label, value)} ${operator} ${prefix}${metricText(label, threshold)}`;
 }
 
 function compactDate(isoDate) {
@@ -145,7 +181,7 @@ function drawSparkline(svg, values) {
   }));
 }
 
-function renderHoldings(holdings) {
+function renderHoldings(holdings, thresholds) {
   const container = $("#holdings-list");
   container.replaceChildren();
 
@@ -161,13 +197,25 @@ function renderHoldings(holdings) {
     const nameSmall = document.createElement("small");
     nameSmall.textContent = `${holding.code} · ${holding.weight_pct.toFixed(1)}%`;
     name.append(nameStrong, nameSmall);
+    if (!holding.qualifies) {
+      const comparison = document.createElement("span");
+      comparison.className = "condition-comparison";
+      holding.failed_metrics.forEach((label) => {
+        const line = document.createElement("small");
+        line.textContent = compareMetric(label, holding, thresholds);
+        comparison.appendChild(line);
+      });
+      name.appendChild(comparison);
+    }
 
     const sparkline = createSvgElement("svg", { class: "mini-chart" });
     const badge = document.createElement("span");
     badge.className = `condition-badge ${holding.qualifies ? "pass" : "fail"}`;
     badge.textContent = holding.qualifies
       ? "符合"
-      : `${holding.failed_metrics.join(" / ")} 掉线`;
+      : holding.failed_metrics.length > 1
+        ? `${holding.failed_metrics.length} 项掉线`
+        : `${holding.failed_metrics[0]} 掉线`;
 
     const returnValue = document.createElement("span");
     returnValue.className = `stock-return${holding.return_pct < 0 ? " negative" : ""}`;
@@ -176,17 +224,20 @@ function renderHoldings(holdings) {
 
     const detail = document.createElement("div");
     detail.className = "holding-detail";
-    [
-      ["PE", holding.metrics.pe],
-      ["PB", holding.metrics.pb],
-      ["PR", holding.metrics.pr],
-      ["ROE", holding.metrics.roe === null ? null : `${holding.metrics.roe.toFixed(2)}%`],
-    ].forEach(([label, value]) => {
+    METRIC_LABELS.forEach((label) => {
+      const config = METRIC_CONFIG[label];
+      const value = holding.metrics[config.metric];
+      const threshold = thresholds?.[config.threshold];
       const item = document.createElement("span");
+      const passes = metricPasses(label, value, thresholds);
+      if (passes === false) item.className = "metric-fail";
       item.textContent = label;
       const strong = document.createElement("b");
-      strong.textContent = value === null || value === undefined ? "—" : String(value);
+      strong.textContent = metricText(label, value);
+      const thresholdLabel = document.createElement("small");
+      thresholdLabel.textContent = `阈值 ${metricText(label, threshold)}`;
       item.appendChild(strong);
+      item.appendChild(thresholdLabel);
       detail.appendChild(item);
     });
 
@@ -233,7 +284,7 @@ function renderCandidates(candidates) {
   });
 }
 
-function renderConditions(holdings) {
+function renderConditions(holdings, thresholds) {
   const container = $("#condition-list");
   container.replaceChildren();
 
@@ -254,7 +305,9 @@ function renderConditions(holdings) {
     const detail = document.createElement("small");
     detail.textContent = holding.qualifies
       ? "PE / PB / PR / ROE 全部通过"
-      : `${holding.failed_metrics.join(" / ")} 未达到当周门槛`;
+      : holding.failed_metrics
+          .map((label) => compareMetric(label, holding, thresholds))
+          .join(" · ");
     text.append(name, detail);
     const status = document.createElement("em");
     status.className = holding.qualifies ? "" : "is-fail";
@@ -305,9 +358,9 @@ function renderDashboard(data) {
     `ROE 高于最高 ${100 - rules.roe_quantile}% 分位；先裁去各指标不利尾部 ${(rules.trim_ratio * 100).toFixed(1)}%。` +
     `通过后按 ${rules.ranking}，最多保留 ${rules.max_positions} 只；上市不足 ${rules.new_stock_exclusion_days} 个交易日的股票排除。`;
 
-  renderHoldings(data.holdings);
+  renderHoldings(data.holdings, data.screen.thresholds);
   renderCandidates(data.screen.candidates);
-  renderConditions(data.holdings);
+  renderConditions(data.holdings, data.screen.thresholds);
   drawMainChart(data.history);
 
   $("#loading").hidden = true;

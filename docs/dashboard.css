@@ -381,6 +381,20 @@ a {
   font-size: 11px;
 }
 
+.condition-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 2px;
+}
+
+.stock-name .condition-comparison small {
+  color: var(--red);
+  font-size: 10px;
+  font-weight: 550;
+  line-height: 1.35;
+}
+
 .mini-chart {
   display: block;
   width: 68px;
@@ -444,6 +458,18 @@ a {
   color: var(--ink);
   font-size: 12px;
   font-weight: 650;
+}
+
+.holding-detail small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.holding-detail .metric-fail b,
+.holding-detail .metric-fail small {
+  color: var(--red);
 }
 
 .screen-summary {
