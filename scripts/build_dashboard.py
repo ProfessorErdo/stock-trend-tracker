@@ -222,6 +222,7 @@ def build_performance_history(
     as_of: pd.Timestamp,
     holdings: pd.DataFrame,
     price_frames: dict[str, pd.DataFrame],
+    screen_codes: list[str],
 ) -> tuple[list[dict], float | None]:
     if not EQUITY_FILE.exists():
         raise FileNotFoundError(
@@ -240,6 +241,38 @@ def build_performance_history(
     if strategy_base <= 0 or benchmark_base <= 0:
         return [], None
 
+    weekly_dates = [pd.Timestamp(date).normalize() for date in weekly["date"]]
+    benchmark_by_date = {
+        pd.Timestamp(row.date).normalize(): float(row.benchmark_equity)
+        for row in weekly.itertuples(index=False)
+    }
+
+    last_equity_date = weekly_dates[-1]
+    if as_of > last_equity_date:
+        interval_returns = []
+        for code in screen_codes:
+            frame = price_frames.get(code, pd.DataFrame())
+            if frame.empty or not {"trade_date", "close"}.issubset(frame.columns):
+                continue
+            prices = frame[["trade_date", "close"]].copy()
+            prices["trade_date"] = pd.to_datetime(prices["trade_date"]).dt.normalize()
+            prices = prices.dropna().drop_duplicates("trade_date", keep="last")
+            start_rows = prices[prices["trade_date"] <= last_equity_date]
+            end_rows = prices[prices["trade_date"] <= as_of]
+            if start_rows.empty or end_rows.empty:
+                continue
+            start_price = float(start_rows.iloc[-1]["close"])
+            end_price = float(end_rows.iloc[-1]["close"])
+            if start_price > 0 and end_price > 0:
+                interval_returns.append(end_price / start_price - 1)
+        if len(interval_returns) < max(50, int(len(screen_codes) * 0.75)):
+            raise RuntimeError("Not enough benchmark prices to extend to the latest date.")
+        interval_return = float(pd.Series(interval_returns).mean())
+        benchmark_by_date[as_of] = (
+            benchmark_by_date[last_equity_date] * (1 + interval_return)
+        )
+        weekly_dates.append(as_of)
+
     holding_prices: dict[str, pd.Series] = {}
     for row in holdings.itertuples(index=False):
         code = str(row.stock_code).zfill(6)
@@ -254,14 +287,14 @@ def build_performance_history(
         ].dropna().drop_duplicates("trade_date", keep="last")
         holding_prices[code] = prices.set_index("trade_date")["close"]
 
-    aligned_portfolio = pd.Series(0.0, index=weekly["date"])
+    aligned_portfolio = pd.Series(0.0, index=weekly_dates)
     total_holding_weight = 0.0
     for row in holdings.itertuples(index=False):
         code = str(row.stock_code).zfill(6)
         entry_price = float(row.current_price)
         if entry_price <= 0:
             raise RuntimeError(f"Invalid rebalance price for holding {code}.")
-        aligned = holding_prices[code].reindex(weekly["date"], method="ffill")
+        aligned = holding_prices[code].reindex(weekly_dates, method="ffill")
         weight = float(row.weight)
         aligned_portfolio += aligned / entry_price * weight
         total_holding_weight += weight
@@ -270,16 +303,19 @@ def build_performance_history(
     portfolio_index = aligned_portfolio / total_holding_weight * 100
 
     history: list[dict] = []
-    for row in weekly.itertuples(index=False):
+    for date in weekly_dates:
         history.append(
             {
-                "date": row.date.strftime("%Y-%m-%d"),
-                "portfolio": clean_number(portfolio_index.loc[row.date], 2),
-                "benchmark": clean_number(row.benchmark_equity / benchmark_base * 100, 2),
+                "date": date.strftime("%Y-%m-%d"),
+                "portfolio": clean_number(portfolio_index.loc[date], 2),
+                "benchmark": clean_number(
+                    benchmark_by_date[date] / benchmark_base * 100,
+                    2,
+                ),
             }
         )
 
-    benchmark_return = float(weekly["benchmark_equity"].iloc[-1]) / benchmark_base - 1
+    benchmark_return = benchmark_by_date[weekly_dates[-1]] / benchmark_base - 1
     return history, benchmark_return
 
 
@@ -490,7 +526,6 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
     if EQUITY_FILE.exists():
         equity_dates = pd.to_datetime(pd.read_csv(EQUITY_FILE, usecols=["date"])["date"])
         equity_latest = equity_dates.max().normalize()
-        latest_market_date = min(latest_market_date, equity_latest)
     if latest_market_date < rebalance_date:
         raise RuntimeError("The requested date is before the latest holding rebalance.")
     latest_market_date = latest_market_date.normalize()
@@ -500,6 +535,7 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
         latest_market_date,
         holdings,
         price_frames,
+        screen_codes,
     )
     valuation_map, screen, raw_thresholds = screen_stocks(
         screen_codes,
@@ -574,7 +610,9 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
             "complete": bool(
                 latest_price_date is not None
                 and latest_market_date == latest_price_date
-                and (equity_latest is None or latest_market_date <= equity_latest)
+            ),
+            "benchmark_extended": bool(
+                equity_latest is not None and latest_market_date > equity_latest
             ),
         },
         "rebalance_date": rebalance_date.strftime("%Y-%m-%d"),

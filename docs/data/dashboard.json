@@ -1,30 +1,34 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-07T10:10:34+08:00",
-  "data_as_of": "2026-10-30",
+  "generated_at": "2026-11-07T10:14:13+08:00",
+  "data_as_of": "2026-11-06",
   "data_quality": {
     "latest_price_date": "2026-11-06",
     "latest_equity_date": "2026-10-30",
-    "complete": false
+    "complete": true,
+    "benchmark_extended": true
   },
   "rebalance_date": "2026-05-06",
   "holding_until": "2027-05",
   "summary": {
-    "portfolio_return_pct": 5.57,
-    "benchmark_return_pct": -0.58,
-    "excess_return_pp": 6.15,
-    "qualifying_count": 3,
+    "portfolio_return_pct": 7.79,
+    "benchmark_return_pct": 3.87,
+    "excess_return_pp": 3.92,
+    "qualifying_count": 1,
     "holding_count": 5,
-    "new_candidate_count": 3,
-    "dropped_count": 2,
+    "new_candidate_count": 4,
+    "dropped_count": 4,
     "new_candidates": [
-      "宏力达",
       "渤海租赁",
-      "中国平安"
+      "九安医疗",
+      "招商证券",
+      "中远海控"
     ],
     "dropped_names": [
       "杭州银行",
-      "东航物流"
+      "东航物流",
+      "中国人保",
+      "中国太保"
     ]
   },
   "history": [
@@ -162,6 +166,11 @@
       "date": "2026-10-30",
       "portfolio": 105.57,
       "benchmark": 99.42
+    },
+    {
+      "date": "2026-11-06",
+      "portfolio": 107.79,
+      "benchmark": 103.87
     }
   ],
   "holdings": [
@@ -169,18 +178,18 @@
       "code": "600926",
       "name": "杭州银行",
       "weight_pct": 20.0,
-      "return_pct": 4.12,
-      "day_change_pct": 0.23,
-      "latest_price": 46.98,
+      "return_pct": 3.88,
+      "day_change_pct": 0.99,
+      "latest_price": 46.87,
       "qualifies": false,
       "failed_metrics": [
         "ROE"
       ],
       "metrics": {
-        "pe": 6.56,
-        "pb": 0.9,
-        "pr": 0.47,
-        "roe": 14.02
+        "pe": 6.35,
+        "pb": 0.88,
+        "pr": 0.45,
+        "roe": 14.09
       },
       "sparkline": [
         97.67,
@@ -216,19 +225,19 @@
       "code": "601156",
       "name": "东航物流",
       "weight_pct": 20.0,
-      "return_pct": 18.68,
-      "day_change_pct": 2.09,
-      "latest_price": 21.47,
+      "return_pct": 26.04,
+      "day_change_pct": -1.38,
+      "latest_price": 22.8,
       "qualifies": false,
       "failed_metrics": [
         "PB",
         "ROE"
       ],
       "metrics": {
-        "pe": 10.51,
-        "pb": 1.5,
-        "pr": 0.74,
-        "roe": 14.28
+        "pe": 11.1,
+        "pb": 1.56,
+        "pr": 0.79,
+        "roe": 14.08
       },
       "sparkline": [
         99.56,
@@ -264,16 +273,18 @@
       "code": "601319",
       "name": "中国人保",
       "weight_pct": 20.0,
-      "return_pct": 5.9,
-      "day_change_pct": -1.43,
-      "latest_price": 8.97,
-      "qualifies": true,
-      "failed_metrics": [],
+      "return_pct": 5.19,
+      "day_change_pct": -0.45,
+      "latest_price": 8.91,
+      "qualifies": false,
+      "failed_metrics": [
+        "ROE"
+      ],
       "metrics": {
-        "pe": 5.8,
-        "pb": 1.02,
-        "pr": 0.33,
-        "roe": 17.79
+        "pe": 10.23,
+        "pb": 0.98,
+        "pr": 1.04,
+        "roe": 9.87
       },
       "sparkline": [
         102.48,
@@ -309,16 +320,18 @@
       "code": "601601",
       "name": "中国太保",
       "weight_pct": 20.0,
-      "return_pct": -12.89,
-      "day_change_pct": -0.29,
-      "latest_price": 52.23,
-      "qualifies": true,
-      "failed_metrics": [],
+      "return_pct": -9.49,
+      "day_change_pct": -0.13,
+      "latest_price": 54.27,
+      "qualifies": false,
+      "failed_metrics": [
+        "ROE"
+      ],
       "metrics": {
-        "pe": 5.23,
+        "pe": 6.94,
         "pb": 0.96,
-        "pr": 0.29,
-        "roe": 18.1
+        "pr": 0.51,
+        "roe": 13.6
       },
       "sparkline": [
         99.47,
@@ -354,16 +367,16 @@
       "code": "601838",
       "name": "成都银行",
       "weight_pct": 20.0,
-      "return_pct": 12.02,
-      "day_change_pct": 0.2,
-      "latest_price": 30.47,
+      "return_pct": 13.35,
+      "day_change_pct": 1.58,
+      "latest_price": 30.83,
       "qualifies": true,
       "failed_metrics": [],
       "metrics": {
-        "pe": 6.37,
-        "pb": 0.95,
-        "pr": 0.43,
-        "roe": 14.94
+        "pe": 6.49,
+        "pb": 0.94,
+        "pr": 0.45,
+        "roe": 14.47
       },
       "sparkline": [
         98.38,
@@ -397,128 +410,86 @@
     }
   ],
   "screen": {
-    "as_of": "2026-10-30",
+    "as_of": "2026-11-06",
     "universe_size": 1052,
-    "valid_samples": 953,
-    "passed_count": 8,
+    "valid_samples": 933,
+    "passed_count": 5,
     "target_count": 5,
     "thresholds": {
-      "pe": 12.9,
-      "pb": 1.12,
-      "pr": 0.99,
-      "roe": 14.51
+      "pe": 13.52,
+      "pb": 1.14,
+      "pr": 1.05,
+      "roe": 14.3
     },
     "candidates": [
       {
-        "code": "688330",
-        "name": "宏力达",
+        "code": "000415",
+        "name": "渤海租赁",
         "rank": 1,
         "target": true,
         "in_portfolio": false,
         "new_to_portfolio": true,
         "metrics": {
-          "pe": 4.49,
-          "pb": 0.87,
-          "pr": 0.23,
-          "roe": 19.45
+          "pe": 5.4,
+          "pb": 0.96,
+          "pr": 0.3,
+          "roe": 17.75
         }
       },
       {
-        "code": "000415",
-        "name": "渤海租赁",
+        "code": "002432",
+        "name": "九安医疗",
         "rank": 2,
         "target": true,
         "in_portfolio": false,
         "new_to_portfolio": true,
         "metrics": {
-          "pe": 5.88,
-          "pb": 0.95,
-          "pr": 0.37,
+          "pe": 3.74,
+          "pb": 1.06,
+          "pr": 0.15,
+          "roe": 25.31
+        }
+      },
+      {
+        "code": "600999",
+        "name": "招商证券",
+        "rank": 3,
+        "target": true,
+        "in_portfolio": false,
+        "new_to_portfolio": true,
+        "metrics": {
+          "pe": 7.02,
+          "pb": 1.12,
+          "pr": 0.44,
           "roe": 15.95
         }
       },
       {
         "code": "601838",
         "name": "成都银行",
-        "rank": 3,
-        "target": true,
-        "in_portfolio": true,
-        "new_to_portfolio": false,
-        "metrics": {
-          "pe": 6.37,
-          "pb": 0.95,
-          "pr": 0.43,
-          "roe": 14.94
-        }
-      },
-      {
-        "code": "601318",
-        "name": "中国平安",
         "rank": 4,
         "target": true,
-        "in_portfolio": false,
-        "new_to_portfolio": true,
+        "in_portfolio": true,
+        "new_to_portfolio": false,
         "metrics": {
-          "pe": 5.8,
-          "pb": 0.95,
-          "pr": 0.37,
-          "roe": 15.8
+          "pe": 6.49,
+          "pb": 0.94,
+          "pr": 0.45,
+          "roe": 14.47
         }
       },
       {
-        "code": "601601",
-        "name": "中国太保",
+        "code": "601919",
+        "name": "中远海控",
         "rank": 5,
         "target": true,
-        "in_portfolio": true,
-        "new_to_portfolio": false,
-        "metrics": {
-          "pe": 5.23,
-          "pb": 0.96,
-          "pr": 0.29,
-          "roe": 18.1
-        }
-      },
-      {
-        "code": "000987",
-        "name": "越秀资本",
-        "rank": null,
-        "target": false,
         "in_portfolio": false,
         "new_to_portfolio": true,
         "metrics": {
-          "pe": 6.89,
-          "pb": 1.0,
-          "pr": 0.47,
-          "roe": 14.64
-        }
-      },
-      {
-        "code": "601319",
-        "name": "中国人保",
-        "rank": null,
-        "target": false,
-        "in_portfolio": true,
-        "new_to_portfolio": false,
-        "metrics": {
-          "pe": 5.8,
-          "pb": 1.02,
-          "pr": 0.33,
-          "roe": 17.79
-        }
-      },
-      {
-        "code": "601717",
-        "name": "中创智领",
-        "rank": null,
-        "target": false,
-        "in_portfolio": false,
-        "new_to_portfolio": true,
-        "metrics": {
-          "pe": 7.47,
-          "pb": 1.08,
-          "pr": 0.5,
-          "roe": 14.95
+          "pe": 7.73,
+          "pb": 1.13,
+          "pr": 0.53,
+          "roe": 14.54
         }
       }
     ]
