@@ -287,7 +287,8 @@ function renderDashboard(data) {
   $("#benchmark-pill").textContent = `基准 ${percent(summary.benchmark_return_pct)}`;
   $("#qualify-pill").textContent = `${summary.qualifying_count}/${summary.holding_count} 仍符合选股条件`;
   $("#holdings-caption").textContent = `调仓日 ${data.rebalance_date}`;
-  $("#screen-date").textContent = `${data.screen.as_of} · ${data.rules.universe_size} 只固定池`;
+  $("#screen-date").textContent =
+    `${data.screen.as_of} · 动态池 ${data.rules.screen_universe_size} 只`;
   $("#passed-count").textContent = String(data.screen.passed_count);
   $("#still-count").textContent = `${summary.qualifying_count}/${summary.holding_count}`;
   $("#new-count").textContent = String(summary.new_candidate_count);
@@ -297,7 +298,8 @@ function renderDashboard(data) {
 
   const rules = data.rules;
   $("#rules-copy").textContent =
-    `股票池固定为 ${rules.universe_size} 只（${rules.universe_snapshot}），不混入后续新增名单。` +
+    `持仓由 ${rules.holding_universe_size} 只的 ${rules.holding_universe_snapshot} 选出并锁定；` +
+    `周更阈值和候选股使用 ${rules.screen_universe_size} 只的${rules.screen_universe_snapshot}。` +
     `PE、PB、PR 低于全样本最低 ${rules.valuation_quantile}% 分位，` +
     `ROE 高于最高 ${100 - rules.roe_quantile}% 分位；先裁去各指标不利尾部 ${(rules.trim_ratio * 100).toFixed(1)}%。` +
     `通过后按 ${rules.ranking}，最多保留 ${rules.max_positions} 只；上市不足 ${rules.new_stock_exclusion_days} 个交易日的股票排除。`;

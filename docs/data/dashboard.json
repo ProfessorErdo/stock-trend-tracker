@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-07T09:58:35+08:00",
+  "generated_at": "2026-11-07T10:04:25+08:00",
   "data_as_of": "2026-10-27",
   "data_quality": {
     "latest_price_date": "2026-11-06",
@@ -396,14 +396,15 @@
   ],
   "screen": {
     "as_of": "2026-10-27",
-    "valid_samples": 837,
+    "universe_size": 1052,
+    "valid_samples": 952,
     "passed_count": 9,
     "target_count": 5,
     "thresholds": {
-      "pe": 12.83,
+      "pe": 12.88,
       "pb": 1.13,
-      "pr": 0.99,
-      "roe": 14.16
+      "pr": 1.01,
+      "roe": 14.5
     },
     "candidates": [
       {
@@ -535,8 +536,10 @@
     ]
   },
   "rules": {
-    "universe_size": 932,
-    "universe_snapshot": "2026-04-30 固定池",
+    "holding_universe_size": 932,
+    "holding_universe_snapshot": "2026-04-30 持仓池",
+    "screen_universe_size": 1052,
+    "screen_universe_snapshot": "当前动态股票池",
     "valuation_quantile": 25,
     "roe_quantile": 75,
     "max_positions": 5,

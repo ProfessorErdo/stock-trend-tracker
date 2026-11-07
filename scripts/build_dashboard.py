@@ -23,7 +23,7 @@ BACKTESTING_DIR = ROOT / "backtesting"
 sys.path.insert(0, str(BACKTESTING_DIR))
 
 import config  # noqa: E402
-from data_loader import load_price_data  # noqa: E402
+from data_loader import load_price_data, load_stock_pool  # noqa: E402
 from stock_selector import (  # noqa: E402
     adverse_tail_quantile,
     rank_and_limit,
@@ -36,9 +36,8 @@ EQUITY_FILE = ROOT / "data" / "processed" / "backtesting" / "performance" / "equ
 STOCK_NAMES_FILE = ROOT / "data" / "input" / "stock_names_full.csv"
 DEFAULT_OUTPUT = ROOT / "docs" / "data" / "dashboard.json"
 
-# Fixed universe used by the real 2026-04-30 annual rebalance. Each index
-# contributes the single list version that was current in the 932-stock era.
-PORTFOLIO_UNIVERSE_FILES = {
+# Fixed universe used to find the real 2026-04-30 annual holdings.
+HOLDING_UNIVERSE_FILES = {
     "hs300": (ROOT / "data" / "input" / "hs300_list_20251213.csv", ","),
     "zz500": (ROOT / "data" / "input" / "zz500_list_20251216.csv", "\t"),
     "hongli": (ROOT / "data" / "input" / "hongli_list_20251213.csv", ","),
@@ -47,7 +46,10 @@ PORTFOLIO_UNIVERSE_FILES = {
     "gzfc": (ROOT / "data" / "input" / "gzfc_list_20260227.csv", ","),
     "zzfc": (ROOT / "data" / "input" / "zzfc_list_20260316.csv", ","),
 }
-EXPECTED_UNIVERSE_SIZE = 932
+EXPECTED_HOLDING_UNIVERSE_SIZE = 932
+EXPECTED_HOLDINGS = {"600926", "601838", "601128", "601319", "601601"}
+PORTFOLIO_CUTOFF_DATE = pd.Timestamp("2026-04-30")
+PORTFOLIO_REBALANCE_DATE = pd.Timestamp("2026-05-06")
 SKIP_STOCKS = {"689009"}
 
 
@@ -68,10 +70,10 @@ def get_stock_names() -> dict[str, str]:
     }
 
 
-def load_portfolio_universe() -> pd.DataFrame:
-    """Load the exact fixed universe used by the 2026-04-30 rebalance."""
+def load_holding_universe() -> pd.DataFrame:
+    """Load the exact 932-stock universe used to find the real holdings."""
     all_codes: set[str] = set()
-    for file_path, separator in PORTFOLIO_UNIVERSE_FILES.values():
+    for file_path, separator in HOLDING_UNIVERSE_FILES.values():
         if not file_path.exists():
             raise FileNotFoundError(f"Missing fixed-universe file: {file_path}")
         frame = pd.read_csv(file_path, sep=separator)
@@ -81,10 +83,10 @@ def load_portfolio_universe() -> pd.DataFrame:
             frame["code"].astype(str).str.strip().str.zfill(6).tolist()
         )
     all_codes.difference_update(SKIP_STOCKS)
-    if len(all_codes) != EXPECTED_UNIVERSE_SIZE:
+    if len(all_codes) != EXPECTED_HOLDING_UNIVERSE_SIZE:
         raise RuntimeError(
             "The fixed portfolio universe changed: "
-            f"expected {EXPECTED_UNIVERSE_SIZE}, found {len(all_codes)}."
+            f"expected {EXPECTED_HOLDING_UNIVERSE_SIZE}, found {len(all_codes)}."
         )
     return pd.DataFrame({"code": sorted(all_codes)})
 
@@ -151,7 +153,10 @@ def latest_available_date(price_frames: dict[str, pd.DataFrame]) -> pd.Timestamp
     return max(dates).normalize() if dates else None
 
 
-def load_holding_rows(as_of: pd.Timestamp | None) -> tuple[pd.Timestamp, pd.DataFrame]:
+def load_holding_rows(
+    expected_codes: list[str],
+    price_cache: dict[str, pd.DataFrame],
+) -> tuple[pd.Timestamp, pd.DataFrame]:
     if not HOLDINGS_FILE.exists():
         raise FileNotFoundError(
             f"Missing holdings file: {HOLDINGS_FILE}. "
@@ -161,19 +166,40 @@ def load_holding_rows(as_of: pd.Timestamp | None) -> tuple[pd.Timestamp, pd.Data
     holdings = pd.read_csv(HOLDINGS_FILE, dtype={"stock_code": str})
     holdings["rebalance_date"] = pd.to_datetime(holdings["rebalance_date"]).dt.normalize()
     holdings["stock_code"] = holdings["stock_code"].astype(str).str.zfill(6)
-    if as_of is not None:
-        holdings = holdings[holdings["rebalance_date"] <= as_of]
-    if holdings.empty:
-        raise RuntimeError("No holdings are available on or before the requested date.")
+    current = holdings[holdings["rebalance_date"] == PORTFOLIO_REBALANCE_DATE].copy()
 
-    rebalance_date = holdings["rebalance_date"].max()
-    current = holdings[holdings["rebalance_date"] == rebalance_date].copy()
+    if set(current["stock_code"]) != set(expected_codes):
+        fallback_rows = []
+        for code in expected_codes:
+            frame = price_cache.get(code, pd.DataFrame())
+            if frame.empty:
+                raise RuntimeError(f"Missing rebalance price for {code}.")
+            prices = frame.copy()
+            prices["trade_date"] = pd.to_datetime(prices["trade_date"]).dt.normalize()
+            available = prices[
+                (prices["trade_date"] >= PORTFOLIO_REBALANCE_DATE)
+            ].sort_values("trade_date")
+            if available.empty:
+                raise RuntimeError(f"No rebalance-day price for {code}.")
+            fallback_rows.append(
+                {
+                    "rebalance_date": PORTFOLIO_REBALANCE_DATE,
+                    "stock_code": code,
+                    "current_price": float(available.iloc[0]["close"]),
+                    "weight": 1 / len(expected_codes),
+                }
+            )
+        current = pd.DataFrame(fallback_rows)
+
+    if current.empty:
+        raise RuntimeError("The fixed 2026-04-30 holdings could not be loaded.")
+
     total_weight = float(current["weight"].sum())
     if total_weight > 0:
         current["weight"] = current["weight"] / total_weight
     else:
         current["weight"] = 1 / len(current)
-    return rebalance_date, current
+    return PORTFOLIO_REBALANCE_DATE, current
 
 
 def weekly_series(frame: pd.DataFrame, date_col: str, value_cols: list[str]) -> pd.DataFrame:
@@ -270,19 +296,24 @@ def public_metrics(row: pd.Series | None) -> dict[str, float | None]:
 
 
 def screen_stocks(
+    screen_codes: list[str],
     holdings: pd.DataFrame,
     as_of: pd.Timestamp,
     names: dict[str, str],
     price_cache: dict[str, pd.DataFrame],
 ) -> tuple[pd.DataFrame, dict, dict[str, float]]:
     print(f"Loading stock pool for {as_of.date()}...", flush=True)
-    stock_codes = list(price_cache)
-    print(f"Screening {len(stock_codes)} stocks...", flush=True)
-    passed, valuations = select_stocks(stock_codes, as_of, price_cache=price_cache)
+    print(f"Screening {len(screen_codes)} stocks...", flush=True)
+    passed, valuations = select_stocks(
+        screen_codes,
+        as_of,
+        price_cache=price_cache,
+    )
 
     if valuations.empty:
         return valuations, {
             "as_of": as_of.strftime("%Y-%m-%d"),
+            "universe_size": len(screen_codes),
             "valid_samples": 0,
             "passed_count": 0,
             "target_count": 0,
@@ -348,6 +379,7 @@ def screen_stocks(
     }
     return valuation_map, {
         "as_of": as_of.strftime("%Y-%m-%d"),
+        "universe_size": len(screen_codes),
         "valid_samples": int(len(valuations)),
         "passed_count": int(len(passed)),
         "target_count": int(len(ranked)),
@@ -358,10 +390,34 @@ def screen_stocks(
 
 def build_payload(as_of: pd.Timestamp | None) -> dict:
     names = get_stock_names()
-    rebalance_date, holdings = load_holding_rows(as_of)
-    pool = load_portfolio_universe()
-    stock_codes = pool["code"].astype(str).str.zfill(6).drop_duplicates().tolist()
-    price_frames = load_price_cache(stock_codes)
+    holding_pool = load_holding_universe()
+    holding_codes = (
+        holding_pool["code"].astype(str).str.zfill(6).drop_duplicates().tolist()
+    )
+    screen_pool = load_stock_pool()
+    screen_codes = (
+        screen_pool["code"].astype(str).str.zfill(6).drop_duplicates().tolist()
+    )
+    all_codes = sorted(set(holding_codes) | set(screen_codes))
+    price_frames = load_price_cache(all_codes)
+
+    selected_holdings, holdings_valuations = select_stocks(
+        holding_codes,
+        PORTFOLIO_CUTOFF_DATE,
+        price_cache=price_frames,
+    )
+    fixed_holdings = rank_and_limit(
+        selected_holdings,
+        holdings_valuations,
+        config.MAX_POSITIONS,
+        "pb",
+    )
+    if set(fixed_holdings) != EXPECTED_HOLDINGS:
+        raise RuntimeError(
+            "The 932-stock selection no longer matches the locked portfolio: "
+            f"expected {sorted(EXPECTED_HOLDINGS)}, found {sorted(fixed_holdings)}."
+        )
+    rebalance_date, holdings = load_holding_rows(fixed_holdings, price_frames)
 
     latest_price_date = latest_available_date(price_frames)
     latest_market_date = as_of or choose_screen_date(price_frames)
@@ -376,6 +432,7 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
 
     history, benchmark_return = build_performance_history(rebalance_date, latest_market_date)
     valuation_map, screen, raw_thresholds = screen_stocks(
+        screen_codes,
         holdings,
         latest_market_date,
         names,
@@ -467,8 +524,10 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
         "holdings": holding_payload,
         "screen": screen,
         "rules": {
-            "universe_size": len(stock_codes),
-            "universe_snapshot": "2026-04-30 固定池",
+            "holding_universe_size": len(holding_codes),
+            "holding_universe_snapshot": "2026-04-30 持仓池",
+            "screen_universe_size": len(screen_codes),
+            "screen_universe_snapshot": "当前动态股票池",
             "valuation_quantile": int(config.PE_THRESHOLD * 100),
             "roe_quantile": int(config.ROE_THRESHOLD * 100),
             "max_positions": int(config.MAX_POSITIONS),
