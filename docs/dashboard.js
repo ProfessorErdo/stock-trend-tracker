@@ -378,6 +378,9 @@ function renderWatchlist(watchlist) {
 }
 
 function renderDashboard(data) {
+  if (!data.watchlist?.stocks?.length) {
+    throw new Error("选股池数据版本过旧，请刷新页面");
+  }
   const summary = data.summary;
   const dateChip = $("#data-date");
   if (data.data_quality?.complete) {
@@ -430,7 +433,9 @@ function renderDashboard(data) {
 
 async function init() {
   try {
-    const response = await fetch("./data/dashboard.json", { cache: "no-store" });
+    const dataUrl = new URL("./data/dashboard.json", window.location.href);
+    dataUrl.searchParams.set("v", String(Date.now()));
+    const response = await fetch(dataUrl, { cache: "no-store" });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
