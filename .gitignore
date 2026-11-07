@@ -43,11 +43,13 @@ wheels/
 !/data/processed/.gitkeep
 !/data/processed/stock-valuation/
 /data/processed/stock-valuation/*
-!/data/processed/stock-valuation/all/
-!/data/processed/stock-valuation/all/*.csv
 !/data/processed/stock-valuation/stocks_values_filtered_*.csv
 
 /img/*
 !/img/.gitkeep
 !/img/20260501/
 !/img/20260501/*.png
+
+# Local runtime files
+server.pid
+server.port
