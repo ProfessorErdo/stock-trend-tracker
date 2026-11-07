@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f3f5f1">
+  <meta name="description" content="年度持仓表现与每周选股条件跟踪">
+  <title>年度持仓看板</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./dashboard.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="年度持仓看板首页">
+        <span class="brand-mark" aria-hidden="true">ST</span>
+        <span>年度持仓</span>
+      </a>
+      <span id="data-date" class="date-chip" aria-live="polite">读取中</span>
+    </header>
+
+    <main id="dashboard" hidden>
+      <section class="hero" aria-labelledby="portfolio-title">
+        <p class="eyebrow">调仓以来</p>
+        <div class="return-line">
+          <h1 id="portfolio-title" class="return">—</h1>
+          <span id="excess-return" class="return-delta">—</span>
+        </div>
+        <div class="hero-meta">
+          <span id="benchmark-pill" class="pill pill-positive">—</span>
+          <span id="qualify-pill" class="pill pill-neutral">—</span>
+        </div>
+        <div class="chart-wrap">
+          <svg id="trend-chart" class="trend-chart" role="img" aria-labelledby="chart-title chart-desc">
+            <title id="chart-title">持仓组合与等权基准走势</title>
+            <desc id="chart-desc">从调仓日至当前数据日期的归一化净值走势。</desc>
+          </svg>
+          <div class="legend" aria-hidden="true">
+            <span><i class="legend-portfolio"></i>我的组合</span>
+            <span><i class="legend-benchmark"></i>等权基准</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="holdings-title">
+        <div class="section-heading">
+          <h2 id="holdings-title">持仓表现</h2>
+          <span id="holdings-caption">收益率</span>
+        </div>
+        <div id="holdings-list" class="holdings-list"></div>
+      </section>
+
+      <section class="section" aria-labelledby="weekly-title">
+        <div class="section-heading">
+          <h2 id="weekly-title">本周筛选</h2>
+          <span id="screen-date">—</span>
+        </div>
+        <div class="screen-summary">
+          <div>
+            <strong id="passed-count">—</strong>
+            <span>只通过条件</span>
+          </div>
+          <div>
+            <strong id="still-count">—</strong>
+            <span>在仓仍符合</span>
+          </div>
+          <div>
+            <strong id="new-count">—</strong>
+            <span>新进前五</span>
+          </div>
+        </div>
+        <div class="screen-grid">
+          <article class="screen-panel">
+            <div class="panel-heading">
+              <h3>本周候选</h3>
+              <span id="candidate-caption">按 PB 从低到高</span>
+            </div>
+            <div id="candidate-list" class="compact-list"></div>
+          </article>
+          <article class="screen-panel">
+            <div class="panel-heading">
+              <h3>持仓条件</h3>
+              <span id="condition-caption">—</span>
+            </div>
+            <div id="condition-list" class="compact-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="rules" aria-labelledby="rules-title">
+        <div class="section-heading">
+          <h2 id="rules-title">当前规则</h2>
+          <span>行情数据不做展示</span>
+        </div>
+        <p id="rules-copy"></p>
+      </section>
+    </main>
+
+    <section id="loading" class="state-card" aria-live="polite">
+      <span class="loader" aria-hidden="true"></span>
+      <p>正在读取看板数据</p>
+    </section>
+    <section id="error" class="state-card state-error" role="alert" hidden>
+      <h1>看板数据暂时不可用</h1>
+      <p id="error-message">请重新运行数据生成脚本后再发布。</p>
+    </section>
+
+    <footer class="footer">
+      <span>仅展示收益率与估值指标</span>
+      <span id="generated-at">—</span>
+    </footer>
+  </div>
+
+  <script src="./dashboard.js" defer></script>
+</body>
+</html>

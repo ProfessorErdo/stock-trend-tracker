@@ -72,6 +72,36 @@ RECEIVER_EMAIL=recipient@example.com
 Practical backtesting instructions, data/list refresh workflows, and troubleshooting are collected in
 [`docs/backtesting-operations-qa.md`](docs/backtesting-operations-qa.md).
 
+### Static Portfolio Dashboard
+
+The GitHub Pages dashboard is generated from the latest local portfolio and
+screening data. It publishes only derived values such as returns, weights, and
+valuation metrics; share counts, cost basis, transaction amounts, and cash are
+excluded.
+
+Build the public dashboard data:
+
+```bash
+.venv/bin/python scripts/build_dashboard.py
+```
+
+Preview the static site locally:
+
+```bash
+python3 -m http.server 8000 --directory docs
+```
+
+Then open `http://localhost:8000/`.
+
+Build, commit only the dashboard files, and push:
+
+```bash
+./scripts/publish_dashboard.sh --publish
+```
+
+In GitHub, configure **Settings → Pages → Deploy from a branch**, select the
+branch you use for the dashboard, and choose the `/docs` folder.
+
 ### Quick Start
 
 Run the complete pipeline:
