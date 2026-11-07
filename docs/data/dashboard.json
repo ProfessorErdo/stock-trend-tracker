@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-07T10:04:25+08:00",
-  "data_as_of": "2026-10-27",
+  "generated_at": "2026-11-07T10:10:34+08:00",
+  "data_as_of": "2026-10-30",
   "data_quality": {
     "latest_price_date": "2026-11-06",
     "latest_equity_date": "2026-10-30",
@@ -10,20 +10,21 @@
   "rebalance_date": "2026-05-06",
   "holding_until": "2027-05",
   "summary": {
-    "portfolio_return_pct": -0.59,
-    "benchmark_return_pct": -0.55,
-    "excess_return_pp": -0.04,
+    "portfolio_return_pct": 5.57,
+    "benchmark_return_pct": -0.58,
+    "excess_return_pp": 6.15,
     "qualifying_count": 3,
     "holding_count": 5,
-    "new_candidate_count": 2,
+    "new_candidate_count": 3,
     "dropped_count": 2,
     "new_candidates": [
+      "宏力达",
       "渤海租赁",
       "中国平安"
     ],
     "dropped_names": [
       "杭州银行",
-      "常熟银行"
+      "东航物流"
     ]
   },
   "history": [
@@ -34,151 +35,151 @@
     },
     {
       "date": "2026-05-08",
-      "portfolio": 99.31,
+      "portfolio": 99.51,
       "benchmark": 100.05
     },
     {
       "date": "2026-05-15",
-      "portfolio": 96.79,
+      "portfolio": 95.83,
       "benchmark": 99.91
     },
     {
       "date": "2026-05-22",
-      "portfolio": 95.04,
+      "portfolio": 94.82,
       "benchmark": 99.81
     },
     {
       "date": "2026-05-29",
-      "portfolio": 94.39,
+      "portfolio": 94.68,
       "benchmark": 99.75
     },
     {
       "date": "2026-06-05",
-      "portfolio": 93.3,
+      "portfolio": 93.69,
       "benchmark": 99.66
     },
     {
       "date": "2026-06-12",
-      "portfolio": 98.14,
+      "portfolio": 98.18,
       "benchmark": 99.63
     },
     {
       "date": "2026-06-18",
-      "portfolio": 92.46,
+      "portfolio": 93.03,
       "benchmark": 99.55
     },
     {
       "date": "2026-06-26",
-      "portfolio": 89.69,
+      "portfolio": 90.87,
       "benchmark": 99.45
     },
     {
       "date": "2026-07-03",
-      "portfolio": 91.99,
+      "portfolio": 94.98,
       "benchmark": 99.51
     },
     {
       "date": "2026-07-10",
-      "portfolio": 92.58,
+      "portfolio": 93.6,
       "benchmark": 99.45
     },
     {
       "date": "2026-07-17",
-      "portfolio": 95.0,
+      "portfolio": 95.37,
       "benchmark": 99.45
     },
     {
       "date": "2026-07-24",
-      "portfolio": 97.09,
+      "portfolio": 98.31,
       "benchmark": 99.52
     },
     {
       "date": "2026-07-31",
-      "portfolio": 99.05,
+      "portfolio": 100.68,
       "benchmark": 99.68
     },
     {
       "date": "2026-08-07",
-      "portfolio": 95.58,
+      "portfolio": 98.53,
       "benchmark": 99.6
     },
     {
       "date": "2026-08-14",
-      "portfolio": 94.63,
+      "portfolio": 97.99,
       "benchmark": 99.56
     },
     {
       "date": "2026-08-21",
-      "portfolio": 96.73,
+      "portfolio": 100.67,
       "benchmark": 99.55
     },
     {
       "date": "2026-08-28",
-      "portfolio": 97.67,
+      "portfolio": 102.58,
       "benchmark": 99.67
     },
     {
       "date": "2026-09-04",
-      "portfolio": 103.87,
+      "portfolio": 108.3,
       "benchmark": 99.69
     },
     {
       "date": "2026-09-11",
-      "portfolio": 103.74,
+      "portfolio": 107.61,
       "benchmark": 99.63
     },
     {
       "date": "2026-09-18",
-      "portfolio": 101.88,
+      "portfolio": 105.14,
       "benchmark": 99.57
     },
     {
       "date": "2026-09-24",
-      "portfolio": 101.69,
+      "portfolio": 105.33,
       "benchmark": 99.53
     },
     {
       "date": "2026-09-30",
-      "portfolio": 102.57,
+      "portfolio": 106.12,
       "benchmark": 99.56
     },
     {
       "date": "2026-10-09",
-      "portfolio": 102.1,
+      "portfolio": 105.94,
       "benchmark": 99.6
     },
     {
       "date": "2026-10-16",
-      "portfolio": 99.68,
+      "portfolio": 102.78,
       "benchmark": 99.53
     },
     {
       "date": "2026-10-23",
-      "portfolio": 97.29,
+      "portfolio": 100.71,
       "benchmark": 99.45
     },
     {
-      "date": "2026-10-27",
-      "portfolio": 99.41,
-      "benchmark": 99.45
+      "date": "2026-10-30",
+      "portfolio": 105.57,
+      "benchmark": 99.42
     }
   ],
   "holdings": [
     {
       "code": "600926",
       "name": "杭州银行",
-      "weight_pct": 21.64,
-      "return_pct": 2.06,
-      "day_change_pct": 0.24,
-      "latest_price": 46.05,
+      "weight_pct": 20.0,
+      "return_pct": 4.12,
+      "day_change_pct": 0.23,
+      "latest_price": 46.98,
       "qualifies": false,
       "failed_metrics": [
         "ROE"
       ],
       "metrics": {
-        "pe": 6.43,
-        "pb": 0.89,
-        "pr": 0.46,
+        "pe": 6.56,
+        "pb": 0.9,
+        "pr": 0.47,
         "roe": 14.02
       },
       "sparkline": [
@@ -212,110 +213,66 @@
       ]
     },
     {
-      "code": "601838",
-      "name": "成都银行",
-      "weight_pct": 21.09,
-      "return_pct": 7.28,
-      "day_change_pct": 2.49,
-      "latest_price": 29.18,
-      "qualifies": true,
-      "failed_metrics": [],
-      "metrics": {
-        "pe": 6.1,
-        "pb": 0.91,
-        "pr": 0.41,
-        "roe": 14.94
-      },
-      "sparkline": [
-        98.38,
-        97.61,
-        96.65,
-        96.99,
-        99.26,
-        104.63,
-        97.28,
-        93.64,
-        95.88,
-        99.04,
-        100.0,
-        101.1,
-        101.36,
-        97.98,
-        98.93,
-        102.17,
-        102.5,
-        106.8,
-        109.85,
-        107.54,
-        106.95,
-        108.49,
-        108.35,
-        107.24,
-        102.98,
-        112.02,
-        113.35
-      ]
-    },
-    {
-      "code": "601128",
-      "name": "常熟银行",
-      "weight_pct": 20.01,
-      "return_pct": -3.87,
-      "day_change_pct": 0.64,
-      "latest_price": 10.94,
+      "code": "601156",
+      "name": "东航物流",
+      "weight_pct": 20.0,
+      "return_pct": 18.68,
+      "day_change_pct": 2.09,
+      "latest_price": 21.47,
       "qualifies": false,
       "failed_metrics": [
+        "PB",
         "ROE"
       ],
       "metrics": {
-        "pe": 4.66,
-        "pb": 0.66,
-        "pr": 0.33,
-        "roe": 14.06
+        "pe": 10.51,
+        "pb": 1.5,
+        "pr": 0.74,
+        "roe": 14.28
       },
       "sparkline": [
-        98.77,
-        99.3,
-        98.51,
-        98.24,
-        97.8,
-        100.26,
-        96.75,
-        91.74,
-        92.36,
-        93.76,
-        96.57,
-        96.57,
-        99.65,
-        94.9,
-        94.38,
-        96.75,
-        95.34,
         99.56,
-        99.38,
-        97.19,
-        95.61,
-        97.01,
-        96.57,
-        95.61,
-        94.29,
-        97.54,
-        98.59
+        94.97,
+        98.23,
+        100.77,
+        101.33,
+        102.1,
+        101.49,
+        99.5,
+        108.96,
+        100.72,
+        100.11,
+        103.65,
+        108.96,
+        110.72,
+        113.05,
+        118.46,
+        121.39,
+        122.83,
+        120.62,
+        115.37,
+        116.2,
+        117.36,
+        118.35,
+        114.15,
+        114.04,
+        118.68,
+        126.04
       ]
     },
     {
       "code": "601319",
       "name": "中国人保",
-      "weight_pct": 20.01,
-      "return_pct": 4.84,
-      "day_change_pct": 0.0,
-      "latest_price": 8.88,
+      "weight_pct": 20.0,
+      "return_pct": 5.9,
+      "day_change_pct": -1.43,
+      "latest_price": 8.97,
       "qualifies": true,
       "failed_metrics": [],
       "metrics": {
-        "pe": 5.74,
-        "pb": 1.01,
-        "pr": 0.32,
+        "pe": 5.8,
+        "pb": 1.02,
+        "pr": 0.33,
         "roe": 17.79
       },
       "sparkline": [
@@ -351,16 +308,16 @@
     {
       "code": "601601",
       "name": "中国太保",
-      "weight_pct": 17.25,
-      "return_pct": -16.01,
-      "day_change_pct": -1.12,
-      "latest_price": 50.36,
+      "weight_pct": 20.0,
+      "return_pct": -12.89,
+      "day_change_pct": -0.29,
+      "latest_price": 52.23,
       "qualifies": true,
       "failed_metrics": [],
       "metrics": {
-        "pe": 5.04,
-        "pb": 0.93,
-        "pr": 0.28,
+        "pe": 5.23,
+        "pb": 0.96,
+        "pr": 0.29,
         "roe": 18.1
       },
       "sparkline": [
@@ -392,61 +349,106 @@
         87.11,
         90.51
       ]
+    },
+    {
+      "code": "601838",
+      "name": "成都银行",
+      "weight_pct": 20.0,
+      "return_pct": 12.02,
+      "day_change_pct": 0.2,
+      "latest_price": 30.47,
+      "qualifies": true,
+      "failed_metrics": [],
+      "metrics": {
+        "pe": 6.37,
+        "pb": 0.95,
+        "pr": 0.43,
+        "roe": 14.94
+      },
+      "sparkline": [
+        98.38,
+        97.61,
+        96.65,
+        96.99,
+        99.26,
+        104.63,
+        97.28,
+        93.64,
+        95.88,
+        99.04,
+        100.0,
+        101.1,
+        101.36,
+        97.98,
+        98.93,
+        102.17,
+        102.5,
+        106.8,
+        109.85,
+        107.54,
+        106.95,
+        108.49,
+        108.35,
+        107.24,
+        102.98,
+        112.02,
+        113.35
+      ]
     }
   ],
   "screen": {
-    "as_of": "2026-10-27",
+    "as_of": "2026-10-30",
     "universe_size": 1052,
-    "valid_samples": 952,
-    "passed_count": 9,
+    "valid_samples": 953,
+    "passed_count": 8,
     "target_count": 5,
     "thresholds": {
-      "pe": 12.88,
-      "pb": 1.13,
-      "pr": 1.01,
-      "roe": 14.5
+      "pe": 12.9,
+      "pb": 1.12,
+      "pr": 0.99,
+      "roe": 14.51
     },
     "candidates": [
       {
-        "code": "000415",
-        "name": "渤海租赁",
+        "code": "688330",
+        "name": "宏力达",
         "rank": 1,
         "target": true,
         "in_portfolio": false,
         "new_to_portfolio": true,
         "metrics": {
-          "pe": 5.23,
-          "pb": 0.84,
-          "pr": 0.33,
+          "pe": 4.49,
+          "pb": 0.87,
+          "pr": 0.23,
+          "roe": 19.45
+        }
+      },
+      {
+        "code": "000415",
+        "name": "渤海租赁",
+        "rank": 2,
+        "target": true,
+        "in_portfolio": false,
+        "new_to_portfolio": true,
+        "metrics": {
+          "pe": 5.88,
+          "pb": 0.95,
+          "pr": 0.37,
           "roe": 15.95
         }
       },
       {
         "code": "601838",
         "name": "成都银行",
-        "rank": 2,
-        "target": true,
-        "in_portfolio": true,
-        "new_to_portfolio": false,
-        "metrics": {
-          "pe": 6.1,
-          "pb": 0.91,
-          "pr": 0.41,
-          "roe": 14.94
-        }
-      },
-      {
-        "code": "601601",
-        "name": "中国太保",
         "rank": 3,
         "target": true,
         "in_portfolio": true,
         "new_to_portfolio": false,
         "metrics": {
-          "pe": 5.04,
-          "pb": 0.93,
-          "pr": 0.28,
-          "roe": 18.1
+          "pe": 6.37,
+          "pb": 0.95,
+          "pr": 0.43,
+          "roe": 14.94
         }
       },
       {
@@ -457,24 +459,24 @@
         "in_portfolio": false,
         "new_to_portfolio": true,
         "metrics": {
-          "pe": 5.77,
-          "pb": 0.94,
+          "pe": 5.8,
+          "pb": 0.95,
           "pr": 0.37,
           "roe": 15.8
         }
       },
       {
-        "code": "601319",
-        "name": "中国人保",
+        "code": "601601",
+        "name": "中国太保",
         "rank": 5,
         "target": true,
         "in_portfolio": true,
         "new_to_portfolio": false,
         "metrics": {
-          "pe": 5.74,
-          "pb": 1.01,
-          "pr": 0.32,
-          "roe": 17.79
+          "pe": 5.23,
+          "pb": 0.96,
+          "pr": 0.29,
+          "roe": 18.1
         }
       },
       {
@@ -485,24 +487,24 @@
         "in_portfolio": false,
         "new_to_portfolio": true,
         "metrics": {
-          "pe": 7.04,
-          "pb": 1.02,
-          "pr": 0.48,
+          "pe": 6.89,
+          "pb": 1.0,
+          "pr": 0.47,
           "roe": 14.64
         }
       },
       {
-        "code": "002432",
-        "name": "九安医疗",
+        "code": "601319",
+        "name": "中国人保",
         "rank": null,
         "target": false,
-        "in_portfolio": false,
-        "new_to_portfolio": true,
+        "in_portfolio": true,
+        "new_to_portfolio": false,
         "metrics": {
-          "pe": 4.98,
-          "pb": 1.09,
-          "pr": 0.25,
-          "roe": 20.02
+          "pe": 5.8,
+          "pb": 1.02,
+          "pr": 0.33,
+          "roe": 17.79
         }
       },
       {
@@ -513,24 +515,10 @@
         "in_portfolio": false,
         "new_to_portfolio": true,
         "metrics": {
-          "pe": 7.07,
-          "pb": 1.02,
-          "pr": 0.47,
-          "roe": 14.95
-        }
-      },
-      {
-        "code": "688330",
-        "name": "宏力达",
-        "rank": null,
-        "target": false,
-        "in_portfolio": false,
-        "new_to_portfolio": true,
-        "metrics": {
-          "pe": 5.55,
+          "pe": 7.47,
           "pb": 1.08,
-          "pr": 0.29,
-          "roe": 19.45
+          "pr": 0.5,
+          "roe": 14.95
         }
       }
     ]
@@ -538,6 +526,13 @@
   "rules": {
     "holding_universe_size": 932,
     "holding_universe_snapshot": "2026-04-30 持仓池",
+    "holding_selection": "932 旧版：四指标分位、不裁尾、PB 排序",
+    "holding_thresholds": {
+      "pe": 15.3769,
+      "pb": 1.3515,
+      "pr": 1.1875,
+      "roe": 14.105
+    },
     "screen_universe_size": 1052,
     "screen_universe_snapshot": "当前动态股票池",
     "valuation_quantile": 25,

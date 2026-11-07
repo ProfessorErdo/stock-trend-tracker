@@ -26,6 +26,7 @@ import config  # noqa: E402
 from data_loader import load_price_data, load_stock_pool  # noqa: E402
 from stock_selector import (  # noqa: E402
     adverse_tail_quantile,
+    is_new_stock,
     rank_and_limit,
     select_stocks,
 )
@@ -47,7 +48,7 @@ HOLDING_UNIVERSE_FILES = {
     "zzfc": (ROOT / "data" / "input" / "zzfc_list_20260316.csv", ","),
 }
 EXPECTED_HOLDING_UNIVERSE_SIZE = 932
-EXPECTED_HOLDINGS = {"600926", "601838", "601128", "601319", "601601"}
+EXPECTED_HOLDINGS = {"600926", "601838", "601156", "601319", "601601"}
 PORTFOLIO_CUTOFF_DATE = pd.Timestamp("2026-04-30")
 PORTFOLIO_REBALANCE_DATE = pd.Timestamp("2026-05-06")
 SKIP_STOCKS = {"689009"}
@@ -219,6 +220,8 @@ def weekly_series(frame: pd.DataFrame, date_col: str, value_cols: list[str]) -> 
 def build_performance_history(
     rebalance_date: pd.Timestamp,
     as_of: pd.Timestamp,
+    holdings: pd.DataFrame,
+    price_frames: dict[str, pd.DataFrame],
 ) -> tuple[list[dict], float | None]:
     if not EQUITY_FILE.exists():
         raise FileNotFoundError(
@@ -237,18 +240,87 @@ def build_performance_history(
     if strategy_base <= 0 or benchmark_base <= 0:
         return [], None
 
+    holding_prices: dict[str, pd.Series] = {}
+    for row in holdings.itertuples(index=False):
+        code = str(row.stock_code).zfill(6)
+        frame = price_frames.get(code, pd.DataFrame())
+        if frame.empty or "close" not in frame.columns:
+            raise RuntimeError(f"Missing close data for holding {code}.")
+        prices = frame[["trade_date", "close"]].copy()
+        prices["trade_date"] = pd.to_datetime(prices["trade_date"]).dt.normalize()
+        prices = prices[
+            (prices["trade_date"] >= rebalance_date)
+            & (prices["trade_date"] <= as_of)
+        ].dropna().drop_duplicates("trade_date", keep="last")
+        holding_prices[code] = prices.set_index("trade_date")["close"]
+
+    aligned_portfolio = pd.Series(0.0, index=weekly["date"])
+    total_holding_weight = 0.0
+    for row in holdings.itertuples(index=False):
+        code = str(row.stock_code).zfill(6)
+        entry_price = float(row.current_price)
+        if entry_price <= 0:
+            raise RuntimeError(f"Invalid rebalance price for holding {code}.")
+        aligned = holding_prices[code].reindex(weekly["date"], method="ffill")
+        weight = float(row.weight)
+        aligned_portfolio += aligned / entry_price * weight
+        total_holding_weight += weight
+    if total_holding_weight <= 0:
+        raise RuntimeError("Portfolio holdings have no positive weight.")
+    portfolio_index = aligned_portfolio / total_holding_weight * 100
+
     history: list[dict] = []
     for row in weekly.itertuples(index=False):
         history.append(
             {
                 "date": row.date.strftime("%Y-%m-%d"),
-                "portfolio": clean_number(row.strategy_equity / strategy_base * 100, 2),
+                "portfolio": clean_number(portfolio_index.loc[row.date], 2),
                 "benchmark": clean_number(row.benchmark_equity / benchmark_base * 100, 2),
             }
         )
 
     benchmark_return = float(weekly["benchmark_equity"].iloc[-1]) / benchmark_base - 1
     return history, benchmark_return
+
+
+def select_legacy_932_holdings(
+    holding_codes: list[str],
+    price_cache: dict[str, pd.DataFrame],
+) -> tuple[list[str], dict, pd.DataFrame]:
+    """Reproduce the original 932-stock annual selection without tail trimming."""
+    _, valuations = select_stocks(
+        holding_codes,
+        PORTFOLIO_CUTOFF_DATE,
+        price_cache=price_cache,
+    )
+    if valuations.empty:
+        raise RuntimeError("No valuations were available for the 932-stock cutoff.")
+
+    thresholds = {
+        "pe": float(valuations["pe_ttm"].quantile(config.PE_THRESHOLD)),
+        "pb": float(valuations["pb_ttm"].quantile(config.PB_THRESHOLD)),
+        "pr": float(valuations["pr_ttm"].quantile(config.PR_THRESHOLD)),
+        "roe": float(valuations["roe_ttm"].quantile(config.ROE_THRESHOLD)),
+    }
+    mask = (
+        (valuations["pe_ttm"] <= thresholds["pe"])
+        & (valuations["pb_ttm"] <= thresholds["pb"])
+        & (valuations["pr_ttm"] <= thresholds["pr"])
+        & (valuations["roe_ttm"] >= thresholds["roe"])
+    )
+    selected = [
+        str(row.code).zfill(6)
+        for row in valuations[mask].itertuples(index=False)
+        if not is_new_stock(
+            str(row.code).zfill(6),
+            price_cache[str(row.code).zfill(6)],
+            PORTFOLIO_CUTOFF_DATE,
+            config.NEW_STOCK_EXCLUDE_DAYS,
+        )
+    ]
+    ranked = rank_and_limit(selected, valuations, config.MAX_POSITIONS, "pb")
+    rounded = {key: clean_number(value, 4) for key, value in thresholds.items()}
+    return ranked, rounded, valuations
 
 
 def holding_sparkline(price_df: pd.DataFrame, rebalance_date: pd.Timestamp, entry_price: float) -> list[float]:
@@ -401,16 +473,9 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
     all_codes = sorted(set(holding_codes) | set(screen_codes))
     price_frames = load_price_cache(all_codes)
 
-    selected_holdings, holdings_valuations = select_stocks(
+    fixed_holdings, holding_thresholds, _ = select_legacy_932_holdings(
         holding_codes,
-        PORTFOLIO_CUTOFF_DATE,
-        price_cache=price_frames,
-    )
-    fixed_holdings = rank_and_limit(
-        selected_holdings,
-        holdings_valuations,
-        config.MAX_POSITIONS,
-        "pb",
+        price_frames,
     )
     if set(fixed_holdings) != EXPECTED_HOLDINGS:
         raise RuntimeError(
@@ -430,7 +495,12 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
         raise RuntimeError("The requested date is before the latest holding rebalance.")
     latest_market_date = latest_market_date.normalize()
 
-    history, benchmark_return = build_performance_history(rebalance_date, latest_market_date)
+    history, benchmark_return = build_performance_history(
+        rebalance_date,
+        latest_market_date,
+        holdings,
+        price_frames,
+    )
     valuation_map, screen, raw_thresholds = screen_stocks(
         screen_codes,
         holdings,
@@ -526,6 +596,8 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
         "rules": {
             "holding_universe_size": len(holding_codes),
             "holding_universe_snapshot": "2026-04-30 持仓池",
+            "holding_selection": "932 旧版：四指标分位、不裁尾、PB 排序",
+            "holding_thresholds": holding_thresholds,
             "screen_universe_size": len(screen_codes),
             "screen_universe_snapshot": "当前动态股票池",
             "valuation_quantile": int(config.PE_THRESHOLD * 100),

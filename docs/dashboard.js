@@ -299,6 +299,7 @@ function renderDashboard(data) {
   const rules = data.rules;
   $("#rules-copy").textContent =
     `持仓由 ${rules.holding_universe_size} 只的 ${rules.holding_universe_snapshot} 选出并锁定；` +
+    `${rules.holding_selection}。` +
     `周更阈值和候选股使用 ${rules.screen_universe_size} 只的${rules.screen_universe_snapshot}。` +
     `PE、PB、PR 低于全样本最低 ${rules.valuation_quantile}% 分位，` +
     `ROE 高于最高 ${100 - rules.roe_quantile}% 分位；先裁去各指标不利尾部 ${(rules.trim_ratio * 100).toFixed(1)}%。` +
