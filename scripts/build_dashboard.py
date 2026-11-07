@@ -23,7 +23,7 @@ BACKTESTING_DIR = ROOT / "backtesting"
 sys.path.insert(0, str(BACKTESTING_DIR))
 
 import config  # noqa: E402
-from data_loader import load_price_data, load_stock_pool  # noqa: E402
+from data_loader import load_price_data  # noqa: E402
 from stock_selector import (  # noqa: E402
     adverse_tail_quantile,
     rank_and_limit,
@@ -35,6 +35,20 @@ HOLDINGS_FILE = ROOT / "data" / "processed" / "backtesting" / "holdings" / "hold
 EQUITY_FILE = ROOT / "data" / "processed" / "backtesting" / "performance" / "equity_curve.csv"
 STOCK_NAMES_FILE = ROOT / "data" / "input" / "stock_names_full.csv"
 DEFAULT_OUTPUT = ROOT / "docs" / "data" / "dashboard.json"
+
+# Fixed universe used by the real 2026-04-30 annual rebalance. Each index
+# contributes the single list version that was current in the 932-stock era.
+PORTFOLIO_UNIVERSE_FILES = {
+    "hs300": (ROOT / "data" / "input" / "hs300_list_20251213.csv", ","),
+    "zz500": (ROOT / "data" / "input" / "zz500_list_20251216.csv", "\t"),
+    "hongli": (ROOT / "data" / "input" / "hongli_list_20251213.csv", ","),
+    "honglidibo": (ROOT / "data" / "input" / "honglidibo_list_20251213.csv", ","),
+    "gz100": (ROOT / "data" / "input" / "gz100_list_20260227.csv", ","),
+    "gzfc": (ROOT / "data" / "input" / "gzfc_list_20260227.csv", ","),
+    "zzfc": (ROOT / "data" / "input" / "zzfc_list_20260316.csv", ","),
+}
+EXPECTED_UNIVERSE_SIZE = 932
+SKIP_STOCKS = {"689009"}
 
 
 def clean_number(value: float, digits: int = 4) -> float | None:
@@ -52,6 +66,27 @@ def get_stock_names() -> dict[str, str]:
         str(row.code).zfill(6): str(row.name).replace(" ", "")
         for row in names.itertuples(index=False)
     }
+
+
+def load_portfolio_universe() -> pd.DataFrame:
+    """Load the exact fixed universe used by the 2026-04-30 rebalance."""
+    all_codes: set[str] = set()
+    for file_path, separator in PORTFOLIO_UNIVERSE_FILES.values():
+        if not file_path.exists():
+            raise FileNotFoundError(f"Missing fixed-universe file: {file_path}")
+        frame = pd.read_csv(file_path, sep=separator)
+        if "code" not in frame.columns:
+            raise RuntimeError(f"No code column in universe file: {file_path}")
+        all_codes.update(
+            frame["code"].astype(str).str.strip().str.zfill(6).tolist()
+        )
+    all_codes.difference_update(SKIP_STOCKS)
+    if len(all_codes) != EXPECTED_UNIVERSE_SIZE:
+        raise RuntimeError(
+            "The fixed portfolio universe changed: "
+            f"expected {EXPECTED_UNIVERSE_SIZE}, found {len(all_codes)}."
+        )
+    return pd.DataFrame({"code": sorted(all_codes)})
 
 
 def load_price_cache(stock_codes: list[str]) -> dict[str, pd.DataFrame]:
@@ -324,7 +359,7 @@ def screen_stocks(
 def build_payload(as_of: pd.Timestamp | None) -> dict:
     names = get_stock_names()
     rebalance_date, holdings = load_holding_rows(as_of)
-    pool = load_stock_pool()
+    pool = load_portfolio_universe()
     stock_codes = pool["code"].astype(str).str.zfill(6).drop_duplicates().tolist()
     price_frames = load_price_cache(stock_codes)
 
@@ -432,6 +467,8 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
         "holdings": holding_payload,
         "screen": screen,
         "rules": {
+            "universe_size": len(stock_codes),
+            "universe_snapshot": "2026-04-30 固定池",
             "valuation_quantile": int(config.PE_THRESHOLD * 100),
             "roe_quantile": int(config.ROE_THRESHOLD * 100),
             "max_positions": int(config.MAX_POSITIONS),

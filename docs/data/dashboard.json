@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-07T09:24:20+08:00",
+  "generated_at": "2026-11-07T09:58:35+08:00",
   "data_as_of": "2026-10-27",
   "data_quality": {
     "latest_price_date": "2026-11-06",
@@ -396,14 +396,14 @@
   ],
   "screen": {
     "as_of": "2026-10-27",
-    "valid_samples": 952,
+    "valid_samples": 837,
     "passed_count": 9,
     "target_count": 5,
     "thresholds": {
-      "pe": 12.88,
+      "pe": 12.83,
       "pb": 1.13,
-      "pr": 1.01,
-      "roe": 14.5
+      "pr": 0.99,
+      "roe": 14.16
     },
     "candidates": [
       {
@@ -535,6 +535,8 @@
     ]
   },
   "rules": {
+    "universe_size": 932,
+    "universe_snapshot": "2026-04-30 固定池",
     "valuation_quantile": 25,
     "roe_quantile": 75,
     "max_positions": 5,

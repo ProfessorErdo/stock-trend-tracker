@@ -79,6 +79,10 @@ screening data. It publishes only derived values such as returns, weights, and
 valuation metrics; share counts, cost basis, transaction amounts, and cash are
 excluded.
 
+The weekly screen is pinned to the same fixed 932-stock universe used for the
+2026-04-30 rebalance. It does not merge later index-list snapshots into the
+portfolio history.
+
 Build the public dashboard data:
 
 ```bash
