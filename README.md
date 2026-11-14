@@ -13,6 +13,22 @@ A Python-based stock analysis tool that queries financial and price data, calcul
 - **Individual Stock Query**: Query and visualize valuation data for a specific stock
 - **Top Stocks Ranking**: Find top N stocks based on valuation indicators
 
+## Documentation Map（文档索引）
+
+Start here if you are new to this repository, or if you are starting a new agent session:
+
+| Document | What it covers |
+|---|---|
+| [docs/index-update-and-full-backtest-playbook.md](docs/index-update-and-full-backtest-playbook.md) | **年度/季度操作手册**：更新指数清单、补齐新股票数据、跑全量回测、生成调仓计划 |
+| [docs/universe-backtest-2026-11.md](docs/universe-backtest-2026-11.md) | 1052 只并集池的全角度回测与最佳选股方案（2026-11） |
+| [docs/universe-backtest-932-2026-11.md](docs/universe-backtest-932-2026-11.md) | 932 只旧池的同口径对比（2026-11） |
+| [docs/within-basket-rebalance-2026-11.md](docs/within-basket-rebalance-2026-11.md) | 固定年度篮子内的再平衡频率与权重实验（2026-11） |
+| [docs/backtesting-operations-qa.md](docs/backtesting-operations-qa.md) | 日常回测 Q&A、命令速查、故障排查 |
+| [backtesting/README.md](backtesting/README.md) | 回测引擎结构、CLI、输出说明 |
+| [AGENTS.md](AGENTS.md) | Agent 工作约定、目录结构、策略逻辑 |
+
+**Current state (2026-11-07):** stock pool = **1052** (union of 14 index-list files, `689009` excluded); backtest data through **2026-11-06**; last annual rebalance = 2026-04-30 cutoff → 2026-05-06; **next annual rebalance = 2027-04-30 cutoff → first trading day of May 2027**.
+
 ## Project Structure
 
 ```
@@ -69,8 +85,10 @@ RECEIVER_EMAIL=recipient@example.com
 
 ## Usage
 
-Practical backtesting instructions, data/list refresh workflows, and troubleshooting are collected in
-[`docs/backtesting-operations-qa.md`](docs/backtesting-operations-qa.md).
+Practical backtesting instructions, the annual index-list refresh workflow, the full parameter-sweep
+pipeline, and troubleshooting are collected in
+[`docs/index-update-and-full-backtest-playbook.md`](docs/index-update-and-full-backtest-playbook.md)
+and [`docs/backtesting-operations-qa.md`](docs/backtesting-operations-qa.md).
 
 ### Static Portfolio Dashboard
 

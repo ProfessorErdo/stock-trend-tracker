@@ -88,7 +88,7 @@ def format_symbol(code: str) -> str:
     code = str(code).strip()
     if code.startswith(("600", "601", "603", "605", "688", "689")):
         return f"sh{code}"
-    elif code.startswith(("000", "001", "002", "003", "300", "301")):
+    elif code.startswith(("000", "001", "002", "003", "300", "301", "302")):
         return f"sz{code}"
     elif code.startswith(("83", "87", "92", "43")):
         return f"bj{code}"

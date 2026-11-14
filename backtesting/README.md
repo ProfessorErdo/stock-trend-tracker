@@ -5,6 +5,10 @@ Backtesting engine for a **low-valuation + high-ROE** A-share stock selection st
 For the practical, recurring operational checklist and FAQ, see
 [`docs/backtesting-operations-qa.md`](../docs/backtesting-operations-qa.md).
 
+For the **annual/quarterly refresh workflow** (index-list update → fill new stocks → data update →
+full parameter sweep → report → next rebalance plan), start with
+[`docs/index-update-and-full-backtest-playbook.md`](../docs/index-update-and-full-backtest-playbook.md).
+
 > Note: this module has its **own data directory** (`data/input/backtesting/`, HFQ-adjusted prices) and is independent of the `src/` data pipeline (`data/input/price-data/all`, unadjusted prices). Running `src/run_new.sh` does **not** update backtesting data, and vice versa.
 
 ## Quick Start
