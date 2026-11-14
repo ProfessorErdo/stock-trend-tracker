@@ -1,12 +1,24 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents (DeepSeek Harness, Codex, and other coding agents) when working in this repository.
 
 ## Project Overview
 
 A Python-based stock analysis tool for A-share market investing. Two main components:
 1. **`src/`** — Data ingestion, valuation calculation, and daily reporting pipeline
 2. **`backtesting/`** — Backtesting engine for low-valuation + high-ROE stock selection strategy (active development on `dev/backtest` branch)
+
+## Current State & Docs (2026-11)
+
+- Stock pool: **1052** — union of every historical list file in `config.EXISTING_STOCK_POOL_FILES`
+  (currently 14 files across 7 pools; `689009` excluded).
+- Backtest data: prices/financials through **2026-11-06** in `data/input/backtesting/`.
+- Last annual rebalance: 2026-04-30 cutoff → 2026-05-06.
+- **Next annual rebalance: 2027-04-30 cutoff → first trading day of May 2027.**
+- Read first: [`docs/index-update-and-full-backtest-playbook.md`](docs/index-update-and-full-backtest-playbook.md)
+  (annual/quarterly workflow), then the 1052/932 backtest reports linked from the root `README.md`.
+- Full-sweep scripts: `backtesting/universe_compare.py`, `build_universe_report.py`,
+  `build_pool_report.py`, `analyze_holdings_diff.py`.
 
 ## Environment Setup
 
@@ -43,6 +55,9 @@ stock-trend-tracker/
 │   ├── run.sh                    # Interactive menu for all backtest variants
 │   ├── next_rebalance.py         # Calculate next rebalance allocation plan
 │   ├── compare_*.py              # Cross-strategy comparison scripts
+│   ├── universe_compare.py       # Full parameter sweep (filters × rankings × trim × N × thresholds × frequency)
+│   ├── build_universe_report.py  # Build the union-pool report + charts
+│   ├── build_pool_report.py      # Build a single-pool report and compare it with another pool
 │   ├── analyze_selection.py      # Per-step stock count analysis
 │   ├── analyze_rebalance_cycles.py  # Rebalance cycle + DCA simulation
 │   └── test_thresholds.py        # Parameter sweep for PE/PB/PR/ROE thresholds
@@ -104,7 +119,7 @@ python query_top_stocks.py --indicator roe_ttm --top_n 20
 
 The backtest implements a **low-valuation + high-ROE** stock selection strategy:
 
-1. **Stock pool**: ~1050 stocks — union of the current and historical members of 7 indices (HS300, ZZ500, Hongli, HongliDibo, GZ100, GZFC, ZZFC); every file matching `EXISTING_STOCK_POOL_FILES` is merged to avoid survivorship bias
+1. **Stock pool**: ~1052 stocks — union of the current and historical members of 7 indices (HS300, ZZ500, Hongli, HongliDibo, GZ100, GZFC, ZZFC); every file matching `EXISTING_STOCK_POOL_FILES` is merged to avoid survivorship bias
 2. **4-step filter** (each cutoff date):
    - Step 1: Basic filter — exclude suspended stocks, missing financial data, negative valuations
    - Step 2: Valuation filter — PE/PB/PR all below 25th percentile (AND logic)
@@ -118,7 +133,7 @@ The backtest implements a **low-valuation + high-ROE** stock selection strategy:
 
 ```
 run_backtest.py
-  → load_stock_pool()              # 7 pools × all list files → ~1050 codes
+  → load_stock_pool()              # 7 pools × all list files → ~1052 codes
   → build_trading_calendar()       # From price data, filtered by date range
   → get_*_cutoff_dates()           # (cutoff, rebalance) pairs per frequency
   → pre-load all price data
