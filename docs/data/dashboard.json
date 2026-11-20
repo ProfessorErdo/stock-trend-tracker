@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-14T17:26:50+08:00",
-  "data_as_of": "2026-11-13",
+  "generated_at": "2026-11-20T21:39:40+08:00",
+  "data_as_of": "2026-11-20",
   "data_quality": {
-    "latest_price_date": "2026-11-13",
+    "latest_price_date": "2026-11-20",
     "latest_equity_date": "2026-10-30",
     "complete": true,
     "benchmark_extended": true
@@ -11,17 +11,17 @@
   "rebalance_date": "2026-05-06",
   "holding_until": "2027-05",
   "summary": {
-    "portfolio_return_pct": 8.12,
-    "benchmark_return_pct": 1.64,
-    "excess_return_pp": 6.48,
+    "portfolio_return_pct": 9.88,
+    "benchmark_return_pct": -3.56,
+    "excess_return_pp": 13.44,
     "qualifying_count": 1,
     "holding_count": 5,
     "new_candidate_count": 3,
     "dropped_count": 4,
     "new_candidates": [
       "渤海租赁",
-      "招商证券",
-      "中远海控"
+      "九安医疗",
+      "中孚实业"
     ],
     "dropped_names": [
       "杭州银行",
@@ -167,9 +167,9 @@
       "benchmark": 99.42
     },
     {
-      "date": "2026-11-13",
-      "portfolio": 108.12,
-      "benchmark": 101.64
+      "date": "2026-11-20",
+      "portfolio": 109.88,
+      "benchmark": 96.44
     }
   ],
   "holdings": [
@@ -177,17 +177,17 @@
       "code": "600926",
       "name": "杭州银行",
       "weight_pct": 20.0,
-      "return_pct": 6.49,
-      "day_change_pct": 1.5,
-      "latest_price": 48.05,
+      "return_pct": 8.75,
+      "day_change_pct": 0.97,
+      "latest_price": 49.07,
       "qualifies": false,
       "failed_metrics": [
         "ROE"
       ],
       "metrics": {
-        "pe": 6.51,
-        "pb": 0.91,
-        "pr": 0.46,
+        "pe": 6.65,
+        "pb": 0.92,
+        "pr": 0.47,
         "roe": 14.09
       },
       "sparkline": [
@@ -218,25 +218,26 @@
         100.42,
         104.12,
         103.88,
-        106.49
+        106.49,
+        108.75
       ]
     },
     {
       "code": "601156",
       "name": "东航物流",
       "weight_pct": 20.0,
-      "return_pct": 25.1,
-      "day_change_pct": 0.58,
-      "latest_price": 22.63,
+      "return_pct": 25.76,
+      "day_change_pct": -0.48,
+      "latest_price": 22.75,
       "qualifies": false,
       "failed_metrics": [
         "PB",
         "ROE"
       ],
       "metrics": {
-        "pe": 11.01,
-        "pb": 1.54,
-        "pr": 0.78,
+        "pe": 11.07,
+        "pb": 1.55,
+        "pr": 0.79,
         "roe": 14.08
       },
       "sparkline": [
@@ -267,22 +268,24 @@
         114.04,
         118.68,
         126.04,
-        125.1
+        125.1,
+        125.76
       ]
     },
     {
       "code": "601319",
       "name": "中国人保",
       "weight_pct": 20.0,
-      "return_pct": 3.42,
-      "day_change_pct": 0.57,
-      "latest_price": 8.76,
+      "return_pct": 3.78,
+      "day_change_pct": -0.45,
+      "latest_price": 8.79,
       "qualifies": false,
       "failed_metrics": [
+        "PR",
         "ROE"
       ],
       "metrics": {
-        "pe": 10.06,
+        "pe": 10.1,
         "pb": 0.97,
         "pr": 1.02,
         "roe": 9.87
@@ -315,24 +318,25 @@
         104.01,
         105.9,
         105.19,
-        103.42
+        103.42,
+        103.78
       ]
     },
     {
       "code": "601601",
       "name": "中国太保",
       "weight_pct": 20.0,
-      "return_pct": -10.39,
-      "day_change_pct": 1.88,
-      "latest_price": 53.73,
+      "return_pct": -6.3,
+      "day_change_pct": 1.59,
+      "latest_price": 56.18,
       "qualifies": false,
       "failed_metrics": [
         "ROE"
       ],
       "metrics": {
-        "pe": 6.87,
-        "pb": 0.95,
-        "pr": 0.51,
+        "pe": 7.19,
+        "pb": 1.0,
+        "pr": 0.53,
         "roe": 13.6
       },
       "sparkline": [
@@ -363,21 +367,22 @@
         82.07,
         87.11,
         90.51,
-        89.61
+        89.61,
+        93.7
       ]
     },
     {
       "code": "601838",
       "name": "成都银行",
       "weight_pct": 20.0,
-      "return_pct": 15.96,
-      "day_change_pct": 1.55,
-      "latest_price": 31.54,
+      "return_pct": 17.39,
+      "day_change_pct": 0.09,
+      "latest_price": 31.93,
       "qualifies": true,
       "failed_metrics": [],
       "metrics": {
-        "pe": 6.64,
-        "pb": 0.96,
+        "pe": 6.72,
+        "pb": 0.97,
         "pr": 0.46,
         "roe": 14.47
       },
@@ -409,17 +414,18 @@
         102.98,
         112.02,
         113.35,
-        115.96
+        115.96,
+        117.39
       ]
     }
   ],
   "watchlist": {
-    "as_of": "2026-11-13",
+    "as_of": "2026-11-20",
     "thresholds": {
-      "pe": 13.23,
-      "pb": 1.12,
-      "pr": 1.02,
-      "roe": 14.4
+      "pe": 12.75,
+      "pb": 1.09,
+      "pr": 1.0,
+      "roe": 14.38
     },
     "stock_count": 6,
     "fully_qualifying_count": 0,
@@ -428,9 +434,9 @@
         "code": "600519",
         "name": "贵州茅台",
         "metrics": {
-          "pe": 21.86,
-          "pb": 6.92,
-          "pr": 0.68,
+          "pe": 22.63,
+          "pb": 7.16,
+          "pr": 0.7,
           "roe": 32.36
         },
         "conditions": {
@@ -450,30 +456,31 @@
         "code": "601318",
         "name": "中国平安",
         "metrics": {
-          "pe": 9.49,
-          "pb": 0.95,
-          "pr": 0.98,
+          "pe": 9.78,
+          "pb": 0.98,
+          "pr": 1.01,
           "roe": 9.7
         },
         "conditions": {
           "pe": true,
           "pb": true,
-          "pr": true,
+          "pr": false,
           "roe": false
         },
         "failed_metrics": [
+          "PR",
           "ROE"
         ],
-        "passing_count": 3,
+        "passing_count": 2,
         "qualifies": false
       },
       {
         "code": "000333",
         "name": "美的集团",
         "metrics": {
-          "pe": 14.24,
-          "pb": 3.1,
-          "pr": 0.68,
+          "pe": 14.91,
+          "pb": 3.24,
+          "pr": 0.71,
           "roe": 20.97
         },
         "conditions": {
@@ -493,9 +500,9 @@
         "code": "000651",
         "name": "格力电器",
         "metrics": {
-          "pe": 9.02,
-          "pb": 1.5,
-          "pr": 0.54,
+          "pe": 9.22,
+          "pb": 1.53,
+          "pr": 0.56,
           "roe": 16.57
         },
         "conditions": {
@@ -514,9 +521,9 @@
         "code": "600036",
         "name": "招商银行",
         "metrics": {
-          "pe": 7.35,
-          "pb": 0.95,
-          "pr": 0.56,
+          "pe": 7.53,
+          "pb": 0.97,
+          "pr": 0.58,
           "roe": 13.09
         },
         "conditions": {
@@ -535,9 +542,9 @@
         "code": "600938",
         "name": "中国海油",
         "metrics": {
-          "pe": 10.49,
-          "pb": 1.75,
-          "pr": 0.63,
+          "pe": 10.3,
+          "pb": 1.72,
+          "pr": 0.62,
           "roe": 16.75
         },
         "conditions": {
@@ -555,16 +562,16 @@
     ]
   },
   "screen": {
-    "as_of": "2026-11-13",
+    "as_of": "2026-11-20",
     "universe_size": 1052,
-    "valid_samples": 939,
+    "valid_samples": 940,
     "passed_count": 4,
     "target_count": 4,
     "thresholds": {
-      "pe": 13.23,
-      "pb": 1.12,
-      "pr": 1.02,
-      "roe": 14.4
+      "pe": 12.75,
+      "pb": 1.09,
+      "pr": 1.0,
+      "roe": 14.38
     },
     "candidates": [
       {
@@ -575,52 +582,52 @@
         "in_portfolio": false,
         "new_to_portfolio": true,
         "metrics": {
-          "pe": 5.26,
+          "pe": 5.27,
           "pb": 0.94,
           "pr": 0.3,
           "roe": 17.75
         }
       },
       {
-        "code": "600999",
-        "name": "招商证券",
+        "code": "002432",
+        "name": "九安医疗",
         "rank": 2,
         "target": true,
         "in_portfolio": false,
         "new_to_portfolio": true,
         "metrics": {
-          "pe": 6.84,
-          "pb": 1.09,
-          "pr": 0.43,
-          "roe": 15.95
+          "pe": 3.53,
+          "pb": 1.0,
+          "pr": 0.14,
+          "roe": 25.31
+        }
+      },
+      {
+        "code": "600595",
+        "name": "中孚实业",
+        "rank": 3,
+        "target": true,
+        "in_portfolio": false,
+        "new_to_portfolio": true,
+        "metrics": {
+          "pe": 5.64,
+          "pb": 1.03,
+          "pr": 0.3,
+          "roe": 18.58
         }
       },
       {
         "code": "601838",
         "name": "成都银行",
-        "rank": 3,
+        "rank": 4,
         "target": true,
         "in_portfolio": true,
         "new_to_portfolio": false,
         "metrics": {
-          "pe": 6.64,
-          "pb": 0.96,
+          "pe": 6.72,
+          "pb": 0.97,
           "pr": 0.46,
           "roe": 14.47
-        }
-      },
-      {
-        "code": "601919",
-        "name": "中远海控",
-        "rank": 4,
-        "target": true,
-        "in_portfolio": false,
-        "new_to_portfolio": true,
-        "metrics": {
-          "pe": 7.54,
-          "pb": 1.11,
-          "pr": 0.52,
-          "roe": 14.54
         }
       }
     ]
