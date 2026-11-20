@@ -23,6 +23,7 @@ Start here if you are new to this repository, or if you are starting a new agent
 | [docs/universe-backtest-2026-11.md](docs/universe-backtest-2026-11.md) | 1052 只并集池的全角度回测与最佳选股方案（2026-11） |
 | [docs/universe-backtest-932-2026-11.md](docs/universe-backtest-932-2026-11.md) | 932 只旧池的同口径对比（2026-11） |
 | [docs/within-basket-rebalance-2026-11.md](docs/within-basket-rebalance-2026-11.md) | 固定年度篮子内的再平衡频率与权重实验（2026-11） |
+| [docs/three-start-metrics-2026-11.md](docs/three-start-metrics-2026-11.md) | M1/M2/M3 三个起点口径：2015 空仓、首次建仓、2015 起投 |
 | [docs/backtesting-operations-qa.md](docs/backtesting-operations-qa.md) | 日常回测 Q&A、命令速查、故障排查 |
 | [backtesting/README.md](backtesting/README.md) | 回测引擎结构、CLI、输出说明 |
 | [AGENTS.md](AGENTS.md) | Agent 工作约定、目录结构、策略逻辑 |

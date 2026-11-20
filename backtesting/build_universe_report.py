@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 PCT_COLS = {
     "annual_return",
+    "annual_return_since_first_investment",
     "cumulative_return",
     "annual_volatility",
     "max_drawdown",
@@ -511,6 +512,10 @@ def build_report(out_root, report_path, end_date, image_prefix="charts/"):
     lines.append(f"- 回测区间：2015-01-01 ~ {end_date}（今天为周六，实际最后交易日为 2026-11-06）")
     lines.append(f"- 股票池：历史各期指数清单并集，去重后 **{int(summary['pool_size'].max())} 只**")
     lines.append(f"- 实验数量：{len(summary)} 组（含股票池口径校验；同参数重复项在排行榜中已去重）")
+    lines.append(
+        "- 年化口径：主表为 **M1**（2015-01 起，含 2015 空仓）；排行榜另列 **M2 建仓以来年化**；"
+        "**M3 2015 起投**见 [three-start-metrics-2026-11.md](three-start-metrics-2026-11.md)"
+    )
     lines.append("- 成本：佣金 0.03%（最低 5 元）、印花税 0.1%（卖出）、滑点 0.1%、100 股整手")
     lines.append("- 基准：报告只做策略间横向比较；引擎内置等权基准的实现有偏差，未用于结论")
     lines.append(f"- 原始结果目录：`{os.path.relpath(out_root, PROJECT_DIR)}`")
@@ -522,7 +527,9 @@ def build_report(out_root, report_path, end_date, image_prefix="charts/"):
     lines.append("")
     lines.append(
         "- 相关报告：932 旧池的同口径 131 组对比见 "
-        "[universe-backtest-932-2026-11.md](universe-backtest-932-2026-11.md)。"
+        "[universe-backtest-932-2026-11.md](universe-backtest-932-2026-11.md)；"
+        "M1/M2/M3 三个起点口径见 "
+        "[three-start-metrics-2026-11.md](three-start-metrics-2026-11.md)。"
     )
     lines.append("")
     lines.append("## 1. 结论速览\n")
@@ -735,10 +742,13 @@ def build_report(out_root, report_path, end_date, image_prefix="charts/"):
     lines.append(
         fmt_table(
             top,
-            ["id", "annual_return", "sharpe_ratio", "max_drawdown", "cagr_2015_2020",
+            ["id", "annual_return", "annual_return_since_first_investment",
+             "sharpe_ratio", "max_drawdown", "cagr_2015_2020",
              "cagr_2021_2026", "cagr_ex_best_year", "worst_year", "positive_years",
              "n_years", "avg_positions"],
-            rename={"id": "实验", "annual_return": "年化", "sharpe_ratio": "夏普",
+            rename={"id": "实验", "annual_return": "年化",
+                    "annual_return_since_first_investment": "建仓以来年化",
+                    "sharpe_ratio": "夏普",
                     "max_drawdown": "最大回撤", "cagr_2015_2020": "2015-2020",
                     "cagr_2021_2026": "2021-2026", "cagr_ex_best_year": "剔除最好年份",
                     "worst_year": "最差年份", "positive_years": "正收益年数",

@@ -15,6 +15,40 @@ logger = logging.getLogger("performance")
 import config
 
 
+def compute_since_first_investment(equity_df: pd.DataFrame, trade_records: list | None = None) -> dict:
+    """从首次买入日起算的累计收益与年化（剔除建仓前的空仓期）。"""
+    df = equity_df.copy()
+    df["date"] = pd.to_datetime(df["date"])
+    df = df.sort_values("date").reset_index(drop=True)
+
+    first_date = df["date"].iloc[0]
+    if trade_records:
+        buy_dates = [
+            pd.Timestamp(t["trade_date"])
+            for t in trade_records
+            if t.get("direction") == "买入" and t.get("trade_date") is not None
+        ]
+        if buy_dates:
+            candidate = min(buy_dates)
+            if candidate in set(df["date"]):
+                first_date = candidate
+
+    sub = df[df["date"] >= first_date]
+    if len(sub) >= 2:
+        cumulative = sub["strategy_equity"].iloc[-1] / sub["strategy_equity"].iloc[0] - 1
+        annual = (1 + cumulative) ** (252 / len(sub)) - 1
+    else:
+        cumulative = 0.0
+        annual = 0.0
+
+    return {
+        "first_investment_date": first_date.strftime("%Y-%m-%d"),
+        "trading_days_since_first_investment": len(sub),
+        "cumulative_return_since_first_investment": float(cumulative),
+        "annual_return_since_first_investment": float(annual),
+    }
+
+
 def calculate_performance(equity_df: pd.DataFrame, cutoffs: list = None, trade_records: list = None) -> dict:
     """
     计算回测绩效指标
@@ -37,6 +71,7 @@ def calculate_performance(equity_df: pd.DataFrame, cutoffs: list = None, trade_r
 
     # --- 策略累计收益 ---
     cumulative_return = final_equity / initial_capital - 1
+    since_first = compute_since_first_investment(df, trade_records)
 
     # --- 策略年化收益 ---
     annual_return = (1 + cumulative_return) ** (252 / trading_days) - 1
@@ -120,6 +155,7 @@ def calculate_performance(equity_df: pd.DataFrame, cutoffs: list = None, trade_r
         'trading_days': trading_days,
         'initial_capital': initial_capital,
         'final_equity': final_equity,
+        **since_first,
     }
 
 
@@ -258,6 +294,10 @@ def save_performance_summary(performance: dict, filepath: str):
         ('Final Equity', 'final_equity', False),
         ('Cumulative Return', 'cumulative_return', True),
         ('Annual Return', 'annual_return', True),
+        ('First Investment Date', 'first_investment_date', False),
+        ('Trading Days Since First Investment', 'trading_days_since_first_investment', False),
+        ('Cumulative Return Since First Investment', 'cumulative_return_since_first_investment', True),
+        ('Annual Return Since First Investment', 'annual_return_since_first_investment', True),
         ('Annual Volatility', 'annual_volatility', True),
         ('Sharpe Ratio', 'sharpe_ratio', False),
         ('Max Drawdown', 'max_drawdown', True),

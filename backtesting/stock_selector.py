@@ -194,7 +194,8 @@ def select_stocks(
     stock_codes: list,
     trade_date: pd.Timestamp,
     price_cache: dict = None,
-    filter_indicators: list = None
+    filter_indicators: list = None,
+    ignore_new_stock: bool = False,
 ) -> tuple:
     """
     执行完整的四步选股流程
@@ -303,16 +304,20 @@ def select_stocks(
         return [], val_df
 
     # Step 4 - 新股排除
-    selected = []
-    for _, row in step3_df.iterrows():
-        code = row["code"]
-        if price_cache is not None and code in price_cache:
-            p_df = price_cache[code]
-        else:
-            p_df = load_price_data(code)
+    if ignore_new_stock:
+        # 数据起点附近的截面无法用价格文件推断上市日；回测首个截面可显式跳过
+        selected = step3_df["code"].tolist()
+    else:
+        selected = []
+        for _, row in step3_df.iterrows():
+            code = row["code"]
+            if price_cache is not None and code in price_cache:
+                p_df = price_cache[code]
+            else:
+                p_df = load_price_data(code)
 
-        if not is_new_stock(code, p_df, trade_date, config.NEW_STOCK_EXCLUDE_DAYS):
-            selected.append(code)
+            if not is_new_stock(code, p_df, trade_date, config.NEW_STOCK_EXCLUDE_DAYS):
+                selected.append(code)
 
     return selected, val_df
 

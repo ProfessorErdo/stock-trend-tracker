@@ -18,7 +18,8 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
 - Read first: [`docs/index-update-and-full-backtest-playbook.md`](docs/index-update-and-full-backtest-playbook.md)
   (annual/quarterly workflow), then the 1052/932 backtest reports linked from the root `README.md`.
 - Full-sweep scripts: `backtesting/universe_compare.py`, `build_universe_report.py`,
-  `build_pool_report.py`, `analyze_holdings_diff.py`, `test_within_basket.py`.
+  `build_pool_report.py`, `analyze_holdings_diff.py`, `test_within_basket.py`,
+  `enrich_summary_metrics.py`, `compare_three_metrics.py`.
 
 ## Environment Setup
 

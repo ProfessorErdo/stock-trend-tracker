@@ -161,6 +161,11 @@ def main():
                         help="Full stop-loss drawdown threshold (default: 0.25)")
     parser.add_argument("--filter_indicators", type=str, default=None,
                         help="Step 2 filter indicators, comma-separated: pe,pb  or  pb  or  pe,pb,pr (default: from config)")
+    parser.add_argument(
+        "--ignore_first_cutoff_new_stock",
+        action="store_true",
+        help="在回测的第一个截面上跳过新股过滤（用于修复数据起点导致的 2015 年全市场误判）",
+    )
     parser.add_argument("--latest_pools_only", action="store_true",
                         help="每个池子只用最新一期清单（当前成分股，含幸存者偏差；默认合并历史各期）")
 
@@ -300,6 +305,7 @@ def main():
         frequency=args.frequency,
         ranking_method=args.ranking,
         filter_indicators=config.FILTER_INDICATORS,
+        ignore_first_cutoff_new_stock=args.ignore_first_cutoff_new_stock,
     )
 
     if result is None:

@@ -234,7 +234,7 @@ OUT=$(ls -dt ../data/processed/backtesting/universe_compare_2* | head -1)
 - 当前持仓的行业集中度（低 PB + 高 ROE 经常集中在银行/保险/周期）。
 - “最佳参数”是否和上一轮一致；不一致是正常的，说明它对股票池敏感。
 
-**不要只看最高年化。** 2026-11 这轮的结论是：
+**不要只看最高年化。** 2026-11 这轮的结论是（M1 为主，M2/M3 见 [`three-start-metrics-2026-11.md`](three-start-metrics-2026-11.md)）：
 
 | 方案 | 年化 | 夏普 | 回撤 | 备注 |
 |---|---:|---:|---:|---|
@@ -330,6 +330,8 @@ OUT=$(ls -dt ../data/processed/backtesting/universe_compare_2* | head -1)
 | `backtesting/build_pool_report.py` | 生成单池（如 932）报告，并与另一个池对比 | `--output-root`、`--compare-root`、`--report-path`、`--end-date`、`--assets-dir` |
 | `backtesting/analyze_holdings_diff.py` | 对比两套持仓在某次调仓后的走势 | `--run-root`、`--out-dir` |
 | `backtesting/test_within_basket.py` | 固定年度篮子，测试年内再平衡频率与不等权 | `--configs`、`--frequencies`、`--weightings` |
+| `backtesting/enrich_summary_metrics.py` | 给已有 summary 补“首次建仓以来”指标 | `--output-root` |
+| `backtesting/compare_three_metrics.py` | 比较 M1/M2/M3 三口径排名 | `--standard-root`、`--start2015-root` |
 
 `universe_compare.py` 的 `--phases` 可选：
 
@@ -371,6 +373,7 @@ data/processed/backtesting/universe_compare_<时间戳>/
 - 1052 并集池全角度回测：[`universe-backtest-2026-11.md`](universe-backtest-2026-11.md)
 - 932 旧池同口径对比：[`universe-backtest-932-2026-11.md`](universe-backtest-932-2026-11.md)
 - 固定篮子内的再平衡频率与权重：[`within-basket-rebalance-2026-11.md`](within-basket-rebalance-2026-11.md)
+- 三个起点口径 M1/M2/M3：[`three-start-metrics-2026-11.md`](three-start-metrics-2026-11.md)
 - 日常回测 Q&A：[`backtesting-operations-qa.md`](backtesting-operations-qa.md)
 - 回测引擎说明：[`../backtesting/README.md`](../backtesting/README.md)
 

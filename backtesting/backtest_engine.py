@@ -300,6 +300,7 @@ def run_backtest(
     frequency: str = None,
     ranking_method: str = "pb",
     filter_indicators: list = None,
+    ignore_first_cutoff_new_stock: bool = False,
 ) -> dict:
     """
     Execute full backtest workflow
@@ -424,6 +425,9 @@ def run_backtest(
     # Step 5: 选股 - 对每个截面日执行选股
     logger.info("\n[Step 5] Running stock selection for each cutoff date...")
     logger.info(f"  Ranking method: {rank_label}")
+    if ignore_first_cutoff_new_stock:
+        logger.info("  First-cutoff new-stock filter: OFF (data-start artifact bypass)")
+    first_cutoff = cutoffs[0][0] if cutoffs else None
     selection_results = {}  # {(cutoff_date, rebalance_date): selected_codes}
     for cutoff, rebalance in tqdm(cutoffs, desc="Selecting stocks"):
         try:
@@ -454,8 +458,13 @@ def run_backtest(
                 else:
                     final_selected = []
             else:
-                selected, val_df = select_stocks(stock_codes, cutoff, price_cache=price_cache,
-                                                  filter_indicators=filter_indicators)
+                selected, val_df = select_stocks(
+                    stock_codes, cutoff, price_cache=price_cache,
+                    filter_indicators=filter_indicators,
+                    ignore_new_stock=(
+                        ignore_first_cutoff_new_stock and cutoff == first_cutoff
+                    ),
+                )
                 final_selected = rank_and_limit(selected, val_df, config.MAX_POSITIONS, ranking_method)
 
             # Always include the pair — when rebalance is None, use cutoff date close as fill price
@@ -599,8 +608,9 @@ def run_backtest(
                 if not can_buy_flags.get(code, True):
                     continue
 
-                # 新股检查
-                if code in price_cache:
+                # 新股检查（首个截面若显式跳过新股过滤，执行层也跳过）
+                skip_new_check = ignore_first_cutoff_new_stock and cutoff == first_cutoff
+                if not skip_new_check and code in price_cache:
                     if is_new_stock(code, price_cache[code], execution_date, config.NEW_STOCK_EXCLUDE_DAYS):
                         continue
 

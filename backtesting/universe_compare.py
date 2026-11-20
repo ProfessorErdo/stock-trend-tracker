@@ -137,6 +137,8 @@ def install_caches():
 # ---------------------------------------------------------------------------
 # 当前整轮实验使用的股票池："union"（并集 1052）、"legacy"（旧 932）、"latest"（953）
 ACTIVE_POOL = "union"
+# 首个截面是否跳过新股过滤（修复数据起点导致的 2015 年空仓）
+IGNORE_FIRST_NEW_STOCK = False
 
 
 def base_spec(**overrides):
@@ -154,6 +156,7 @@ def base_spec(**overrides):
         "pr_thr": 0.25,
         "roe_thr": 0.75,
         "stop_loss": False,
+        "ignore_first_new_stock": IGNORE_FIRST_NEW_STOCK,
     }
     spec.update(overrides)
     return spec
@@ -176,6 +179,8 @@ def make_id(spec):
     ]
     if spec["stop_loss"]:
         parts.append("sl")
+    if spec.get("ignore_first_new_stock"):
+        parts.append("2015start")
     return "_".join(parts)
 
 
@@ -244,6 +249,7 @@ def run_one(spec, args, out_root):
         frequency=spec["frequency"],
         ranking_method=spec["ranking"],
         filter_indicators=spec["filters"],
+        ignore_first_cutoff_new_stock=spec.get("ignore_first_new_stock", False),
     )
     if result is None:
         raise RuntimeError(f"backtest returned None for {spec['id']}")
@@ -271,6 +277,10 @@ def run_one(spec, args, out_root):
         "roe_thr": spec["roe_thr"],
         "stop_loss": spec["stop_loss"],
         "annual_return": performance["annual_return"],
+        "annual_return_since_first_investment": performance["annual_return_since_first_investment"],
+        "cumulative_return_since_first_investment": performance["cumulative_return_since_first_investment"],
+        "first_investment_date": performance["first_investment_date"],
+        "trading_days_since_first_investment": performance["trading_days_since_first_investment"],
         "cumulative_return": performance["cumulative_return"],
         "annual_volatility": performance["annual_volatility"],
         "sharpe_ratio": performance["sharpe_ratio"],
@@ -608,14 +618,20 @@ def main():
         help="整轮实验使用的股票池（默认 union=1052）",
     )
     parser.add_argument(
+        "--ignore-first-new-stock",
+        action="store_true",
+        help="首个截面跳过新股过滤（让 2015 年也能建仓，用于 2015 起投口径）",
+    )
+    parser.add_argument(
         "--phases",
         default="core,pool,trim,positions,threshold,refine,frequency,special",
         help="逗号分隔的阶段列表",
     )
     args = parser.parse_args()
 
-    global ACTIVE_POOL
+    global ACTIVE_POOL, IGNORE_FIRST_NEW_STOCK
     ACTIVE_POOL = args.pool
+    IGNORE_FIRST_NEW_STOCK = args.ignore_first_new_stock
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_root = args.output_root or os.path.join(
@@ -679,6 +695,7 @@ def main():
                 "end_date": args.end_date,
                 "pool_sizes": pool_sizes,
                 "active_pool": ACTIVE_POOL,
+                "ignore_first_new_stock": IGNORE_FIRST_NEW_STOCK,
                 "phases": phases,
             },
             handle,
