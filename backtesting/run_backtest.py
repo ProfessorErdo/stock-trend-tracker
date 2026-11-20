@@ -171,6 +171,12 @@ def main():
         action="store_true",
         help="排除 EPS_TTM 相对过去 5 年年度 EPS 中位数超出 [0.5, 2] 倍的股票",
     )
+    parser.add_argument("--exclude_roe_outliers", action="store_true",
+                        help="排除 ROE_TTM / 过去 5 年年度 ROE 中位数 > 1.5 的股票")
+    parser.add_argument("--exclude_price_crash", action="store_true",
+                        help="排除当年 1-4 月跌幅超过阈值的股票")
+    parser.add_argument("--price_crash_threshold", type=float, default=-0.20,
+                        help="1-4 月跌幅阈值（默认 -0.20）")
     parser.add_argument("--latest_pools_only", action="store_true",
                         help="每个池子只用最新一期清单（当前成分股，含幸存者偏差；默认合并历史各期）")
 
@@ -304,6 +310,8 @@ def main():
             os.remove(INTERMEDIATE_RESULTS)
             logger.info("  Removed old intermediate results for full backtest")
 
+    config.PRICE_CRASH_THRESHOLD = args.price_crash_threshold
+
     result = run_backtest(
         args.start_date, args.end_date,
         incremental_from=incremental_flag,
@@ -312,6 +320,8 @@ def main():
         filter_indicators=config.FILTER_INDICATORS,
         ignore_first_cutoff_new_stock=args.ignore_first_cutoff_new_stock,
         exclude_earnings_outliers=args.exclude_earnings_outliers,
+        exclude_roe_outliers=args.exclude_roe_outliers,
+        exclude_price_crash=args.exclude_price_crash,
     )
 
     if result is None:

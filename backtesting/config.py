@@ -52,7 +52,15 @@ ROE_THRESHOLD = 0.75
 # 用于排除疫情/景气峰值业绩股（如 2021-2022 的英科医疗）
 EXCLUDE_EARNINGS_OUTLIERS = False
 EARNINGS_RATIO_MIN = 0.5
-EARNINGS_RATIO_MAX = 2.0         # ROE分位数阈值（保留最高75%分位以上）
+EARNINGS_RATIO_MAX = 2.0
+
+# ROE 峰值过滤：当前 ROE_TTM / 过去 5 年年度 ROE 中位数
+EXCLUDE_ROE_OUTLIERS = False
+ROE_RATIO_MAX = 1.5
+
+# 价格先崩过滤：当年 1-4 月跌幅超过阈值
+EXCLUDE_PRICE_CRASH = False
+PRICE_CRASH_THRESHOLD = -0.20         # ROE分位数阈值（保留最高75%分位以上）
 
 # 分位阈值处理
 # 启用后分别裁掉各指标的不利尾部，再计算分位阈值：

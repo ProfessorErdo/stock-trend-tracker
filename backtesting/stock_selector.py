@@ -200,6 +200,8 @@ def select_stocks(
     filter_indicators: list = None,
     ignore_new_stock: bool = False,
     exclude_earnings_outliers: bool = False,
+    exclude_roe_outliers: bool = False,
+    exclude_price_crash: bool = False,
 ) -> tuple:
     """
     执行完整的四步选股流程
@@ -232,6 +234,14 @@ def select_stocks(
         if trade_date not in price_df["trade_date"].values:
             continue
 
+        if exclude_price_crash:
+            p = price_df.set_index("trade_date")["close"]
+            ystart = p.index[p.index <= pd.Timestamp(f"{trade_date.year - 1}-12-31")]
+            if len(ystart):
+                ret = p.loc[trade_date] / p.loc[ystart[-1]] - 1
+                if ret < config.PRICE_CRASH_THRESHOLD:
+                    continue
+
         # Step 1b - 获取财务数据
         fin_data = get_latest_financial_data(code, trade_date)
         if fin_data is None:
@@ -242,6 +252,11 @@ def select_stocks(
             if ratio is not None and (
                 ratio < config.EARNINGS_RATIO_MIN or ratio > config.EARNINGS_RATIO_MAX
             ):
+                continue
+
+        if exclude_roe_outliers:
+            ratio = fin_data.get("roe_ratio_5y")
+            if ratio is not None and ratio > config.ROE_RATIO_MAX:
                 continue
 
         # 计算估值

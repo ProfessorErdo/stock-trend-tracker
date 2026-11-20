@@ -302,6 +302,8 @@ def run_backtest(
     filter_indicators: list = None,
     ignore_first_cutoff_new_stock: bool = False,
     exclude_earnings_outliers: bool = False,
+    exclude_roe_outliers: bool = False,
+    exclude_price_crash: bool = False,
 ) -> dict:
     """
     Execute full backtest workflow
@@ -466,6 +468,8 @@ def run_backtest(
                         ignore_first_cutoff_new_stock and cutoff == first_cutoff
                     ),
                     exclude_earnings_outliers=exclude_earnings_outliers,
+                    exclude_roe_outliers=exclude_roe_outliers,
+                    exclude_price_crash=exclude_price_crash,
                 )
                 final_selected = rank_and_limit(selected, val_df, config.MAX_POSITIONS, ranking_method)
 
