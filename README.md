@@ -21,6 +21,7 @@ Start here if you are new to this repository, or if you are starting a new agent
 |---|---|
 | [docs/index-update-and-full-backtest-playbook.md](docs/index-update-and-full-backtest-playbook.md) | **年度/季度操作手册**：更新指数清单、补齐新股票数据、跑全量回测、生成调仓计划 |
 | [docs/m3b-backtest-2026-11.md](docs/m3b-backtest-2026-11.md) | **主报告（M3b 主口径）**：1052 vs 932 全量排名、核心网格、裁尾/N/阈值、池间对比 |
+| [docs/1052-best-yearly-holdings-2026-11.md](docs/1052-best-yearly-holdings-2026-11.md) | 1052 最佳策略逐年收益、持仓、每只股票的当年收益 |
 | [docs/universe-backtest-2026-11.md](docs/universe-backtest-2026-11.md) | 1052 只并集池的全角度回测与最佳选股方案（2026-11） |
 | [docs/universe-backtest-932-2026-11.md](docs/universe-backtest-932-2026-11.md) | 932 只旧池的同口径对比（2026-11） |
 | [docs/within-basket-rebalance-2026-11.md](docs/within-basket-rebalance-2026-11.md) | 固定年度篮子内的再平衡频率与权重实验（2026-11） |
