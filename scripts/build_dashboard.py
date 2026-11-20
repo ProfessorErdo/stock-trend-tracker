@@ -951,12 +951,18 @@ def main() -> None:
     as_of = pd.Timestamp(args.as_of).normalize() if args.as_of else None
     payload = build_payload(as_of)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+    payload_text = json.dumps(payload, ensure_ascii=False, indent=2)
+    args.output.write_text(payload_text + "\n", encoding="utf-8")
+
+    script_output = args.output.with_name("dashboard-data.js")
+    script_output.write_text(
+        "window.__DASHBOARD_DATA__ = "
+        + payload_text
+        + ";\n",
         encoding="utf-8",
     )
     print(
-        f"Wrote {args.output} | as of {payload['data_as_of']} | "
+        f"Wrote {args.output} and {script_output} | as of {payload['data_as_of']} | "
         f"{len(payload['holdings'])} holdings | "
         f"{payload['summary']['qualifying_count']} still qualify",
         flush=True,

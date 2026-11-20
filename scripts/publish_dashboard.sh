@@ -37,6 +37,7 @@ if [[ "$publish" == true ]]; then
     docs/favicon.svg
     docs/.nojekyll
     docs/data/dashboard.json
+    docs/data/dashboard-data.js
   )
   git add -- "${dashboard_files[@]}"
   if git diff --cached --quiet -- "${dashboard_files[@]}"; then

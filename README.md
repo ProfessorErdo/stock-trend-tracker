@@ -112,6 +112,10 @@ Build the public dashboard data:
 .venv/bin/python scripts/build_dashboard.py
 ```
 
+The build writes both `docs/data/dashboard.json` and a fallback
+`docs/data/dashboard-data.js`, so the dashboard also works when `index.html`
+is opened directly without a local HTTP server.
+
 Preview the static site locally:
 
 ```bash
