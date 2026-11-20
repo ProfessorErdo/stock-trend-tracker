@@ -189,7 +189,7 @@ def main():
         "932 是 12.06%，1052 只有 8.63%；2% 裁尾则收敛到 9.02% vs 9.55%。"
     )
     lines.append(
-        "5. **结论**：参数必须绑定股票池；M1/M2 适合和历史记录对齐，M3/M3b 更适合做跨池稳健性检查。"
+        "5. **结论**：参数必须绑定股票池；M1 用于历史对照，M3b 作为“自 2015 年首次可建仓以来”的主口径，M3 用于全期检查。"
     )
     lines.append("")
     lines.append("![best by metric](img/consolidated-2026-11/best_by_metric_pools.png)\n")
@@ -250,13 +250,43 @@ def main():
         "45° 线附近的结构说明：股票池主要影响 2015-2016 的起点，2017 年以后两池的选股差异才是长期收益差异的来源。"
     )
     lines.append("")
-    lines.append("## 6. 建议\n")
-    lines.append("1. **实际使用 1052 池**：用 1052 最佳（PB15/ROE70 + PE 排名 + 1% 裁尾 + N5）或经典 2%（9.55%）。")
-    lines.append("2. **不要套用 932 最佳**：它在 1052 上只有 8.63%（M1）/6.98%（M3）。")
-    lines.append("3. **跨池比较看 M3**：M1/M2 的 932 优势主要来自清单偏差，M3 下 1052 反而略高。")
-    lines.append("4. **保留经典 2% 作为稳健基准**：两池差距最小（9.55% vs 9.02%），参数平台也更宽。")
+    lines.append("## 6. 口径选择：为什么可以把 M3b 当主口径\n")
+    lines.append(
+        "如果回到 2015 年，真实流程是：4 月底知道 2014 年报 → 5 月第一个交易日建仓 → 经历 2015 年 5-12 月。"
+        "M3b 正好对应这个路径：\n"
+    )
+    lines.append("- M1 把 2015 年 1-4 月空仓也算进分母（不真实：你 5 月就会建仓）；")
+    lines.append("- M2 从 2016-05 才开始（完全跳过 2015 年股灾，过于乐观）；")
+    lines.append("- M3 从 2015-01 算，但 1-4 月还是空仓；")
+    lines.append("- **M3b 从 2015-05-04 实际建仓起算，是四者中最贴近真实年度建仓体验的。**")
     lines.append("")
-    lines.append("## 7. 文件\n")
+    lines.append("| 口径 | 1052 最佳 | 932 最佳 | 适合回答 |")
+    lines.append("|---|---:|---:|---|")
+    lines.append("| M1 | 12.37% | 12.55% | 和历史记录对齐 |")
+    lines.append("| M2 | 14.05% | 14.26% | 2016 年以来 |")
+    lines.append("| M3 | 10.92% | 10.73% | 2015 全期（含 1-4 月空仓） |")
+    lines.append("| **M3b** | **11.25%** | **11.05%** | **自 2015 年首次可建仓以来（推荐主口径）** |")
+    lines.append("")
+    lines.append("三点限制：")
+    lines.append(
+        "1. 2015 年的股票池仍是用 2025-26 年清单回推的，真实 2015 年投资者不知道这些成分股；"
+        "M3b 没有消除这层偏差。"
+    )
+    lines.append(
+        "2. 2015 截面跳过新股过滤是近似修复；真实上市日未知，2015 篮子里可能混有真正的新股。"
+    )
+    lines.append(
+        "3. 2015 是单一极端年份（股灾），M3b 的水平受它影响很大；它更真实，但不比 M1 更“统计稳定”。"
+        "排序上 M3b 与 M3 几乎完全一致（Spearman 0.9999），所以选参数时两者可以互相验证。"
+    )
+    lines.append("")
+    lines.append("## 7. 建议\n")
+    lines.append("1. **实际使用 1052 池**：用 1052 最佳（PB15/ROE70 + PE 排名 + 1% 裁尾 + N5，M3b 11.25%）或经典 2%（M3b 8.14%）。")
+    lines.append("2. **不要套用 932 最佳**：它在 1052 上 M3b 只有 7.19%。")
+    lines.append("3. **跨池比较看 M3b**：M1/M2 的 932 优势主要来自清单偏差；M3b 下 1052 反而略高（11.25% vs 11.05%）。")
+    lines.append("4. **保留经典 2% 作为稳健基准**：两池 M3b 差距最小（8.14% vs 7.56%），参数平台也更宽。")
+    lines.append("")
+    lines.append("## 8. 文件\n")
     lines.append("- 合并总表：[consolidated.csv](../data/processed/backtesting/consolidated_20261120/consolidated.csv)")
     lines.append("- 关键配置：[key_configs.csv](../data/processed/backtesting/consolidated_20261120/key_configs.csv)")
     lines.append("- 各指标最佳：[best_by_metric.csv](../data/processed/backtesting/consolidated_20261120/best_by_metric.csv)")
