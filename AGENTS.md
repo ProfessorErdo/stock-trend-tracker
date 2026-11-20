@@ -11,7 +11,8 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
 ## Current State & Docs (2026-11)
 
 - Stock pool: **1052** — union of every historical list file in `config.EXISTING_STOCK_POOL_FILES`
-  (currently 14 files across 7 pools; `689009` excluded).
+  (currently 14 files across 7 pools; `689009` excluded). The union grows after each April list
+  update; `--pool legacy` (932) is a fixed old-pool comparison.
 - Backtest data: prices/financials through **2026-11-06** in `data/input/backtesting/`.
 - Last annual rebalance: 2026-04-30 cutoff → 2026-05-06.
 - **Next annual rebalance: 2027-04-30 cutoff → first trading day of May 2027.**
