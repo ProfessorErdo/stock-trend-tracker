@@ -326,62 +326,6 @@ a {
   font-size: 11px;
 }
 
-.personal-summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 19px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
-}
-
-.personal-summary-card {
-  min-width: 0;
-  padding: 14px 11px;
-}
-
-.personal-summary-card + .personal-summary-card {
-  border-left: 1px solid var(--line);
-}
-
-.personal-summary-card span,
-.personal-summary-card small {
-  display: block;
-  color: var(--muted);
-  font-size: 9px;
-}
-
-.personal-summary-card strong {
-  display: block;
-  margin: 3px 0;
-  color: var(--ink);
-  font-size: 22px;
-  font-weight: 650;
-  letter-spacing: -0.04em;
-}
-
-.personal-summary-card strong.negative {
-  color: var(--red);
-}
-
-.personal-summary-main {
-  background:
-    radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--personal) 16%, transparent), transparent 9rem),
-    var(--surface-soft);
-}
-
-.personal-summary-main strong {
-  color: var(--personal);
-}
-
-.personal-note {
-  margin: 9px 2px 11px;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.6;
-}
-
 .holdings-list {
   overflow: hidden;
   border: 1px solid var(--line);
@@ -847,18 +791,6 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .personal-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .personal-summary-card:nth-child(3) {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .personal-summary-card:nth-child(4) {
-    border-top: 1px solid var(--line);
-  }
 }
 
 @media (max-width: 420px) {
@@ -1027,29 +959,6 @@ a {
           <h2 id="watchlist-title">算法 vs 我的持仓</h2>
           <span id="watchlist-caption">—</span>
         </div>
-        <div class="personal-summary">
-          <article class="personal-summary-card personal-summary-main">
-            <span>我的持仓</span>
-            <strong id="personal-return">—</strong>
-            <small id="personal-vs">—</small>
-          </article>
-          <article class="personal-summary-card">
-            <span>价格涨跌</span>
-            <strong id="personal-price-return">—</strong>
-            <small id="personal-income">—</small>
-          </article>
-          <article class="personal-summary-card">
-            <span>算法组合</span>
-            <strong id="personal-algorithm-return">—</strong>
-            <small>同期对比</small>
-          </article>
-          <article class="personal-summary-card">
-            <span>等权基准</span>
-            <strong id="personal-benchmark-return">—</strong>
-            <small>1052 股动态池</small>
-          </article>
-        </div>
-        <p id="personal-note" class="personal-note"></p>
         <div id="watchlist-grid" class="watchlist-grid"></div>
       </section>
 
@@ -1080,7 +989,7 @@ a {
   <script>
 window.__DASHBOARD_DATA__ = {
   "schema_version": 1,
-  "generated_at": "2026-11-20T22:05:43+08:00",
+  "generated_at": "2026-11-20T22:13:18+08:00",
   "data_as_of": "2026-11-20",
   "data_quality": {
     "latest_price_date": "2026-11-20",
@@ -1506,8 +1415,6 @@ window.__DASHBOARD_DATA__ = {
     "positive_count": 4,
     "fully_qualifying_count": 0,
     "total_return_pct": 10.94,
-    "price_return_pct": 7.01,
-    "income_return_pp": 3.93,
     "algorithm_return_pct": 9.88,
     "benchmark_return_pct": -3.56,
     "vs_algorithm_pp": 1.06,
@@ -1656,8 +1563,6 @@ window.__DASHBOARD_DATA__ = {
         "qualifies": false,
         "weight_pct": 31.16,
         "return_pct": 10.61,
-        "price_return_pct": 8.05,
-        "income_return_pp": 2.56,
         "contribution_pp": 3.31,
         "latest_price": 1485.75,
         "sparkline": [
@@ -1715,8 +1620,6 @@ window.__DASHBOARD_DATA__ = {
         "qualifies": false,
         "weight_pct": 21.88,
         "return_pct": 23.74,
-        "price_return_pct": 17.88,
-        "income_return_pp": 5.86,
         "contribution_pp": 5.19,
         "latest_price": 94.82,
         "sparkline": [
@@ -1773,8 +1676,6 @@ window.__DASHBOARD_DATA__ = {
         "qualifies": false,
         "weight_pct": 19.81,
         "return_pct": 18.97,
-        "price_return_pct": 15.79,
-        "income_return_pp": 3.18,
         "contribution_pp": 3.76,
         "latest_price": 44.0,
         "sparkline": [
@@ -1832,8 +1733,6 @@ window.__DASHBOARD_DATA__ = {
         "qualifies": false,
         "weight_pct": 17.49,
         "return_pct": -1.73,
-        "price_return_pct": -6.57,
-        "income_return_pp": 4.84,
         "contribution_pp": -0.3,
         "latest_price": 55.46,
         "sparkline": [
@@ -1890,8 +1789,6 @@ window.__DASHBOARD_DATA__ = {
         "qualifies": false,
         "weight_pct": 6.94,
         "return_pct": -17.58,
-        "price_return_pct": -20.87,
-        "income_return_pp": 3.29,
         "contribution_pp": -1.22,
         "latest_price": 30.29,
         "sparkline": [
@@ -1948,8 +1845,6 @@ window.__DASHBOARD_DATA__ = {
         "qualifies": false,
         "weight_pct": 2.72,
         "return_pct": 7.45,
-        "price_return_pct": 2.28,
-        "income_return_pp": 5.17,
         "contribution_pp": 0.2,
         "latest_price": 40.86,
         "sparkline": [
@@ -2442,30 +2337,9 @@ function renderPersonalPortfolio(portfolio) {
   container.replaceChildren();
   const thresholds = portfolio.thresholds;
   const personalReturn = Number(portfolio.total_return_pct);
-  const priceReturn = Number(portfolio.price_return_pct);
-  const algorithmReturn = Number(portfolio.algorithm_return_pct);
-  const benchmarkReturn = Number(portfolio.benchmark_return_pct);
-  const vsAlgorithm = Number(portfolio.vs_algorithm_pp);
-  const vsBenchmark = Number(portfolio.vs_benchmark_pp);
 
   $("#watchlist-caption").textContent =
-    `${portfolio.entry_date} 建仓 · ${portfolio.as_of} 更新`;
-  $("#personal-return").textContent = percent(personalReturn);
-  $("#personal-return").classList.toggle("negative", personalReturn < 0);
-  $("#personal-vs").textContent =
-    `${vsAlgorithm >= 0 ? "领先" : "落后"}算法 ${Math.abs(vsAlgorithm).toFixed(2)}pp`;
-  $("#personal-price-return").textContent = percent(priceReturn);
-  $("#personal-price-return").classList.toggle("negative", priceReturn < 0);
-  $("#personal-income").textContent =
-    `含分红增益 ${percentagePoints(portfolio.income_return_pp)}`;
-  $("#personal-algorithm-return").textContent = percent(algorithmReturn);
-  $("#personal-algorithm-return").classList.toggle("negative", algorithmReturn < 0);
-  $("#personal-benchmark-return").textContent = percent(benchmarkReturn);
-  $("#personal-benchmark-return").classList.toggle("negative", benchmarkReturn < 0);
-  $("#personal-note").textContent =
-    `${portfolio.holding_count} 只持仓中 ${portfolio.positive_count} 只上涨；` +
-    `${vsBenchmark >= 0 ? "领先" : "落后"}等权基准 ${Math.abs(vsBenchmark).toFixed(2)}pp；` +
-    `${portfolio.fully_qualifying_count}/${portfolio.holding_count} 只当前仍通过算法的四项条件。`;
+    `${portfolio.entry_date} 建仓 · ${portfolio.as_of} · 含分红 ${percent(personalReturn)}`;
 
   portfolio.stocks.forEach((stock) => {
     const card = document.createElement("article");
@@ -2492,7 +2366,7 @@ function renderPersonalPortfolio(portfolio) {
     stockReturn.textContent = percent(stock.return_pct);
     const performanceDetail = document.createElement("small");
     performanceDetail.textContent =
-      `贡献 ${percentagePoints(stock.contribution_pp)} · 价格 ${percent(stock.price_return_pct)}` +
+      `贡献 ${percentagePoints(stock.contribution_pp)}` +
       ` · 现价 ${Number(stock.latest_price).toFixed(2)}`;
     performance.append(stockReturn, performanceDetail);
 

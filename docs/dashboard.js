@@ -361,30 +361,9 @@ function renderPersonalPortfolio(portfolio) {
   container.replaceChildren();
   const thresholds = portfolio.thresholds;
   const personalReturn = Number(portfolio.total_return_pct);
-  const priceReturn = Number(portfolio.price_return_pct);
-  const algorithmReturn = Number(portfolio.algorithm_return_pct);
-  const benchmarkReturn = Number(portfolio.benchmark_return_pct);
-  const vsAlgorithm = Number(portfolio.vs_algorithm_pp);
-  const vsBenchmark = Number(portfolio.vs_benchmark_pp);
 
   $("#watchlist-caption").textContent =
-    `${portfolio.entry_date} 建仓 · ${portfolio.as_of} 更新`;
-  $("#personal-return").textContent = percent(personalReturn);
-  $("#personal-return").classList.toggle("negative", personalReturn < 0);
-  $("#personal-vs").textContent =
-    `${vsAlgorithm >= 0 ? "领先" : "落后"}算法 ${Math.abs(vsAlgorithm).toFixed(2)}pp`;
-  $("#personal-price-return").textContent = percent(priceReturn);
-  $("#personal-price-return").classList.toggle("negative", priceReturn < 0);
-  $("#personal-income").textContent =
-    `含分红增益 ${percentagePoints(portfolio.income_return_pp)}`;
-  $("#personal-algorithm-return").textContent = percent(algorithmReturn);
-  $("#personal-algorithm-return").classList.toggle("negative", algorithmReturn < 0);
-  $("#personal-benchmark-return").textContent = percent(benchmarkReturn);
-  $("#personal-benchmark-return").classList.toggle("negative", benchmarkReturn < 0);
-  $("#personal-note").textContent =
-    `${portfolio.holding_count} 只持仓中 ${portfolio.positive_count} 只上涨；` +
-    `${vsBenchmark >= 0 ? "领先" : "落后"}等权基准 ${Math.abs(vsBenchmark).toFixed(2)}pp；` +
-    `${portfolio.fully_qualifying_count}/${portfolio.holding_count} 只当前仍通过算法的四项条件。`;
+    `${portfolio.entry_date} 建仓 · ${portfolio.as_of} · 含分红 ${percent(personalReturn)}`;
 
   portfolio.stocks.forEach((stock) => {
     const card = document.createElement("article");
@@ -411,7 +390,7 @@ function renderPersonalPortfolio(portfolio) {
     stockReturn.textContent = percent(stock.return_pct);
     const performanceDetail = document.createElement("small");
     performanceDetail.textContent =
-      `贡献 ${percentagePoints(stock.contribution_pp)} · 价格 ${percent(stock.price_return_pct)}` +
+      `贡献 ${percentagePoints(stock.contribution_pp)}` +
       ` · 现价 ${Number(stock.latest_price).toFixed(2)}`;
     performance.append(stockReturn, performanceDetail);
 

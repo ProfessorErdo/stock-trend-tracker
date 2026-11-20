@@ -315,62 +315,6 @@ a {
   font-size: 11px;
 }
 
-.personal-summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 19px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
-}
-
-.personal-summary-card {
-  min-width: 0;
-  padding: 14px 11px;
-}
-
-.personal-summary-card + .personal-summary-card {
-  border-left: 1px solid var(--line);
-}
-
-.personal-summary-card span,
-.personal-summary-card small {
-  display: block;
-  color: var(--muted);
-  font-size: 9px;
-}
-
-.personal-summary-card strong {
-  display: block;
-  margin: 3px 0;
-  color: var(--ink);
-  font-size: 22px;
-  font-weight: 650;
-  letter-spacing: -0.04em;
-}
-
-.personal-summary-card strong.negative {
-  color: var(--red);
-}
-
-.personal-summary-main {
-  background:
-    radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--personal) 16%, transparent), transparent 9rem),
-    var(--surface-soft);
-}
-
-.personal-summary-main strong {
-  color: var(--personal);
-}
-
-.personal-note {
-  margin: 9px 2px 11px;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.6;
-}
-
 .holdings-list {
   overflow: hidden;
   border: 1px solid var(--line);
@@ -836,18 +780,6 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .personal-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .personal-summary-card:nth-child(3) {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .personal-summary-card:nth-child(4) {
-    border-top: 1px solid var(--line);
-  }
 }
 
 @media (max-width: 420px) {

@@ -540,7 +540,6 @@ def build_personal_portfolio(
         if min(entry_hfq, entry_na, latest_hfq, latest_na) <= 0:
             raise RuntimeError(f"Invalid personal holding price for {code}.")
 
-        price_return = latest_na / entry_na - 1
         total_return = latest_hfq / entry_hfq - 1
         weight_cost = float(row.quantity) * entry_na
         series = prices.set_index("trade_date")["close"]
@@ -548,7 +547,6 @@ def build_personal_portfolio(
             {
                 "code": code,
                 "weight_cost": weight_cost,
-                "price_return": price_return,
                 "total_return": total_return,
                 "latest_price": latest_na,
                 "sparkline": holding_sparkline(prices, entry_date, entry_hfq),
@@ -563,7 +561,6 @@ def build_personal_portfolio(
 
     personal_index = pd.Series(0.0, index=history_dates)
     stocks = []
-    weighted_price_return = 0.0
     for item in prelim:
         weight = item["weight_cost"] / total_weight_cost
         aligned = item["aligned"].reindex(history_dates, method="ffill")
@@ -574,18 +571,12 @@ def build_personal_portfolio(
         first_price = float(aligned.iloc[0])
         personal_index += aligned / first_price * weight
         contribution = weight * item["total_return"]
-        weighted_price_return += weight * item["price_return"]
 
         stock = dict(item["base_stock"])
         stock.update(
             {
                 "weight_pct": clean_number(weight * 100, 2),
                 "return_pct": clean_number(item["total_return"] * 100, 2),
-                "price_return_pct": clean_number(item["price_return"] * 100, 2),
-                "income_return_pp": clean_number(
-                    (item["total_return"] - item["price_return"]) * 100,
-                    2,
-                ),
                 "contribution_pp": clean_number(contribution * 100, 2),
                 "latest_price": clean_number(item["latest_price"], 2),
                 "sparkline": item["sparkline"],
@@ -609,11 +600,6 @@ def build_personal_portfolio(
         "positive_count": sum(1 for stock in stocks if stock["return_pct"] > 0),
         "fully_qualifying_count": sum(1 for stock in stocks if stock["qualifies"]),
         "total_return_pct": clean_number(personal_return * 100, 2),
-        "price_return_pct": clean_number(weighted_price_return * 100, 2),
-        "income_return_pp": clean_number(
-            (personal_return - weighted_price_return) * 100,
-            2,
-        ),
         "algorithm_return_pct": clean_number(algorithm_return * 100, 2),
         "benchmark_return_pct": (
             clean_number(benchmark_return * 100, 2)

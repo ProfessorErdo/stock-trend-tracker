@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-20T22:05:43+08:00",
+  "generated_at": "2026-11-20T22:13:18+08:00",
   "data_as_of": "2026-11-20",
   "data_quality": {
     "latest_price_date": "2026-11-20",
@@ -426,8 +426,6 @@
     "positive_count": 4,
     "fully_qualifying_count": 0,
     "total_return_pct": 10.94,
-    "price_return_pct": 7.01,
-    "income_return_pp": 3.93,
     "algorithm_return_pct": 9.88,
     "benchmark_return_pct": -3.56,
     "vs_algorithm_pp": 1.06,
@@ -576,8 +574,6 @@
         "qualifies": false,
         "weight_pct": 31.16,
         "return_pct": 10.61,
-        "price_return_pct": 8.05,
-        "income_return_pp": 2.56,
         "contribution_pp": 3.31,
         "latest_price": 1485.75,
         "sparkline": [
@@ -635,8 +631,6 @@
         "qualifies": false,
         "weight_pct": 21.88,
         "return_pct": 23.74,
-        "price_return_pct": 17.88,
-        "income_return_pp": 5.86,
         "contribution_pp": 5.19,
         "latest_price": 94.82,
         "sparkline": [
@@ -693,8 +687,6 @@
         "qualifies": false,
         "weight_pct": 19.81,
         "return_pct": 18.97,
-        "price_return_pct": 15.79,
-        "income_return_pp": 3.18,
         "contribution_pp": 3.76,
         "latest_price": 44.0,
         "sparkline": [
@@ -752,8 +744,6 @@
         "qualifies": false,
         "weight_pct": 17.49,
         "return_pct": -1.73,
-        "price_return_pct": -6.57,
-        "income_return_pp": 4.84,
         "contribution_pp": -0.3,
         "latest_price": 55.46,
         "sparkline": [
@@ -810,8 +800,6 @@
         "qualifies": false,
         "weight_pct": 6.94,
         "return_pct": -17.58,
-        "price_return_pct": -20.87,
-        "income_return_pp": 3.29,
         "contribution_pp": -1.22,
         "latest_price": 30.29,
         "sparkline": [
@@ -868,8 +856,6 @@
         "qualifies": false,
         "weight_pct": 2.72,
         "return_pct": 7.45,
-        "price_return_pct": 2.28,
-        "income_return_pp": 5.17,
         "contribution_pp": 0.2,
         "latest_price": 40.86,
         "sparkline": [
