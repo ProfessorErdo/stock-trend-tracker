@@ -3,6 +3,8 @@
 
 The generated JSON intentionally contains only derived, display-safe fields:
 no share counts, transaction amounts, cost basis, or personal information.
+Personal position quantities are read from a Git-ignored local CSV and are
+only used to calculate weight and return fields.
 """
 
 from __future__ import annotations
@@ -37,6 +39,7 @@ from stock_selector import (  # noqa: E402
 HOLDINGS_FILE = ROOT / "data" / "processed" / "backtesting" / "holdings" / "holdings_summary.csv"
 EQUITY_FILE = ROOT / "data" / "processed" / "backtesting" / "performance" / "equity_curve.csv"
 STOCK_NAMES_FILE = ROOT / "data" / "input" / "stock_names_full.csv"
+PERSONAL_HOLDINGS_FILE = ROOT / "data" / "input" / "personal_holdings.csv"
 DEFAULT_OUTPUT = ROOT / "docs" / "data" / "dashboard.json"
 
 # Fixed universe used to find the real 2026-04-30 annual holdings.
@@ -109,6 +112,30 @@ def load_price_cache(stock_codes: list[str]) -> dict[str, pd.DataFrame]:
     if not frames:
         raise RuntimeError("No stock price data found.")
     return frames
+
+
+def load_personal_positions() -> pd.DataFrame | None:
+    """Load private personal holdings without exposing quantities in the payload."""
+    if not PERSONAL_HOLDINGS_FILE.exists():
+        return None
+
+    positions = pd.read_csv(PERSONAL_HOLDINGS_FILE, dtype={"code": str})
+    required = {"code", "entry_date", "quantity"}
+    missing = required.difference(positions.columns)
+    if missing:
+        raise RuntimeError(
+            f"Personal holdings file is missing columns: {sorted(missing)}"
+        )
+
+    positions = positions.copy()
+    positions["code"] = positions["code"].str.strip().str.zfill(6)
+    positions["entry_date"] = pd.to_datetime(positions["entry_date"]).dt.normalize()
+    positions["quantity"] = pd.to_numeric(positions["quantity"], errors="coerce")
+    if positions["quantity"].isna().any() or (positions["quantity"] <= 0).any():
+        raise RuntimeError("Personal holdings quantities must be positive numbers.")
+    if positions["code"].duplicated().any():
+        raise RuntimeError("Personal holdings file contains duplicate stock codes.")
+    return positions
 
 
 def has_valuation_price(row: pd.Series) -> bool:
@@ -448,6 +475,168 @@ def build_watchlist(
     }
 
 
+def build_personal_portfolio(
+    positions: pd.DataFrame | None,
+    watchlist: dict,
+    price_frames: dict[str, pd.DataFrame],
+    portfolio_history: list[dict],
+) -> dict | None:
+    """Compare quantity-weighted personal holdings with the algorithm portfolio.
+
+    Only derived weights, returns, prices and valuation fields are included in
+    the dashboard payload. Share quantities, cost and market value stay local.
+    """
+    if positions is None or positions.empty:
+        return None
+    if not portfolio_history:
+        return None
+
+    entry_dates = positions["entry_date"].drop_duplicates().tolist()
+    if len(entry_dates) != 1:
+        raise RuntimeError("All personal positions must use the same entry date.")
+    entry_date = pd.Timestamp(entry_dates[0]).normalize()
+    if entry_date != PORTFOLIO_REBALANCE_DATE:
+        raise RuntimeError(
+            "Personal holdings entry date must match the 2026-05-06 portfolio date."
+        )
+
+    stock_map = {stock["code"]: stock for stock in watchlist["stocks"]}
+    history_dates = [
+        pd.Timestamp(point["date"]).normalize()
+        for point in portfolio_history
+    ]
+    prelim = []
+
+    for row in positions.itertuples(index=False):
+        code = str(row.code).zfill(6)
+        base_stock = stock_map.get(code)
+        if base_stock is None:
+            raise RuntimeError(f"Personal holding {code} is missing from the watchlist.")
+
+        frame = price_frames.get(code, pd.DataFrame())
+        if frame.empty or not {"trade_date", "close", "close_na"}.issubset(frame.columns):
+            raise RuntimeError(f"Missing personal holding price data for {code}.")
+
+        prices = frame[["trade_date", "close", "close_na"]].copy()
+        prices["trade_date"] = pd.to_datetime(prices["trade_date"]).dt.normalize()
+        prices = prices.dropna(subset=["trade_date", "close", "close_na"])
+        prices = prices.drop_duplicates("trade_date", keep="last").sort_values("trade_date")
+
+        entry_rows = prices[prices["trade_date"] == entry_date]
+        available = prices[prices["trade_date"] <= history_dates[-1]]
+        if entry_rows.empty or available.empty:
+            raise RuntimeError(f"Missing entry or latest price for personal holding {code}.")
+
+        entry = entry_rows.iloc[-1]
+        latest = available.iloc[-1]
+        entry_hfq = float(entry["close"])
+        entry_na = float(entry["close_na"])
+        latest_hfq = float(latest["close"])
+        latest_na = float(latest["close_na"])
+        if min(entry_hfq, entry_na, latest_hfq, latest_na) <= 0:
+            raise RuntimeError(f"Invalid personal holding price for {code}.")
+
+        price_return = latest_na / entry_na - 1
+        total_return = latest_hfq / entry_hfq - 1
+        weight_cost = float(row.quantity) * entry_na
+        series = prices.set_index("trade_date")["close"]
+        prelim.append(
+            {
+                "code": code,
+                "weight_cost": weight_cost,
+                "price_return": price_return,
+                "total_return": total_return,
+                "latest_price": latest_na,
+                "sparkline": holding_sparkline(prices, entry_date, entry_hfq),
+                "aligned": series,
+                "base_stock": base_stock,
+            }
+        )
+
+    total_weight_cost = sum(item["weight_cost"] for item in prelim)
+    if total_weight_cost <= 0:
+        raise RuntimeError("Personal holdings have no positive weight.")
+
+    personal_index = pd.Series(0.0, index=history_dates)
+    stocks = []
+    weighted_price_return = 0.0
+    for item in prelim:
+        weight = item["weight_cost"] / total_weight_cost
+        aligned = item["aligned"].reindex(history_dates, method="ffill")
+        if aligned.isna().any():
+            raise RuntimeError(
+                f"Personal holding {item['code']} has no price at an anchor date."
+            )
+        first_price = float(aligned.iloc[0])
+        personal_index += aligned / first_price * weight
+        contribution = weight * item["total_return"]
+        weighted_price_return += weight * item["price_return"]
+
+        stock = dict(item["base_stock"])
+        stock.update(
+            {
+                "weight_pct": clean_number(weight * 100, 2),
+                "return_pct": clean_number(item["total_return"] * 100, 2),
+                "price_return_pct": clean_number(item["price_return"] * 100, 2),
+                "income_return_pp": clean_number(
+                    (item["total_return"] - item["price_return"]) * 100,
+                    2,
+                ),
+                "contribution_pp": clean_number(contribution * 100, 2),
+                "latest_price": clean_number(item["latest_price"], 2),
+                "sparkline": item["sparkline"],
+            }
+        )
+        stocks.append(stock)
+
+    personal_return = float(personal_index.iloc[-1]) - 1
+    algorithm_return = float(portfolio_history[-1]["portfolio"]) / 100 - 1
+    benchmark_value = portfolio_history[-1].get("benchmark")
+    benchmark_return = (
+        float(benchmark_value) / 100 - 1
+        if benchmark_value is not None
+        else None
+    )
+
+    return {
+        "entry_date": entry_date.strftime("%Y-%m-%d"),
+        "as_of": portfolio_history[-1]["date"],
+        "holding_count": len(stocks),
+        "positive_count": sum(1 for stock in stocks if stock["return_pct"] > 0),
+        "fully_qualifying_count": sum(1 for stock in stocks if stock["qualifies"]),
+        "total_return_pct": clean_number(personal_return * 100, 2),
+        "price_return_pct": clean_number(weighted_price_return * 100, 2),
+        "income_return_pp": clean_number(
+            (personal_return - weighted_price_return) * 100,
+            2,
+        ),
+        "algorithm_return_pct": clean_number(algorithm_return * 100, 2),
+        "benchmark_return_pct": (
+            clean_number(benchmark_return * 100, 2)
+            if benchmark_return is not None
+            else None
+        ),
+        "vs_algorithm_pp": clean_number(
+            (personal_return - algorithm_return) * 100,
+            2,
+        ),
+        "vs_benchmark_pp": (
+            clean_number((personal_return - benchmark_return) * 100, 2)
+            if benchmark_return is not None
+            else None
+        ),
+        "thresholds": watchlist["thresholds"],
+        "history": [
+            {
+                "date": date.strftime("%Y-%m-%d"),
+                "portfolio": clean_number(personal_index.loc[date] * 100, 2),
+            }
+            for date in history_dates
+        ],
+        "stocks": stocks,
+    }
+
+
 def public_metrics(row: pd.Series | None) -> dict[str, float | None]:
     if row is None:
         return {"pe": None, "pb": None, "pr": None, "roe": None}
@@ -554,6 +743,7 @@ def screen_stocks(
 
 def build_payload(as_of: pd.Timestamp | None) -> dict:
     names = get_stock_names()
+    personal_positions = load_personal_positions()
     holding_pool = load_holding_universe()
     holding_codes = (
         holding_pool["code"].astype(str).str.zfill(6).drop_duplicates().tolist()
@@ -563,7 +753,14 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
         screen_pool["code"].astype(str).str.zfill(6).drop_duplicates().tolist()
     )
     watchlist_codes = [code for code, _ in WATCHLIST]
-    all_codes = sorted(set(holding_codes) | set(screen_codes) | set(watchlist_codes))
+    personal_codes = (
+        personal_positions["code"].astype(str).str.zfill(6).tolist()
+        if personal_positions is not None
+        else []
+    )
+    all_codes = sorted(
+        set(holding_codes) | set(screen_codes) | set(watchlist_codes) | set(personal_codes)
+    )
     price_frames = load_price_cache(all_codes)
 
     fixed_holdings, holding_thresholds, _ = select_legacy_932_holdings(
@@ -605,6 +802,12 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
         latest_market_date,
         price_frames,
         raw_thresholds,
+    )
+    personal_portfolio = build_personal_portfolio(
+        personal_positions,
+        watchlist,
+        price_frames,
+        history,
     )
 
     holding_payload = []
@@ -692,7 +895,7 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
         },
         "history": history,
         "holdings": holding_payload,
-        "watchlist": watchlist,
+        "personal_portfolio": personal_portfolio,
         "screen": screen,
         "rules": {
             "holding_universe_size": len(holding_codes),
@@ -710,7 +913,16 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
         },
     }
 
-    forbidden_keys = {"shares", "cost", "cost_price", "market_value", "amount", "cash"}
+    forbidden_keys = {
+        "shares",
+        "quantity",
+        "cost",
+        "cost_price",
+        "market_value",
+        "position_value",
+        "amount",
+        "cash",
+    }
     leaked = sorted(
         key for key in forbidden_keys if f'"{key}"' in json.dumps(payload, ensure_ascii=False)
     )

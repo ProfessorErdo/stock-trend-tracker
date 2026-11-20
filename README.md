@@ -101,6 +101,11 @@ The held portfolio is derived from the fixed 932-stock universe used for the
 2026-04-30 rebalance. Weekly threshold checks and new candidates use the
 current dynamic stock pool, and the dashboard labels both universe sizes.
 
+The personal-holdings comparison reads quantities from the Git-ignored
+`data/input/personal_holdings.csv` file and starts from the `2026-05-06`
+rebalance date. The published JSON includes derived weights, returns and
+valuation metrics only; quantities, cost and market value stay local.
+
 Build the public dashboard data:
 
 ```bash

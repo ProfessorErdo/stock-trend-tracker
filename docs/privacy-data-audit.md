@@ -58,6 +58,12 @@ The public dashboard output is limited to:
 - PE, PB, PR, ROE
 - screening thresholds and candidate status
 - derived portfolio and benchmark return series
+- quantity-weighted personal-portfolio weights, contributions and returns
+
+The quantities needed for the personal-portfolio comparison are stored in
+the Git-ignored `data/input/personal_holdings.csv`. They are converted to
+weights and returns during dashboard generation and are never copied into
+`docs/data/dashboard.json`.
 
 It does not contain:
 

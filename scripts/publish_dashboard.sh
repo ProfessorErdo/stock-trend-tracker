@@ -21,16 +21,29 @@ for arg in "$@"; do
   fi
 done
 
-"$PYTHON_BIN" scripts/build_dashboard.py "${build_args[@]}"
+if [[ ${#build_args[@]} -gt 0 ]]; then
+  build_cmd=("$PYTHON_BIN" scripts/build_dashboard.py "${build_args[@]}")
+else
+  build_cmd=("$PYTHON_BIN" scripts/build_dashboard.py)
+fi
+"${build_cmd[@]}"
 
 if [[ "$publish" == true ]]; then
   date_tag="$(date +%Y-%m-%d)"
-  git add -- docs/index.html docs/dashboard.css docs/dashboard.js docs/favicon.svg docs/.nojekyll docs/data/dashboard.json
-  if git diff --cached --quiet; then
+  dashboard_files=(
+    docs/index.html
+    docs/dashboard.css
+    docs/dashboard.js
+    docs/favicon.svg
+    docs/.nojekyll
+    docs/data/dashboard.json
+  )
+  git add -- "${dashboard_files[@]}"
+  if git diff --cached --quiet -- "${dashboard_files[@]}"; then
     echo "看板数据没有变化，无需提交。"
     exit 0
   fi
-  git commit -m "chore: update dashboard ${date_tag}"
+  git commit -m "chore: update dashboard ${date_tag}" --only -- "${dashboard_files[@]}"
   git push
   echo "已推送。GitHub Pages 通常会在 1-2 分钟内完成更新。"
 fi

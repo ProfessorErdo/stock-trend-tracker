@@ -28,22 +28,24 @@
 
     <main id="dashboard" hidden>
       <section class="hero" aria-labelledby="portfolio-title">
-        <p class="eyebrow">调仓以来</p>
+        <p class="eyebrow">算法组合 · 调仓以来</p>
         <div class="return-line">
           <h1 id="portfolio-title" class="return">—</h1>
           <span id="excess-return" class="return-delta">—</span>
         </div>
         <div class="hero-meta">
           <span id="benchmark-pill" class="pill pill-positive">—</span>
+          <span id="personal-pill" class="pill pill-personal" hidden>—</span>
           <span id="qualify-pill" class="pill pill-neutral">—</span>
         </div>
         <div class="chart-wrap">
           <svg id="trend-chart" class="trend-chart" role="img" aria-labelledby="chart-title chart-desc">
-            <title id="chart-title">持仓组合与等权基准走势</title>
-            <desc id="chart-desc">从调仓日至当前数据日期的归一化净值走势。</desc>
+            <title id="chart-title">算法组合、个人持仓与等权基准走势</title>
+            <desc id="chart-desc">从调仓日至当前数据日期的归一化净值走势，用于比较算法组合、个人实盘持仓和等权基准。</desc>
           </svg>
           <div class="legend" aria-hidden="true">
-            <span><i class="legend-portfolio"></i>我的组合</span>
+            <span><i class="legend-portfolio"></i>算法组合</span>
+            <span><i class="legend-personal"></i>个人持仓</span>
             <span><i class="legend-benchmark"></i>等权基准</span>
           </div>
         </div>
@@ -94,11 +96,34 @@
         </div>
       </section>
 
-      <section class="section" aria-labelledby="watchlist-title">
+      <section id="personal-section" class="section" aria-labelledby="watchlist-title" hidden>
         <div class="section-heading">
-          <h2 id="watchlist-title">我的选股池</h2>
+          <h2 id="watchlist-title">算法 vs 我的持仓</h2>
           <span id="watchlist-caption">—</span>
         </div>
+        <div class="personal-summary">
+          <article class="personal-summary-card personal-summary-main">
+            <span>我的持仓</span>
+            <strong id="personal-return">—</strong>
+            <small id="personal-vs">—</small>
+          </article>
+          <article class="personal-summary-card">
+            <span>价格涨跌</span>
+            <strong id="personal-price-return">—</strong>
+            <small id="personal-income">—</small>
+          </article>
+          <article class="personal-summary-card">
+            <span>算法组合</span>
+            <strong id="personal-algorithm-return">—</strong>
+            <small>同期对比</small>
+          </article>
+          <article class="personal-summary-card">
+            <span>等权基准</span>
+            <strong id="personal-benchmark-return">—</strong>
+            <small>1052 股动态池</small>
+          </article>
+        </div>
+        <p id="personal-note" class="personal-note"></p>
         <div id="watchlist-grid" class="watchlist-grid"></div>
       </section>
 

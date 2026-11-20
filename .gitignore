@@ -53,6 +53,9 @@ wheels/
 data/input/backtesting/*
 data/processed/backtesting/*
 
+# Private personal holdings (quantities must never be committed)
+data/input/personal_holdings.csv
+
 # Backtesting logs
 backtesting/logs/*.log
 server.log

@@ -17,6 +17,13 @@ function percent(value, signed = true) {
   return `${sign}${number.toFixed(2)}%`;
 }
 
+function percentagePoints(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
+  const number = Number(value);
+  const sign = number > 0 ? "+" : "";
+  return `${sign}${number.toFixed(2)}pp`;
+}
+
 function metricText(label, value) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
   return label === "ROE" ? `${Number(value).toFixed(2)}%` : Number(value).toFixed(2);
@@ -86,7 +93,7 @@ function makePath(values, x, y) {
     .join(" ");
 }
 
-function drawMainChart(history) {
+function drawMainChart(history, personalHistory = []) {
   const svg = $("#trend-chart");
   if (!svg || !history?.length) return;
 
@@ -97,7 +104,8 @@ function drawMainChart(history) {
   const innerHeight = height - margin.top - margin.bottom;
   const portfolio = history.map((point) => Number(point.portfolio));
   const benchmark = history.map((point) => Number(point.benchmark));
-  const all = portfolio.concat(benchmark);
+  const personal = personalHistory.map((point) => Number(point.portfolio));
+  const all = portfolio.concat(benchmark, personal);
   const minValue = Math.floor((Math.min(...all) - 1) / 4) * 4;
   const maxValue = Math.ceil((Math.max(...all) + 1) / 4) * 4;
 
@@ -146,6 +154,23 @@ function drawMainChart(history) {
     "stroke-linecap": "round",
     "stroke-linejoin": "round",
   }));
+
+  if (personal.length === portfolio.length) {
+    layer.appendChild(createSvgElement("path", {
+      d: makePath(personal, x, y),
+      fill: "none",
+      stroke: "var(--personal)",
+      "stroke-width": "2.1",
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+    }));
+    layer.appendChild(createSvgElement("circle", {
+      cx: x(personal.length - 1),
+      cy: y(personal[personal.length - 1]),
+      r: "3.3",
+      fill: "var(--personal)",
+    }));
+  }
 
   layer.appendChild(createSvgElement("circle", {
     cx: x(portfolio.length - 1),
@@ -324,15 +349,44 @@ function renderConditions(holdings, thresholds) {
   });
 }
 
-function renderWatchlist(watchlist) {
+function renderPersonalPortfolio(portfolio) {
+  const section = $("#personal-section");
+  if (!portfolio?.stocks?.length) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+
   const container = $("#watchlist-grid");
   container.replaceChildren();
-  const thresholds = watchlist.thresholds;
+  const thresholds = portfolio.thresholds;
+  const personalReturn = Number(portfolio.total_return_pct);
+  const priceReturn = Number(portfolio.price_return_pct);
+  const algorithmReturn = Number(portfolio.algorithm_return_pct);
+  const benchmarkReturn = Number(portfolio.benchmark_return_pct);
+  const vsAlgorithm = Number(portfolio.vs_algorithm_pp);
+  const vsBenchmark = Number(portfolio.vs_benchmark_pp);
 
   $("#watchlist-caption").textContent =
-    `${watchlist.as_of} · ${watchlist.fully_qualifying_count}/${watchlist.stock_count} 四项全通过`;
+    `${portfolio.entry_date} 建仓 · ${portfolio.as_of} 更新`;
+  $("#personal-return").textContent = percent(personalReturn);
+  $("#personal-return").classList.toggle("negative", personalReturn < 0);
+  $("#personal-vs").textContent =
+    `${vsAlgorithm >= 0 ? "领先" : "落后"}算法 ${Math.abs(vsAlgorithm).toFixed(2)}pp`;
+  $("#personal-price-return").textContent = percent(priceReturn);
+  $("#personal-price-return").classList.toggle("negative", priceReturn < 0);
+  $("#personal-income").textContent =
+    `含分红增益 ${percentagePoints(portfolio.income_return_pp)}`;
+  $("#personal-algorithm-return").textContent = percent(algorithmReturn);
+  $("#personal-algorithm-return").classList.toggle("negative", algorithmReturn < 0);
+  $("#personal-benchmark-return").textContent = percent(benchmarkReturn);
+  $("#personal-benchmark-return").classList.toggle("negative", benchmarkReturn < 0);
+  $("#personal-note").textContent =
+    `${portfolio.holding_count} 只持仓中 ${portfolio.positive_count} 只上涨；` +
+    `${vsBenchmark >= 0 ? "领先" : "落后"}等权基准 ${Math.abs(vsBenchmark).toFixed(2)}pp；` +
+    `${portfolio.fully_qualifying_count}/${portfolio.holding_count} 只当前仍通过算法的四项条件。`;
 
-  watchlist.stocks.forEach((stock) => {
+  portfolio.stocks.forEach((stock) => {
     const card = document.createElement("article");
     card.className = "watchlist-card";
 
@@ -342,13 +396,24 @@ function renderWatchlist(watchlist) {
     const strong = document.createElement("strong");
     strong.textContent = stock.name;
     const code = document.createElement("small");
-    code.textContent = stock.code;
+    code.textContent = `${stock.code} · 权重 ${stock.weight_pct.toFixed(1)}%`;
     name.append(strong, code);
 
     const passCount = document.createElement("span");
     passCount.className = `watchlist-pass-count${stock.qualifies ? " all-pass" : ""}`;
     passCount.textContent = `${stock.passing_count}/4 通过`;
     header.append(name, passCount);
+
+    const performance = document.createElement("div");
+    performance.className = "watchlist-performance";
+    const stockReturn = document.createElement("strong");
+    stockReturn.className = stock.return_pct < 0 ? "negative" : "";
+    stockReturn.textContent = percent(stock.return_pct);
+    const performanceDetail = document.createElement("small");
+    performanceDetail.textContent =
+      `贡献 ${percentagePoints(stock.contribution_pp)} · 价格 ${percent(stock.price_return_pct)}` +
+      ` · 现价 ${Number(stock.latest_price).toFixed(2)}`;
+    performance.append(stockReturn, performanceDetail);
 
     const kpis = document.createElement("div");
     kpis.className = "watchlist-kpis";
@@ -372,16 +437,14 @@ function renderWatchlist(watchlist) {
       kpis.appendChild(cell);
     });
 
-    card.append(header, kpis);
+    card.append(header, performance, kpis);
     container.appendChild(card);
   });
 }
 
 function renderDashboard(data) {
-  if (!data.watchlist?.stocks?.length) {
-    throw new Error("选股池数据版本过旧，请刷新页面");
-  }
   const summary = data.summary;
+  const personalPortfolio = data.personal_portfolio;
   const dateChip = $("#data-date");
   if (data.data_quality?.complete) {
     dateChip.textContent = `数据截至 ${data.data_as_of}`;
@@ -401,6 +464,14 @@ function renderDashboard(data) {
   $("#excess-return").classList.toggle("negative", summary.excess_return_pp < 0);
 
   $("#benchmark-pill").textContent = `基准 ${percent(summary.benchmark_return_pct)}`;
+  const personalPill = $("#personal-pill");
+  personalPill.hidden = !personalPortfolio?.stocks?.length;
+  if (!personalPill.hidden) {
+    personalPill.textContent =
+      `个人持仓 ${percent(personalPortfolio.total_return_pct)} · ` +
+      `${personalPortfolio.vs_algorithm_pp >= 0 ? "领先" : "落后"}算法 ` +
+      `${Math.abs(personalPortfolio.vs_algorithm_pp).toFixed(2)}pp`;
+  }
   $("#qualify-pill").textContent = `${summary.qualifying_count}/${summary.holding_count} 仍符合选股条件`;
   $("#holdings-caption").textContent = `调仓日 ${data.rebalance_date}`;
   $("#screen-date").textContent =
@@ -424,8 +495,8 @@ function renderDashboard(data) {
   renderHoldings(data.holdings, data.screen.thresholds);
   renderCandidates(data.screen.candidates);
   renderConditions(data.holdings, data.screen.thresholds);
-  renderWatchlist(data.watchlist);
-  drawMainChart(data.history);
+  renderPersonalPortfolio(personalPortfolio);
+  drawMainChart(data.history, personalPortfolio?.history || []);
 
   $("#loading").hidden = true;
   $("#dashboard").hidden = false;
@@ -444,7 +515,9 @@ async function init() {
 
     const chart = $("#trend-chart");
     if (chart && "ResizeObserver" in window) {
-      new ResizeObserver(() => drawMainChart(data.history)).observe(chart.parentElement);
+      new ResizeObserver(() =>
+        drawMainChart(data.history, data.personal_portfolio?.history || []),
+      ).observe(chart.parentElement);
     }
   } catch (error) {
     $("#loading").hidden = true;
