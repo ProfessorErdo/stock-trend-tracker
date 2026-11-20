@@ -374,6 +374,7 @@ data/processed/backtesting/universe_compare_<时间戳>/
 - 932 旧池同口径对比：[`universe-backtest-932-2026-11.md`](universe-backtest-932-2026-11.md)
 - 固定篮子内的再平衡频率与权重：[`within-basket-rebalance-2026-11.md`](within-basket-rebalance-2026-11.md)
 - 三个起点口径 M1/M2/M3：[`three-start-metrics-2026-11.md`](three-start-metrics-2026-11.md)
+- 1052 vs 932 全量合并：[`consolidated-metrics-2026-11.md`](consolidated-metrics-2026-11.md)
 - 日常回测 Q&A：[`backtesting-operations-qa.md`](backtesting-operations-qa.md)
 - 回测引擎说明：[`../backtesting/README.md`](../backtesting/README.md)
 
