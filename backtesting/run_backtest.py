@@ -177,6 +177,8 @@ def main():
                         help="排除当年 1-4 月跌幅超过阈值的股票")
     parser.add_argument("--price_crash_threshold", type=float, default=-0.20,
                         help="1-4 月跌幅阈值（默认 -0.20）")
+    parser.add_argument("--price_crash_soft", action="store_true",
+                        help="价格过滤改为软过滤：优先未崩的，不够 5 只用崩过的补足")
     parser.add_argument("--latest_pools_only", action="store_true",
                         help="每个池子只用最新一期清单（当前成分股，含幸存者偏差；默认合并历史各期）")
 
@@ -322,6 +324,7 @@ def main():
         exclude_earnings_outliers=args.exclude_earnings_outliers,
         exclude_roe_outliers=args.exclude_roe_outliers,
         exclude_price_crash=args.exclude_price_crash,
+        price_crash_soft=args.price_crash_soft,
     )
 
     if result is None:

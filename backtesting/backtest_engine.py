@@ -304,6 +304,7 @@ def run_backtest(
     exclude_earnings_outliers: bool = False,
     exclude_roe_outliers: bool = False,
     exclude_price_crash: bool = False,
+    price_crash_soft: bool = False,
 ) -> dict:
     """
     Execute full backtest workflow
@@ -471,7 +472,11 @@ def run_backtest(
                     exclude_roe_outliers=exclude_roe_outliers,
                     exclude_price_crash=exclude_price_crash,
                 )
-                final_selected = rank_and_limit(selected, val_df, config.MAX_POSITIONS, ranking_method)
+                final_selected = rank_and_limit(
+                    selected, val_df, config.MAX_POSITIONS, ranking_method,
+                    price_crash_soft=price_crash_soft,
+                    price_crash_threshold=config.PRICE_CRASH_THRESHOLD,
+                )
 
             # Always include the pair — when rebalance is None, use cutoff date close as fill price
             selection_results[(cutoff, rebalance)] = final_selected

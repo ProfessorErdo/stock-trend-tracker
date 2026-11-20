@@ -60,6 +60,7 @@ ROE_RATIO_MAX = 1.5
 
 # 价格先崩过滤：当年 1-4 月跌幅超过阈值
 EXCLUDE_PRICE_CRASH = False
+PRICE_CRASH_SOFT = False
 PRICE_CRASH_THRESHOLD = -0.20         # ROE分位数阈值（保留最高75%分位以上）
 
 # 分位阈值处理

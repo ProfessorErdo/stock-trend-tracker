@@ -234,13 +234,15 @@ def select_stocks(
         if trade_date not in price_df["trade_date"].values:
             continue
 
-        if exclude_price_crash:
-            p = price_df.set_index("trade_date")["close"]
-            ystart = p.index[p.index <= pd.Timestamp(f"{trade_date.year - 1}-12-31")]
-            if len(ystart):
-                ret = p.loc[trade_date] / p.loc[ystart[-1]] - 1
-                if ret < config.PRICE_CRASH_THRESHOLD:
-                    continue
+        jan_apr_ret = None
+        p = price_df.set_index("trade_date")["close"]
+        ystart = p.index[p.index <= pd.Timestamp(f"{trade_date.year - 1}-12-31")]
+        if len(ystart):
+            jan_apr_ret = float(p.loc[trade_date] / p.loc[ystart[-1]] - 1)
+
+        if exclude_price_crash and jan_apr_ret is not None:
+            if jan_apr_ret < config.PRICE_CRASH_THRESHOLD:
+                continue
 
         # Step 1b - 获取财务数据
         fin_data = get_latest_financial_data(code, trade_date)
@@ -271,7 +273,8 @@ def select_stocks(
 
         all_valuations.append({
             "code": code,
-            **valuation
+            **valuation,
+            "jan_apr_ret": jan_apr_ret,
         })
 
     if not all_valuations:
@@ -349,7 +352,8 @@ def select_stocks(
 
 
 def rank_and_limit(selected: list, val_df: pd.DataFrame, max_positions: int = 10,
-                   ranking_method: str = "roe") -> list:
+                   ranking_method: str = "roe", price_crash_soft: bool = False,
+                   price_crash_threshold: float = -0.20) -> list:
     """
     当通过筛选的股票超过 max_positions 时，按指定指标排序取前 N 只。
 
@@ -362,7 +366,7 @@ def rank_and_limit(selected: list, val_df: pd.DataFrame, max_positions: int = 10
     Returns:
         排序后的股票代码列表（不超过 max_positions）
     """
-    if len(selected) <= max_positions:
+    if len(selected) <= max_positions and not price_crash_soft:
         return selected
 
     val_map = val_df.set_index("code")
@@ -376,7 +380,15 @@ def rank_and_limit(selected: list, val_df: pd.DataFrame, max_positions: int = 10
         return selected[:max_positions]
 
     key_func = method_map[ranking_method]
-    ranked = sorted(selected, key=key_func)
+    if price_crash_soft:
+        def sort_key(c):
+            row = val_map.loc[c]
+            ret = row.get("jan_apr_ret")
+            crashed = bool(pd.notna(ret) and ret < price_crash_threshold)
+            return (crashed, key_func(c))
+        ranked = sorted(selected, key=sort_key)
+    else:
+        ranked = sorted(selected, key=key_func)
     return ranked[:max_positions]
 
 
