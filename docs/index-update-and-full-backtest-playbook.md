@@ -162,20 +162,28 @@ PY
 
 **跑全量回测时用 `--end-date` 固定到这个最新交易日**，避免不同股票的截止日不一致。
 
-### 第 8 步：跑全量参数对比
+### 第 8 步：跑标准矩阵（M1 / M2 辅助口径）
 
 ```bash
 cd backtesting
-../.venv/bin/python universe_compare.py --pool union --end-date 2027-04-30
+OUT1052_STD=../data/processed/backtesting/universe_compare_2027-04
+OUT932_STD=../data/processed/backtesting/universe_compare_legacy932_2027-04
+OUT1052_15=../data/processed/backtesting/universe_compare_2015start_2027-04
+OUT932_15=../data/processed/backtesting/universe_compare_legacy932_2015start_2027-04
+
+../.venv/bin/python universe_compare.py --pool union --end-date 2027-04-30 \
+  --output-root "$OUT1052_STD"
+../.venv/bin/python universe_compare.py --pool legacy --end-date 2027-04-30 \
+  --output-root "$OUT932_STD"
 ```
 
 - `--pool union`：7 个池全部历史清单的并集（当前 1052 只）。
-- `--pool legacy`：只用旧的一期清单（932 只），用于和旧记录对比。
-- `--pool latest`：只用每个池最新一期（953 只），含幸存者偏差。
+- `--pool legacy`：旧的一期清单（932 只），用于和旧记录对比。
 - 默认跑完整矩阵：核心网格（7 过滤 × 5 排名）、股票池对比、裁尾、持仓数、阈值、细化、频率、止损，约 130 组。
-- 耗时约 20-25 分钟，其中 weekly 那一组最慢（约 4-5 分钟）。
-- 输出目录会自动带时间戳：`data/processed/backtesting/universe_compare_<YYYYMMDD_HHMMSS>/`。
+- 每个池约 20-25 分钟，其中 weekly 那一组最慢（约 4-5 分钟）。
 - 如果 4/30 当天收盘数据还没出，把 `--end-date` 改成实际最新交易日（例如 4/29）；关键是所有股票停在同一天。
+- 标准矩阵给 M1/M2；M3b 需要下一步的 2015-start 矩阵。
+- 四个目录变量（`OUT1052_STD` / `OUT932_STD` / `OUT1052_15` / `OUT932_15`）在同一个 shell 里沿用。
 
 如果只想快速验证某一组参数，用官方单策略 CLI（注意这里参数名是 `--end_date`，不是 `--end-date`）：
 
@@ -190,60 +198,76 @@ cd backtesting
   --end_date 2027-04-30
 ```
 
-### 第 9 步：生成报告（图片自动发布）
+### 第 8b 步：跑 2015-start 矩阵（M3 / M3b 主口径）
+
+M3b 需要“2015 年 5 月首次建仓”的 2015-start 回测。`--ignore-first-new-stock` 只跳过第一个截面（2015-04-30）的新股过滤，其他年份不变。
 
 ```bash
-cd backtesting
-OUT=$(ls -dt ../data/processed/backtesting/universe_compare_2* | head -1)
+../.venv/bin/python universe_compare.py --pool union --end-date 2027-04-30 \
+  --ignore-first-new-stock --output-root "$OUT1052_15"
+../.venv/bin/python universe_compare.py --pool legacy --end-date 2027-04-30 \
+  --ignore-first-new-stock --output-root "$OUT932_15"
+```
+
+这一步是 M3b 的基础，必须跑。四个矩阵（标准/2015-start × 1052/932）合计约 1.5-2 小时，可以分开跑。
+
+### 第 9 步：生成报告
+
+先出 M1/M2 辅助报告：
+
+```bash
 ../.venv/bin/python build_universe_report.py \
-  --output-root "$OUT" \
+  --output-root "$OUT1052_STD" \
   --report-path ../docs/universe-backtest-2027-04.md \
   --end-date 2027-04-30 \
   --assets-dir ../docs/img/universe-backtest-2027-04
-```
 
-`ls -dt ... | head -1` 取最新一次结果目录；`universe_compare_2*` 只匹配带时间戳的并集池目录，不会匹配 `universe_compare_legacy...`。
-
-- `--assets-dir` 会把 `charts/` 里的图片复制过去，并把报告里的图片链接改成相对路径。
-- 报告包含：结论速览、股票池对比、核心网格、裁尾、持仓数、阈值、频率、排行榜、稳健性、推荐方案与持仓。
-- 如果还要看 932 旧池：
-
-```bash
-# 先跑 932
-../.venv/bin/python universe_compare.py --pool legacy --end-date 2027-04-30 \
-  --output-root ../data/processed/backtesting/universe_compare_legacy932_2027-04
-
-# 再生成对比报告（--compare-root 指向并集池结果）
-OUT932=../data/processed/backtesting/universe_compare_legacy932_2027-04
-OUT=$(ls -dt ../data/processed/backtesting/universe_compare_2* | head -1)
 ../.venv/bin/python build_pool_report.py \
-  --output-root "$OUT932" \
-  --compare-root "$OUT" \
+  --output-root "$OUT932_STD" \
+  --compare-root "$OUT1052_STD" \
   --report-path ../docs/universe-backtest-932-2027-04.md \
   --end-date 2027-04-30 \
   --assets-dir ../docs/img/universe-backtest-932-2027-04
 ```
 
+再出 **M3b 主报告**：
+
+```bash
+../.venv/bin/python build_m3b_dataset.py \
+  --std-1052 "$OUT1052_STD" --y15-1052 "$OUT1052_15" \
+  --std-932 "$OUT932_STD" --y15-932 "$OUT932_15" \
+  --out-dir ../data/processed/backtesting/m3b_2027-04
+
+../.venv/bin/python build_m3b_report.py \
+  --data ../data/processed/backtesting/m3b_2027-04/m3b_annual.csv \
+  --root-1052 "$OUT1052_15" --root-932 "$OUT932_15" \
+  --img-dir ../docs/img/m3b-2027-04 \
+  --report ../docs/m3b-backtest-2027-04.md
+```
+
+- M3b 报告是主报告；M1/M2 报告只作对照。
+- 图片由 `--assets-dir` / `--img-dir` 自动发布。
+- `build_m3b_dataset.py` 会检查所有年度配置的首笔建仓日，只保留 2015-05-04 的配置。
+
 ### 第 10 步：读结果，决定今年的参数
 
-先看报告的“结论速览”和“推荐方案”，再重点核对：
+先看 M3b 报告的“结论速览”和“分池前 10”，再核对：
 
 - **股票池数量和数据截止日**是否与预期一致。
-- 收益最高的方案，**剔除最好年份后**还剩多少（防止单年驱动）。
-- 最大回撤和 2015-2020 / 2021-2026 两段是否都为正。
+- **M3b 夏普、回撤**是否可接受。
 - 当前持仓的行业集中度（低 PB + 高 ROE 经常集中在银行/保险/周期）。
 - “最佳参数”是否和上一轮一致；不一致是正常的，说明它对股票池敏感。
 
-**不要只看最高年化。** 2026-11 这轮的结论是（M1 为主，M2/M3 见 [`three-start-metrics-2026-11.md`](three-start-metrics-2026-11.md)）：
+**M3b 是主口径，M1 只作历史对照。** 2026-11 这轮的结论：
 
-| 方案 | 年化 | 夏普 | 回撤 | 备注 |
-|---|---:|---:|---:|---|
-| 1052 池最佳：PB<15% + ROE>70% + PE 排名 + 裁尾 1% + N=5 | 12.37% | 0.516 | -34.51% | 参数扫描产物，当前持仓 5 只银行 |
-| 1052 池经典：PB+ROE 25/75 + PB 排名 + 裁尾 2% + N=5 | 9.55% | 0.382 | -33.69% | 更平滑，当前含保险 |
-| 932 池最佳：PE<25% + ROE>75% + PB 排名 + 裁尾 1% + N=5 | 12.55% | 0.526 | -33.84% | 旧池幸存者偏差更重 |
-| 932 池经典原始阈值 | 11.59% | 0.513 | -40.34% | 历史记录 11.37% 的同口径复现 |
+| 方案 | M3b | M1（对照） | M3b 夏普 | M3b 回撤 |
+|---|---:|---:|---:|---:|
+| 1052 最佳：PB<15% + ROE>70% + PE 排名 + 裁尾 1% + N=5 | 11.25% | 12.37% | 0.410 | -34.38% |
+| 1052 经典：PB+ROE 25/75 + PB 排名 + 裁尾 2% + N=5 | 8.14% | 9.55% | 0.275 | -33.79% |
+| 932 最佳：PE<25% + ROE>75% + PB 排名 + 裁尾 1% + N=5 | 11.05% | 12.55% | 0.401 | -33.83% |
+| 932 经典：PB+ROE 25/75 + PB 排名 + 裁尾 2% + N=5 | 7.56% | 9.02% | 0.246 | -33.65% |
 
-两池的最优解互不通用：932 最佳条件搬到 1052 只剩 8.63%，1052 最佳条件搬到 932 只有 10.61%。下一轮必须重新验证，不要直接套用。
+两池 M3b 最优解互不通用：1052 最佳在 932 只有 9.51%，932 最佳在 1052 只有 7.19%。下一轮必须重新验证，不要直接套用。
 
 ### 第 11 步：生成下一次调仓计划
 
@@ -332,6 +356,8 @@ OUT=$(ls -dt ../data/processed/backtesting/universe_compare_2* | head -1)
 | `backtesting/test_within_basket.py` | 固定年度篮子，测试年内再平衡频率与不等权 | `--configs`、`--frequencies`、`--weightings` |
 | `backtesting/enrich_summary_metrics.py` | 给已有 summary 补“首次建仓以来”指标 | `--output-root` |
 | `backtesting/compare_three_metrics.py` | 比较 M1/M2/M3 三口径排名 | `--standard-root`、`--start2015-root` |
+| `backtesting/build_m3b_dataset.py` | 从 2015-start 回测生成 M3b 年度数据集 | 默认读四个结果目录 |
+| `backtesting/build_m3b_report.py` | 生成 M3b 主口径报告和图表 | 默认读 `m3b_annual.csv` |
 
 `universe_compare.py` 的 `--phases` 可选：
 
@@ -370,6 +396,7 @@ data/processed/backtesting/universe_compare_<时间戳>/
 
 ### 报告
 
+- **M3b 主报告（当前主口径）**：[`m3b-backtest-2026-11.md`](m3b-backtest-2026-11.md)
 - 1052 并集池全角度回测：[`universe-backtest-2026-11.md`](universe-backtest-2026-11.md)
 - 932 旧池同口径对比：[`universe-backtest-932-2026-11.md`](universe-backtest-932-2026-11.md)
 - 固定篮子内的再平衡频率与权重：[`within-basket-rebalance-2026-11.md`](within-basket-rebalance-2026-11.md)
@@ -463,9 +490,10 @@ A：2027-04-30 数据更新后跑 `next_rebalance.py`；5 月首个交易日执�
 
 1. `README.md` 的“文档索引”。
 2. 本文件。
-3. `docs/universe-backtest-2026-11.md`（1052 池结论）。
-4. `docs/universe-backtest-932-2026-11.md`（932 池对照）。
-5. `AGENTS.md`（目录结构、策略逻辑、成本假设）。
+3. **`docs/m3b-backtest-2026-11.md`（M3b 主报告，当前主口径）**。
+4. `docs/universe-backtest-2026-11.md` / `docs/universe-backtest-932-2026-11.md`（M1/M2 对照）。
+5. `docs/three-start-metrics-2026-11.md`（M1/M2/M3/M3b 定义与排序一致性）。
+6. `AGENTS.md`（目录结构、策略逻辑、成本假设）。
 
 开始工作前确认：
 

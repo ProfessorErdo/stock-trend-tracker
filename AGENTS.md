@@ -16,11 +16,14 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
 - Last annual rebalance: 2026-04-30 cutoff → 2026-05-06.
 - **Next annual rebalance: 2027-04-30 cutoff → first trading day of May 2027.**
 - Read first: [`docs/index-update-and-full-backtest-playbook.md`](docs/index-update-and-full-backtest-playbook.md)
-  (annual/quarterly workflow), then the 1052/932 backtest reports linked from the root `README.md`.
+  (annual/quarterly workflow), then the **M3b-primary report**
+  [`docs/m3b-backtest-2026-11.md`](docs/m3b-backtest-2026-11.md). M1/M2/M3 are auxiliary metrics.
+- M3b = annualized return since the first 2015-05-04 entry (2014 annual report available).
 - Full-sweep scripts: `backtesting/universe_compare.py`, `build_universe_report.py`,
   `build_pool_report.py`, `analyze_holdings_diff.py`, `test_within_basket.py`,
   `enrich_summary_metrics.py`, `compare_three_metrics.py`,
-  `build_consolidated_metrics.py`, `build_consolidated_report.py`.
+  `build_consolidated_metrics.py`, `build_consolidated_report.py`,
+  `build_m3b_dataset.py`, `build_m3b_report.py`.
 
 ## Environment Setup
 
