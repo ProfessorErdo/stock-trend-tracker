@@ -32,12 +32,12 @@ if [[ "$publish" == true ]]; then
   date_tag="$(date +%Y-%m-%d)"
   dashboard_files=(
     docs/index.html
+    docs/index.template.html
     docs/dashboard.css
     docs/dashboard.js
     docs/favicon.svg
     docs/.nojekyll
     docs/data/dashboard.json
-    docs/data/dashboard-data.js
   )
   git add -- "${dashboard_files[@]}"
   if git diff --cached --quiet -- "${dashboard_files[@]}"; then

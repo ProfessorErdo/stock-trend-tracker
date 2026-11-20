@@ -60,8 +60,9 @@ The public dashboard output is limited to:
 - derived portfolio and benchmark return series
 - quantity-weighted personal-portfolio weights, contributions and returns
 
-The same sanitized payload is published as `docs/data/dashboard.json` for
-HTTP deployments and `docs/data/dashboard-data.js` as a local-file fallback.
+The same sanitized payload is published in `docs/data/dashboard.json` for
+programmatic use and embedded directly into the generated standalone
+`docs/index.html` for browser display.
 
 The quantities needed for the personal-portfolio comparison are stored in
 the Git-ignored `data/input/personal_holdings.csv`. They are converted to

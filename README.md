@@ -112,9 +112,10 @@ Build the public dashboard data:
 .venv/bin/python scripts/build_dashboard.py
 ```
 
-The build writes both `docs/data/dashboard.json` and a fallback
-`docs/data/dashboard-data.js`, so the dashboard also works when `index.html`
-is opened directly without a local HTTP server.
+The build writes `docs/data/dashboard.json` and also generates a standalone
+`docs/index.html` with the CSS, JavaScript and sanitized payload embedded.
+The page therefore works when opened directly without a local HTTP server and
+does not issue any data `fetch` request.
 
 Preview the static site locally:
 

@@ -41,6 +41,10 @@ EQUITY_FILE = ROOT / "data" / "processed" / "backtesting" / "performance" / "equ
 STOCK_NAMES_FILE = ROOT / "data" / "input" / "stock_names_full.csv"
 PERSONAL_HOLDINGS_FILE = ROOT / "data" / "input" / "personal_holdings.csv"
 DEFAULT_OUTPUT = ROOT / "docs" / "data" / "dashboard.json"
+INDEX_TEMPLATE = ROOT / "docs" / "index.template.html"
+DASHBOARD_INDEX = ROOT / "docs" / "index.html"
+DASHBOARD_CSS = ROOT / "docs" / "dashboard.css"
+DASHBOARD_JS = ROOT / "docs" / "dashboard.js"
 
 # Fixed universe used to find the real 2026-04-30 annual holdings.
 HOLDING_UNIVERSE_FILES = {
@@ -931,6 +935,25 @@ def build_payload(as_of: pd.Timestamp | None) -> dict:
     return payload
 
 
+def write_standalone_index(payload_text: str) -> None:
+    """Inline CSS, JavaScript and data so the dashboard works from file://."""
+    template = INDEX_TEMPLATE.read_text(encoding="utf-8")
+    css = DASHBOARD_CSS.read_text(encoding="utf-8")
+    javascript = DASHBOARD_JS.read_text(encoding="utf-8")
+    safe_payload = payload_text.replace("</", "<\\/")
+    data_block = (
+        "<script>\nwindow.__DASHBOARD_DATA__ = "
+        + safe_payload
+        + ";\n</script>"
+    )
+    html = (
+        template.replace("/* __DASHBOARD_CSS__ */", css)
+        .replace("<!-- __DASHBOARD_DATA__ -->", data_block)
+        .replace("/* __DASHBOARD_JS__ */", javascript)
+    )
+    DASHBOARD_INDEX.write_text(html.rstrip() + "\n", encoding="utf-8")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -953,16 +976,9 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     payload_text = json.dumps(payload, ensure_ascii=False, indent=2)
     args.output.write_text(payload_text + "\n", encoding="utf-8")
-
-    script_output = args.output.with_name("dashboard-data.js")
-    script_output.write_text(
-        "window.__DASHBOARD_DATA__ = "
-        + payload_text
-        + ";\n",
-        encoding="utf-8",
-    )
+    write_standalone_index(payload_text)
     print(
-        f"Wrote {args.output} and {script_output} | as of {payload['data_as_of']} | "
+        f"Wrote {args.output} and {DASHBOARD_INDEX} | as of {payload['data_as_of']} | "
         f"{len(payload['holdings'])} holdings | "
         f"{payload['summary']['qualifying_count']} still qualify",
         flush=True,

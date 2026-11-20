@@ -8,7 +8,933 @@
   <meta name="description" content="年度持仓表现与每周选股条件跟踪">
   <title>年度持仓看板</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./dashboard.css">
+  <style>
+:root {
+  color-scheme: dark;
+  --page: #0f1511;
+  --surface: #171f1a;
+  --surface-soft: #202a23;
+  --ink: #eef5ef;
+  --muted: #9caaa0;
+  --faint: #7e8d82;
+  --line: #2c3930;
+  --green: #5fd397;
+  --green-soft: #173627;
+  --red: #ff8d84;
+  --red-soft: #3a211f;
+  --amber: #e9b866;
+  --amber-soft: #392f1f;
+  --benchmark: #78857c;
+  --personal: #79a9ff;
+  --personal-soft: #1b2b42;
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 50% -10%, color-mix(in srgb, var(--green) 10%, transparent), transparent 35rem),
+    var(--page);
+  color: var(--ink);
+  font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+
+button,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+}
+
+.shell {
+  width: min(100% - 24px, 760px);
+  margin: 0 auto;
+  padding: 14px 0 36px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 0 2px 12px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--page);
+}
+
+.brand-mark svg {
+  width: 21px;
+  height: 21px;
+  overflow: visible;
+}
+
+.brand-mark .brand-trend {
+  fill: none;
+  stroke: var(--page);
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.brand-mark .brand-dot {
+  fill: var(--green);
+  stroke: var(--ink);
+  stroke-width: 0.8;
+}
+
+.brand-mark .brand-bars {
+  fill: none;
+  stroke: color-mix(in srgb, var(--page) 52%, transparent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.date-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.date-chip::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.date-chip.needs-update::before {
+  background: var(--amber);
+}
+
+.hero,
+.screen-panel,
+.state-card,
+.rules {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.hero {
+  padding: 20px 18px 15px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--green) 14%, transparent), transparent 17rem),
+    var(--surface);
+}
+
+.eyebrow {
+  margin: 0 0 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.return-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.return {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(42px, 12vw, 58px);
+  font-weight: 650;
+  letter-spacing: -0.065em;
+  line-height: 1;
+}
+
+.return.negative {
+  color: var(--red);
+}
+
+.return-delta {
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.return-delta.negative {
+  color: var(--red);
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.pill-positive {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.pill-neutral {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.pill-personal {
+  background: var(--personal-soft);
+  color: var(--personal);
+}
+
+.pill-negative {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.chart-wrap {
+  margin: 10px -2px -1px;
+}
+
+.trend-chart {
+  display: block;
+  width: 100%;
+  height: 210px;
+  overflow: visible;
+}
+
+.trend-chart text {
+  fill: var(--faint);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend i {
+  display: inline-block;
+  width: 15px;
+  height: 2px;
+  border-radius: 2px;
+}
+
+.legend-portfolio {
+  background: var(--green);
+}
+
+.legend-personal {
+  background: var(--personal);
+}
+
+.legend-benchmark {
+  background: var(--benchmark);
+}
+
+.section {
+  margin-top: 25px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 2px 9px;
+}
+
+.section-heading h2,
+.panel-heading h3 {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.section-heading h2 {
+  font-size: 18px;
+}
+
+.section-heading span,
+.panel-heading span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.personal-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 19px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.personal-summary-card {
+  min-width: 0;
+  padding: 14px 11px;
+}
+
+.personal-summary-card + .personal-summary-card {
+  border-left: 1px solid var(--line);
+}
+
+.personal-summary-card span,
+.personal-summary-card small {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.personal-summary-card strong {
+  display: block;
+  margin: 3px 0;
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+}
+
+.personal-summary-card strong.negative {
+  color: var(--red);
+}
+
+.personal-summary-main {
+  background:
+    radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--personal) 16%, transparent), transparent 9rem),
+    var(--surface-soft);
+}
+
+.personal-summary-main strong {
+  color: var(--personal);
+}
+
+.personal-note {
+  margin: 9px 2px 11px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.holdings-list {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 19px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.holding {
+  background: var(--surface);
+}
+
+.holding + .holding {
+  border-top: 1px solid var(--line);
+}
+
+.holding > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 68px auto auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 65px;
+  padding: 10px 12px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.holding > summary::-webkit-details-marker {
+  display: none;
+}
+
+.holding > summary:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -3px;
+}
+
+.stock-name {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stock-name strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stock-name small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.condition-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 2px;
+}
+
+.stock-name .condition-comparison small {
+  color: var(--red);
+  font-size: 10px;
+  font-weight: 550;
+  line-height: 1.35;
+}
+
+.mini-chart {
+  display: block;
+  width: 68px;
+  height: 27px;
+  overflow: visible;
+}
+
+.condition-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 55px;
+  min-height: 25px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.condition-badge.pass {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.condition-badge.fail {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.stock-return {
+  min-width: 61px;
+  color: var(--green);
+  font-size: 15px;
+  font-weight: 650;
+  text-align: right;
+}
+
+.stock-return.negative {
+  color: var(--red);
+}
+
+.holding-detail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  padding: 0 12px 13px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.holding-detail span {
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.holding-detail b {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.holding-detail small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.holding-detail .metric-fail b,
+.holding-detail .metric-fail small {
+  color: var(--red);
+}
+
+.screen-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--ink);
+  color: var(--page);
+  box-shadow: var(--shadow);
+}
+
+.screen-summary div {
+  min-width: 0;
+  padding: 16px 10px;
+  text-align: center;
+}
+
+.screen-summary div + div {
+  border-left: 1px solid color-mix(in srgb, var(--page) 16%, transparent);
+}
+
+.screen-summary strong {
+  display: block;
+  font-size: 25px;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+}
+
+.screen-summary span {
+  color: color-mix(in srgb, var(--page) 62%, transparent);
+  font-size: 10px;
+}
+
+.screen-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.screen-panel {
+  min-width: 0;
+  padding: 14px;
+  border-radius: 18px;
+  box-shadow: none;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.panel-heading h3 {
+  font-size: 14px;
+}
+
+.compact-list {
+  display: grid;
+  gap: 7px;
+}
+
+.empty-note {
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.compact-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 47px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.compact-item strong {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compact-item small {
+  display: block;
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.compact-item em {
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 650;
+  text-align: right;
+}
+
+.compact-item em.is-new {
+  color: var(--green);
+}
+
+.compact-item em.is-fail {
+  color: var(--red);
+}
+
+.watchlist-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.watchlist-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.watchlist-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.watchlist-card-head strong {
+  display: block;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.watchlist-card-head small {
+  display: block;
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.watchlist-performance {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 10px;
+  margin: -1px 0 10px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.watchlist-performance strong {
+  color: var(--green);
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+.watchlist-performance strong.negative {
+  color: var(--red);
+}
+
+.watchlist-performance small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.watchlist-pass-count {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.watchlist-pass-count.all-pass {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.watchlist-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.kpi-cell {
+  min-width: 0;
+  padding: 8px 9px;
+  border-radius: 11px;
+  background: var(--surface-soft);
+}
+
+.kpi-label {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.kpi-cell b {
+  display: block;
+  margin-top: 1px;
+  color: var(--green);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.kpi-cell small {
+  display: block;
+  margin-top: 1px;
+  color: var(--green);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.kpi-cell.fail b,
+.kpi-cell.fail small {
+  color: var(--red);
+}
+
+.rules {
+  margin-top: 25px;
+  padding: 15px;
+  border-radius: 18px;
+  box-shadow: none;
+}
+
+.rules .section-heading {
+  margin: 0 0 8px;
+}
+
+.rules p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.state-card {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  padding: 24px;
+  border-radius: 22px;
+  text-align: center;
+}
+
+.state-card p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.state-card h1 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.state-error {
+  border-color: color-mix(in srgb, var(--red) 32%, var(--line));
+}
+
+.loader {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--line);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 20px 3px 0;
+  color: var(--faint);
+  font-size: 10px;
+}
+
+@media (max-width: 620px) {
+  .screen-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .watchlist-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .personal-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .personal-summary-card:nth-child(3) {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .personal-summary-card:nth-child(4) {
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 420px) {
+  .shell {
+    width: min(100% - 16px, 760px);
+    padding-top: 8px;
+  }
+
+  .hero {
+    padding-inline: 15px;
+  }
+
+  .holding > summary {
+    grid-template-columns: minmax(0, 1fr) 44px auto auto;
+    gap: 5px;
+    padding-inline: 8px;
+  }
+
+  .mini-chart {
+    width: 44px;
+  }
+
+  .condition-badge {
+    min-width: 48px;
+    padding-inline: 5px;
+    font-size: 9px;
+  }
+
+  .holding-detail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-inline: 10px;
+  }
+
+  .screen-summary strong {
+    font-size: 22px;
+  }
+
+  .watchlist-grid {
+    gap: 8px;
+  }
+
+  .watchlist-card {
+    padding: 11px;
+    border-radius: 15px;
+  }
+
+  .watchlist-card-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .watchlist-kpis {
+    gap: 5px;
+  }
+
+  .kpi-cell {
+    padding: 7px;
+  }
+
+  .kpi-cell b {
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .loader {
+    animation: none;
+  }
+}
+
+  </style>
 </head>
 <body>
   <div class="shell">
@@ -151,6 +1077,1534 @@
     </footer>
   </div>
 
-  <script src="./dashboard.js" defer></script>
+  <script>
+window.__DASHBOARD_DATA__ = {
+  "schema_version": 1,
+  "generated_at": "2026-11-20T22:02:27+08:00",
+  "data_as_of": "2026-11-20",
+  "data_quality": {
+    "latest_price_date": "2026-11-20",
+    "latest_equity_date": "2026-10-30",
+    "complete": true,
+    "benchmark_extended": true
+  },
+  "rebalance_date": "2026-05-06",
+  "holding_until": "2027-05",
+  "summary": {
+    "portfolio_return_pct": 9.88,
+    "benchmark_return_pct": -3.56,
+    "excess_return_pp": 13.44,
+    "qualifying_count": 1,
+    "holding_count": 5,
+    "new_candidate_count": 3,
+    "dropped_count": 4,
+    "new_candidates": [
+      "渤海租赁",
+      "九安医疗",
+      "中孚实业"
+    ],
+    "dropped_names": [
+      "杭州银行",
+      "东航物流",
+      "中国人保",
+      "中国太保"
+    ]
+  },
+  "history": [
+    {
+      "date": "2026-05-06",
+      "portfolio": 100.0,
+      "benchmark": 100.0
+    },
+    {
+      "date": "2026-05-08",
+      "portfolio": 99.51,
+      "benchmark": 100.05
+    },
+    {
+      "date": "2026-05-15",
+      "portfolio": 95.83,
+      "benchmark": 99.91
+    },
+    {
+      "date": "2026-05-22",
+      "portfolio": 94.82,
+      "benchmark": 99.81
+    },
+    {
+      "date": "2026-05-29",
+      "portfolio": 94.68,
+      "benchmark": 99.75
+    },
+    {
+      "date": "2026-06-05",
+      "portfolio": 93.69,
+      "benchmark": 99.66
+    },
+    {
+      "date": "2026-06-12",
+      "portfolio": 98.18,
+      "benchmark": 99.63
+    },
+    {
+      "date": "2026-06-18",
+      "portfolio": 93.03,
+      "benchmark": 99.55
+    },
+    {
+      "date": "2026-06-26",
+      "portfolio": 90.87,
+      "benchmark": 99.45
+    },
+    {
+      "date": "2026-07-03",
+      "portfolio": 94.98,
+      "benchmark": 99.51
+    },
+    {
+      "date": "2026-07-10",
+      "portfolio": 93.6,
+      "benchmark": 99.45
+    },
+    {
+      "date": "2026-07-17",
+      "portfolio": 95.37,
+      "benchmark": 99.45
+    },
+    {
+      "date": "2026-07-24",
+      "portfolio": 98.31,
+      "benchmark": 99.52
+    },
+    {
+      "date": "2026-07-31",
+      "portfolio": 100.68,
+      "benchmark": 99.68
+    },
+    {
+      "date": "2026-08-07",
+      "portfolio": 98.53,
+      "benchmark": 99.6
+    },
+    {
+      "date": "2026-08-14",
+      "portfolio": 97.99,
+      "benchmark": 99.56
+    },
+    {
+      "date": "2026-08-21",
+      "portfolio": 100.67,
+      "benchmark": 99.55
+    },
+    {
+      "date": "2026-08-28",
+      "portfolio": 102.58,
+      "benchmark": 99.67
+    },
+    {
+      "date": "2026-09-04",
+      "portfolio": 108.3,
+      "benchmark": 99.69
+    },
+    {
+      "date": "2026-09-11",
+      "portfolio": 107.61,
+      "benchmark": 99.63
+    },
+    {
+      "date": "2026-09-18",
+      "portfolio": 105.14,
+      "benchmark": 99.57
+    },
+    {
+      "date": "2026-09-24",
+      "portfolio": 105.33,
+      "benchmark": 99.53
+    },
+    {
+      "date": "2026-09-30",
+      "portfolio": 106.12,
+      "benchmark": 99.56
+    },
+    {
+      "date": "2026-10-09",
+      "portfolio": 105.94,
+      "benchmark": 99.6
+    },
+    {
+      "date": "2026-10-16",
+      "portfolio": 102.78,
+      "benchmark": 99.53
+    },
+    {
+      "date": "2026-10-23",
+      "portfolio": 100.71,
+      "benchmark": 99.45
+    },
+    {
+      "date": "2026-10-30",
+      "portfolio": 105.57,
+      "benchmark": 99.42
+    },
+    {
+      "date": "2026-11-20",
+      "portfolio": 109.88,
+      "benchmark": 96.44
+    }
+  ],
+  "holdings": [
+    {
+      "code": "600926",
+      "name": "杭州银行",
+      "weight_pct": 20.0,
+      "return_pct": 8.75,
+      "day_change_pct": 0.97,
+      "latest_price": 49.07,
+      "qualifies": false,
+      "failed_metrics": [
+        "ROE"
+      ],
+      "metrics": {
+        "pe": 6.65,
+        "pb": 0.92,
+        "pr": 0.47,
+        "roe": 14.09
+      },
+      "sparkline": [
+        97.67,
+        96.05,
+        93.37,
+        93.13,
+        92.2,
+        97.38,
+        92.53,
+        87.85,
+        88.74,
+        89.58,
+        92.07,
+        93.13,
+        97.32,
+        94.66,
+        96.32,
+        98.38,
+        98.16,
+        102.06,
+        103.59,
+        101.4,
+        101.95,
+        104.01,
+        104.26,
+        102.3,
+        100.42,
+        104.12,
+        103.88,
+        106.49,
+        108.75
+      ]
+    },
+    {
+      "code": "601156",
+      "name": "东航物流",
+      "weight_pct": 20.0,
+      "return_pct": 25.76,
+      "day_change_pct": -0.48,
+      "latest_price": 22.75,
+      "qualifies": false,
+      "failed_metrics": [
+        "PB",
+        "ROE"
+      ],
+      "metrics": {
+        "pe": 11.07,
+        "pb": 1.55,
+        "pr": 0.79,
+        "roe": 14.08
+      },
+      "sparkline": [
+        99.56,
+        94.97,
+        98.23,
+        100.77,
+        101.33,
+        102.1,
+        101.49,
+        99.5,
+        108.96,
+        100.72,
+        100.11,
+        103.65,
+        108.96,
+        110.72,
+        113.05,
+        118.46,
+        121.39,
+        122.83,
+        120.62,
+        115.37,
+        116.2,
+        117.36,
+        118.35,
+        114.15,
+        114.04,
+        118.68,
+        126.04,
+        125.1,
+        125.76
+      ]
+    },
+    {
+      "code": "601319",
+      "name": "中国人保",
+      "weight_pct": 20.0,
+      "return_pct": 3.78,
+      "day_change_pct": -0.45,
+      "latest_price": 8.79,
+      "qualifies": false,
+      "failed_metrics": [
+        "PR",
+        "ROE"
+      ],
+      "metrics": {
+        "pe": 10.1,
+        "pb": 0.97,
+        "pr": 1.02,
+        "roe": 9.87
+      },
+      "sparkline": [
+        102.48,
+        97.4,
+        97.28,
+        95.75,
+        91.97,
+        98.23,
+        93.03,
+        96.69,
+        101.42,
+        98.82,
+        101.42,
+        104.25,
+        105.19,
+        101.18,
+        97.87,
+        99.17,
+        101.89,
+        114.05,
+        111.69,
+        111.57,
+        115.11,
+        113.81,
+        111.57,
+        108.15,
+        104.01,
+        105.9,
+        105.19,
+        103.42,
+        103.78
+      ]
+    },
+    {
+      "code": "601601",
+      "name": "中国太保",
+      "weight_pct": 20.0,
+      "return_pct": -6.3,
+      "day_change_pct": 1.59,
+      "latest_price": 56.18,
+      "qualifies": false,
+      "failed_metrics": [
+        "ROE"
+      ],
+      "metrics": {
+        "pe": 7.19,
+        "pb": 1.0,
+        "pr": 0.53,
+        "roe": 13.6
+      },
+      "sparkline": [
+        99.47,
+        93.11,
+        88.54,
+        86.74,
+        83.71,
+        88.58,
+        80.82,
+        76.63,
+        79.92,
+        79.84,
+        83.27,
+        89.44,
+        90.59,
+        88.09,
+        83.76,
+        85.16,
+        88.94,
+        95.76,
+        92.29,
+        89.81,
+        86.44,
+        86.94,
+        87.19,
+        82.07,
+        82.07,
+        87.11,
+        90.51,
+        89.61,
+        93.7
+      ]
+    },
+    {
+      "code": "601838",
+      "name": "成都银行",
+      "weight_pct": 20.0,
+      "return_pct": 17.39,
+      "day_change_pct": 0.09,
+      "latest_price": 31.93,
+      "qualifies": true,
+      "failed_metrics": [],
+      "metrics": {
+        "pe": 6.72,
+        "pb": 0.97,
+        "pr": 0.46,
+        "roe": 14.47
+      },
+      "sparkline": [
+        98.38,
+        97.61,
+        96.65,
+        96.99,
+        99.26,
+        104.63,
+        97.28,
+        93.64,
+        95.88,
+        99.04,
+        100.0,
+        101.1,
+        101.36,
+        97.98,
+        98.93,
+        102.17,
+        102.5,
+        106.8,
+        109.85,
+        107.54,
+        106.95,
+        108.49,
+        108.35,
+        107.24,
+        102.98,
+        112.02,
+        113.35,
+        115.96,
+        117.39
+      ]
+    }
+  ],
+  "personal_portfolio": {
+    "entry_date": "2026-05-06",
+    "as_of": "2026-11-20",
+    "holding_count": 6,
+    "positive_count": 4,
+    "fully_qualifying_count": 0,
+    "total_return_pct": 10.94,
+    "price_return_pct": 7.01,
+    "income_return_pp": 3.93,
+    "algorithm_return_pct": 9.88,
+    "benchmark_return_pct": -3.56,
+    "vs_algorithm_pp": 1.06,
+    "vs_benchmark_pp": 14.5,
+    "thresholds": {
+      "pe": 12.75,
+      "pb": 1.09,
+      "pr": 1.0,
+      "roe": 14.38
+    },
+    "history": [
+      {
+        "date": "2026-05-06",
+        "portfolio": 100.0
+      },
+      {
+        "date": "2026-05-08",
+        "portfolio": 99.76
+      },
+      {
+        "date": "2026-05-15",
+        "portfolio": 98.01
+      },
+      {
+        "date": "2026-05-22",
+        "portfolio": 95.32
+      },
+      {
+        "date": "2026-05-29",
+        "portfolio": 96.52
+      },
+      {
+        "date": "2026-06-05",
+        "portfolio": 95.93
+      },
+      {
+        "date": "2026-06-12",
+        "portfolio": 97.54
+      },
+      {
+        "date": "2026-06-18",
+        "portfolio": 91.28
+      },
+      {
+        "date": "2026-06-26",
+        "portfolio": 89.11
+      },
+      {
+        "date": "2026-07-03",
+        "portfolio": 91.75
+      },
+      {
+        "date": "2026-07-10",
+        "portfolio": 93.12
+      },
+      {
+        "date": "2026-07-17",
+        "portfolio": 96.55
+      },
+      {
+        "date": "2026-07-24",
+        "portfolio": 100.31
+      },
+      {
+        "date": "2026-07-31",
+        "portfolio": 103.11
+      },
+      {
+        "date": "2026-08-07",
+        "portfolio": 99.76
+      },
+      {
+        "date": "2026-08-14",
+        "portfolio": 99.94
+      },
+      {
+        "date": "2026-08-21",
+        "portfolio": 99.73
+      },
+      {
+        "date": "2026-08-28",
+        "portfolio": 101.9
+      },
+      {
+        "date": "2026-09-04",
+        "portfolio": 104.87
+      },
+      {
+        "date": "2026-09-11",
+        "portfolio": 102.37
+      },
+      {
+        "date": "2026-09-18",
+        "portfolio": 100.26
+      },
+      {
+        "date": "2026-09-24",
+        "portfolio": 99.39
+      },
+      {
+        "date": "2026-09-30",
+        "portfolio": 99.58
+      },
+      {
+        "date": "2026-10-09",
+        "portfolio": 100.42
+      },
+      {
+        "date": "2026-10-16",
+        "portfolio": 103.19
+      },
+      {
+        "date": "2026-10-23",
+        "portfolio": 102.85
+      },
+      {
+        "date": "2026-10-30",
+        "portfolio": 106.99
+      },
+      {
+        "date": "2026-11-20",
+        "portfolio": 110.94
+      }
+    ],
+    "stocks": [
+      {
+        "code": "600519",
+        "name": "贵州茅台",
+        "metrics": {
+          "pe": 22.63,
+          "pb": 7.16,
+          "pr": 0.7,
+          "roe": 32.36
+        },
+        "conditions": {
+          "pe": false,
+          "pb": false,
+          "pr": true,
+          "roe": true
+        },
+        "failed_metrics": [
+          "PE",
+          "PB"
+        ],
+        "passing_count": 2,
+        "qualifies": false,
+        "weight_pct": 31.16,
+        "return_pct": 10.61,
+        "price_return_pct": 8.05,
+        "income_return_pp": 2.56,
+        "contribution_pp": 3.31,
+        "latest_price": 1485.75,
+        "sparkline": [
+          99.85,
+          96.94,
+          93.83,
+          96.44,
+          92.57,
+          93.96,
+          88.36,
+          87.0,
+          88.93,
+          89.71,
+          93.28,
+          96.59,
+          100.55,
+          97.47,
+          99.91,
+          94.76,
+          96.59,
+          99.02,
+          94.93,
+          93.59,
+          92.09,
+          93.7,
+          94.03,
+          98.94,
+          99.39,
+          103.64,
+          108.17,
+          106.85,
+          110.61
+        ]
+      },
+      {
+        "code": "000333",
+        "name": "美的集团",
+        "metrics": {
+          "pe": 14.91,
+          "pb": 3.24,
+          "pr": 0.71,
+          "roe": 20.97
+        },
+        "conditions": {
+          "pe": false,
+          "pb": false,
+          "pr": true,
+          "roe": true
+        },
+        "failed_metrics": [
+          "PE",
+          "PB"
+        ],
+        "passing_count": 2,
+        "qualifies": false,
+        "weight_pct": 21.88,
+        "return_pct": 23.74,
+        "price_return_pct": 17.88,
+        "income_return_pp": 5.86,
+        "contribution_pp": 5.19,
+        "latest_price": 94.82,
+        "sparkline": [
+          99.95,
+          102.65,
+          99.8,
+          100.51,
+          101.55,
+          103.47,
+          96.97,
+          97.65,
+          101.74,
+          103.08,
+          107.94,
+          110.27,
+          114.32,
+          108.97,
+          108.35,
+          110.01,
+          112.53,
+          114.28,
+          112.57,
+          110.14,
+          107.86,
+          104.53,
+          107.61,
+          110.4,
+          111.69,
+          116.38,
+          116.93,
+          118.17,
+          123.74
+        ]
+      },
+      {
+        "code": "600036",
+        "name": "招商银行",
+        "metrics": {
+          "pe": 7.53,
+          "pb": 0.97,
+          "pr": 0.58,
+          "roe": 13.09
+        },
+        "conditions": {
+          "pe": true,
+          "pb": true,
+          "pr": true,
+          "roe": false
+        },
+        "failed_metrics": [
+          "ROE"
+        ],
+        "passing_count": 3,
+        "qualifies": false,
+        "weight_pct": 19.81,
+        "return_pct": 18.97,
+        "price_return_pct": 15.79,
+        "income_return_pp": 3.18,
+        "contribution_pp": 3.76,
+        "latest_price": 44.0,
+        "sparkline": [
+          99.84,
+          99.08,
+          97.42,
+          100.03,
+          101.53,
+          103.53,
+          98.06,
+          94.74,
+          96.92,
+          99.72,
+          102.8,
+          105.99,
+          107.13,
+          104.91,
+          103.99,
+          105.18,
+          106.4,
+          112.72,
+          111.8,
+          109.75,
+          110.02,
+          111.56,
+          111.99,
+          114.78,
+          112.94,
+          117.75,
+          115.94,
+          116.08,
+          118.97
+        ]
+      },
+      {
+        "code": "601318",
+        "name": "中国平安",
+        "metrics": {
+          "pe": 9.78,
+          "pb": 0.98,
+          "pr": 1.01,
+          "roe": 9.7
+        },
+        "conditions": {
+          "pe": true,
+          "pb": true,
+          "pr": false,
+          "roe": false
+        },
+        "failed_metrics": [
+          "PR",
+          "ROE"
+        ],
+        "passing_count": 2,
+        "qualifies": false,
+        "weight_pct": 17.49,
+        "return_pct": -1.73,
+        "price_return_pct": -6.57,
+        "income_return_pp": 4.84,
+        "contribution_pp": -0.3,
+        "latest_price": 55.46,
+        "sparkline": [
+          101.18,
+          93.49,
+          90.43,
+          90.13,
+          90.09,
+          94.04,
+          85.98,
+          82.23,
+          85.47,
+          86.15,
+          88.27,
+          94.05,
+          95.59,
+          92.94,
+          90.1,
+          92.89,
+          97.24,
+          101.4,
+          97.16,
+          94.57,
+          94.35,
+          94.43,
+          93.61,
+          91.93,
+          91.71,
+          93.56,
+          96.57,
+          95.33,
+          98.27
+        ]
+      },
+      {
+        "code": "600938",
+        "name": "中国海油",
+        "metrics": {
+          "pe": 10.3,
+          "pb": 1.72,
+          "pr": 0.62,
+          "roe": 16.75
+        },
+        "conditions": {
+          "pe": true,
+          "pb": false,
+          "pr": true,
+          "roe": true
+        },
+        "failed_metrics": [
+          "PB"
+        ],
+        "passing_count": 3,
+        "qualifies": false,
+        "weight_pct": 6.94,
+        "return_pct": -17.58,
+        "price_return_pct": -20.87,
+        "income_return_pp": 3.29,
+        "contribution_pp": -1.22,
+        "latest_price": 30.29,
+        "sparkline": [
+          94.94,
+          95.37,
+          93.58,
+          89.85,
+          91.9,
+          87.15,
+          80.18,
+          71.49,
+          72.32,
+          74.8,
+          76.97,
+          84.79,
+          85.71,
+          83.25,
+          86.8,
+          89.97,
+          90.84,
+          88.77,
+          90.09,
+          85.83,
+          87.15,
+          88.79,
+          89.87,
+          94.52,
+          91.74,
+          97.87,
+          85.1,
+          83.94,
+          82.42
+        ]
+      },
+      {
+        "code": "000651",
+        "name": "格力电器",
+        "metrics": {
+          "pe": 9.22,
+          "pb": 1.53,
+          "pr": 0.56,
+          "roe": 16.57
+        },
+        "conditions": {
+          "pe": true,
+          "pb": false,
+          "pr": true,
+          "roe": true
+        },
+        "failed_metrics": [
+          "PB"
+        ],
+        "passing_count": 3,
+        "qualifies": false,
+        "weight_pct": 2.72,
+        "return_pct": 7.45,
+        "price_return_pct": 2.28,
+        "income_return_pp": 5.17,
+        "contribution_pp": 0.2,
+        "latest_price": 40.86,
+        "sparkline": [
+          99.9,
+          100.83,
+          96.97,
+          98.05,
+          96.27,
+          96.45,
+          91.91,
+          92.67,
+          95.94,
+          95.74,
+          100.0,
+          101.28,
+          105.88,
+          100.38,
+          99.87,
+          103.23,
+          102.55,
+          102.5,
+          101.87,
+          101.4,
+          101.24,
+          100.66,
+          102.11,
+          103.84,
+          97.9,
+          101.21,
+          102.61,
+          105.08,
+          107.45
+        ]
+      }
+    ]
+  },
+  "screen": {
+    "as_of": "2026-11-20",
+    "universe_size": 1052,
+    "valid_samples": 940,
+    "passed_count": 4,
+    "target_count": 4,
+    "thresholds": {
+      "pe": 12.75,
+      "pb": 1.09,
+      "pr": 1.0,
+      "roe": 14.38
+    },
+    "candidates": [
+      {
+        "code": "000415",
+        "name": "渤海租赁",
+        "rank": 1,
+        "target": true,
+        "in_portfolio": false,
+        "new_to_portfolio": true,
+        "metrics": {
+          "pe": 5.27,
+          "pb": 0.94,
+          "pr": 0.3,
+          "roe": 17.75
+        }
+      },
+      {
+        "code": "002432",
+        "name": "九安医疗",
+        "rank": 2,
+        "target": true,
+        "in_portfolio": false,
+        "new_to_portfolio": true,
+        "metrics": {
+          "pe": 3.53,
+          "pb": 1.0,
+          "pr": 0.14,
+          "roe": 25.31
+        }
+      },
+      {
+        "code": "600595",
+        "name": "中孚实业",
+        "rank": 3,
+        "target": true,
+        "in_portfolio": false,
+        "new_to_portfolio": true,
+        "metrics": {
+          "pe": 5.64,
+          "pb": 1.03,
+          "pr": 0.3,
+          "roe": 18.58
+        }
+      },
+      {
+        "code": "601838",
+        "name": "成都银行",
+        "rank": 4,
+        "target": true,
+        "in_portfolio": true,
+        "new_to_portfolio": false,
+        "metrics": {
+          "pe": 6.72,
+          "pb": 0.97,
+          "pr": 0.46,
+          "roe": 14.47
+        }
+      }
+    ]
+  },
+  "rules": {
+    "holding_universe_size": 932,
+    "holding_universe_snapshot": "2026-04-30 持仓池",
+    "holding_selection": "932 旧版：四指标分位、不裁尾、PB 排序",
+    "holding_thresholds": {
+      "pe": 15.3769,
+      "pb": 1.3515,
+      "pr": 1.1875,
+      "roe": 14.105
+    },
+    "screen_universe_size": 1052,
+    "screen_universe_snapshot": "当前动态股票池",
+    "valuation_quantile": 25,
+    "roe_quantile": 75,
+    "max_positions": 5,
+    "ranking": "PB 从低到高",
+    "new_stock_exclusion_days": 120,
+    "trim_ratio": 0.01
+  }
+};
+</script>
+  <script>
+const NS = "http://www.w3.org/2000/svg";
+
+const $ = (selector) => document.querySelector(selector);
+
+const METRIC_LABELS = ["PE", "PB", "PR", "ROE"];
+const METRIC_CONFIG = {
+  PE: { metric: "pe", threshold: "pe", direction: "max" },
+  PB: { metric: "pb", threshold: "pb", direction: "max" },
+  PR: { metric: "pr", threshold: "pr", direction: "max" },
+  ROE: { metric: "roe", threshold: "roe", direction: "min" },
+};
+
+function percent(value, signed = true) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
+  const number = Number(value);
+  const sign = signed && number > 0 ? "+" : "";
+  return `${sign}${number.toFixed(2)}%`;
+}
+
+function percentagePoints(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
+  const number = Number(value);
+  const sign = number > 0 ? "+" : "";
+  return `${sign}${number.toFixed(2)}pp`;
+}
+
+function metricText(label, value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
+  return label === "ROE" ? `${Number(value).toFixed(2)}%` : Number(value).toFixed(2);
+}
+
+function metricPasses(label, value, thresholds) {
+  const config = METRIC_CONFIG[label];
+  const threshold = thresholds?.[config.threshold];
+  if (value === null || value === undefined || threshold === null || threshold === undefined) {
+    return null;
+  }
+  return config.direction === "max"
+    ? Number(value) <= Number(threshold)
+    : Number(value) >= Number(threshold);
+}
+
+function compareMetric(label, holding, thresholds, includeThresholdWord = true) {
+  const config = METRIC_CONFIG[label];
+  const value = holding.metrics?.[config.metric];
+  const threshold = thresholds?.[config.threshold];
+  const passes = metricPasses(label, value, thresholds);
+  const operator = passes
+    ? (config.direction === "max" ? "≤" : "≥")
+    : (config.direction === "max" ? ">" : "<");
+  const prefix = includeThresholdWord ? "阈值 " : "";
+  return `${label} ${metricText(label, value)} ${operator} ${prefix}${metricText(label, threshold)}`;
+}
+
+function metricOperator(label, passes) {
+  const direction = METRIC_CONFIG[label].direction;
+  return passes
+    ? (direction === "max" ? "≤" : "≥")
+    : (direction === "max" ? ">" : "<");
+}
+
+function compactDate(isoDate) {
+  if (!isoDate) return "—";
+  const [, month, day] = isoDate.split("-");
+  return `${month}/${day}`;
+}
+
+function formatGeneratedAt(isoDate) {
+  if (!isoDate) return "—";
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
+function createSvgElement(name, attributes = {}) {
+  const element = document.createElementNS(NS, name);
+  Object.entries(attributes).forEach(([key, value]) => {
+    element.setAttribute(key, String(value));
+  });
+  return element;
+}
+
+function makePath(values, x, y) {
+  return values
+    .map((value, index) => `${index === 0 ? "M" : "L"}${x(index).toFixed(2)},${y(value).toFixed(2)}`)
+    .join(" ");
+}
+
+function drawMainChart(history, personalHistory = []) {
+  const svg = $("#trend-chart");
+  if (!svg || !history?.length) return;
+
+  const width = Math.max(280, Math.round(svg.getBoundingClientRect().width || 360));
+  const height = 210;
+  const margin = { top: 20, right: 12, bottom: 30, left: 42 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+  const portfolio = history.map((point) => Number(point.portfolio));
+  const benchmark = history.map((point) => Number(point.benchmark));
+  const personal = personalHistory.map((point) => Number(point.portfolio));
+  const all = portfolio.concat(benchmark, personal);
+  const minValue = Math.floor((Math.min(...all) - 1) / 4) * 4;
+  const maxValue = Math.ceil((Math.max(...all) + 1) / 4) * 4;
+
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.querySelector(".chart-layer")?.remove();
+
+  const layer = createSvgElement("g", { class: "chart-layer" });
+  svg.appendChild(layer);
+  const x = (index) => margin.left + (innerWidth * index) / Math.max(history.length - 1, 1);
+  const y = (value) => margin.top + innerHeight * (1 - (value - minValue) / (maxValue - minValue));
+
+  const gridValues = [minValue, Math.round((minValue + maxValue) / 2), maxValue];
+  gridValues.forEach((value) => {
+    layer.appendChild(createSvgElement("line", {
+      x1: margin.left,
+      y1: y(value),
+      x2: width - margin.right,
+      y2: y(value),
+      stroke: "currentColor",
+      "stroke-opacity": "0.12",
+      "stroke-width": "1",
+    }));
+    const label = createSvgElement("text", {
+      x: margin.left - 7,
+      y: y(value) + 4,
+      "text-anchor": "end",
+    });
+    label.textContent = String(value);
+    layer.appendChild(label);
+  });
+
+  layer.appendChild(createSvgElement("path", {
+    d: makePath(benchmark, x, y),
+    fill: "none",
+    stroke: "var(--benchmark)",
+    "stroke-width": "1.6",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+  }));
+
+  layer.appendChild(createSvgElement("path", {
+    d: makePath(portfolio, x, y),
+    fill: "none",
+    stroke: "var(--green)",
+    "stroke-width": "2.4",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+  }));
+
+  if (personal.length === portfolio.length) {
+    layer.appendChild(createSvgElement("path", {
+      d: makePath(personal, x, y),
+      fill: "none",
+      stroke: "var(--personal)",
+      "stroke-width": "2.1",
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+    }));
+    layer.appendChild(createSvgElement("circle", {
+      cx: x(personal.length - 1),
+      cy: y(personal[personal.length - 1]),
+      r: "3.3",
+      fill: "var(--personal)",
+    }));
+  }
+
+  layer.appendChild(createSvgElement("circle", {
+    cx: x(portfolio.length - 1),
+    cy: y(portfolio[portfolio.length - 1]),
+    r: "3.6",
+    fill: "var(--green)",
+  }));
+
+  const tickIndexes = [0, Math.floor((history.length - 1) / 2), history.length - 1];
+  [...new Set(tickIndexes)].forEach((index, position) => {
+    const label = createSvgElement("text", {
+      x: x(index),
+      y: height - 6,
+      "text-anchor": position === 0 ? "start" : position === tickIndexes.length - 1 ? "end" : "middle",
+    });
+    label.textContent = compactDate(history[index].date);
+    layer.appendChild(label);
+  });
+}
+
+function drawSparkline(svg, values) {
+  if (!svg || !values || values.length < 2) return;
+  const width = 68;
+  const height = 27;
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const range = Math.max(maxValue - minValue, 0.5);
+  const x = (index) => 1 + (index / (values.length - 1)) * (width - 2);
+  const y = (value) => 2 + ((maxValue - value) / range) * (height - 4);
+
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("aria-hidden", "true");
+  svg.appendChild(createSvgElement("path", {
+    d: makePath(values, x, y),
+    fill: "none",
+    stroke: values[values.length - 1] >= values[0] ? "var(--green)" : "var(--red)",
+    "stroke-width": "1.6",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+  }));
+}
+
+function renderHoldings(holdings, thresholds) {
+  const container = $("#holdings-list");
+  container.replaceChildren();
+
+  holdings.forEach((holding) => {
+    const details = document.createElement("details");
+    details.className = "holding";
+
+    const summary = document.createElement("summary");
+    const name = document.createElement("span");
+    name.className = "stock-name";
+    const nameStrong = document.createElement("strong");
+    nameStrong.textContent = holding.name;
+    const nameSmall = document.createElement("small");
+    nameSmall.textContent = `${holding.code} · ${holding.weight_pct.toFixed(1)}%`;
+    name.append(nameStrong, nameSmall);
+    if (!holding.qualifies) {
+      const comparison = document.createElement("span");
+      comparison.className = "condition-comparison";
+      holding.failed_metrics.forEach((label) => {
+        const line = document.createElement("small");
+        line.textContent = compareMetric(label, holding, thresholds);
+        comparison.appendChild(line);
+      });
+      name.appendChild(comparison);
+    }
+
+    const sparkline = createSvgElement("svg", { class: "mini-chart" });
+    const badge = document.createElement("span");
+    badge.className = `condition-badge ${holding.qualifies ? "pass" : "fail"}`;
+    badge.textContent = holding.qualifies
+      ? "符合"
+      : holding.failed_metrics.length > 1
+        ? `${holding.failed_metrics.length} 项掉线`
+        : `${holding.failed_metrics[0]} 掉线`;
+
+    const returnValue = document.createElement("span");
+    returnValue.className = `stock-return${holding.return_pct < 0 ? " negative" : ""}`;
+    returnValue.textContent = percent(holding.return_pct);
+    summary.append(name, sparkline, badge, returnValue);
+
+    const detail = document.createElement("div");
+    detail.className = "holding-detail";
+    METRIC_LABELS.forEach((label) => {
+      const config = METRIC_CONFIG[label];
+      const value = holding.metrics[config.metric];
+      const threshold = thresholds?.[config.threshold];
+      const item = document.createElement("span");
+      const passes = metricPasses(label, value, thresholds);
+      if (passes === false) item.className = "metric-fail";
+      item.textContent = label;
+      const strong = document.createElement("b");
+      strong.textContent = metricText(label, value);
+      const thresholdLabel = document.createElement("small");
+      thresholdLabel.textContent = `阈值 ${metricText(label, threshold)}`;
+      item.appendChild(strong);
+      item.appendChild(thresholdLabel);
+      detail.appendChild(item);
+    });
+
+    details.append(summary, detail);
+    container.appendChild(details);
+    drawSparkline(sparkline, holding.sparkline);
+  });
+}
+
+function renderCandidates(candidates) {
+  const container = $("#candidate-list");
+  container.replaceChildren();
+
+  const visibleCandidates = candidates.slice(0, 6);
+  if (!visibleCandidates.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-note";
+    empty.textContent = "本周没有股票通过全部条件";
+    container.appendChild(empty);
+    return;
+  }
+
+  visibleCandidates.forEach((candidate) => {
+    const item = document.createElement("div");
+    item.className = "compact-item";
+    const text = document.createElement("div");
+    const name = document.createElement("strong");
+    name.textContent = `${candidate.name} ${candidate.code}`;
+    const metric = document.createElement("small");
+    metric.textContent = `PB ${candidate.metrics.pb?.toFixed(2) ?? "—"} · ROE ${candidate.metrics.roe?.toFixed(2) ?? "—"}%`;
+    text.append(name, metric);
+
+    const status = document.createElement("em");
+    if (candidate.new_to_portfolio && candidate.target) {
+      status.textContent = "NEW";
+      status.className = "is-new";
+    } else if (candidate.in_portfolio) {
+      status.textContent = "在仓";
+    } else {
+      status.textContent = "候补";
+    }
+    item.append(text, status);
+    container.appendChild(item);
+  });
+}
+
+function renderConditions(holdings, thresholds) {
+  const container = $("#condition-list");
+  container.replaceChildren();
+
+  if (!holdings.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-note";
+    empty.textContent = "没有可用的持仓数据";
+    container.appendChild(empty);
+    return;
+  }
+
+  holdings.forEach((holding) => {
+    const item = document.createElement("div");
+    item.className = "compact-item";
+    const text = document.createElement("div");
+    const name = document.createElement("strong");
+    name.textContent = holding.name;
+    const detail = document.createElement("small");
+    detail.textContent = holding.qualifies
+      ? "PE / PB / PR / ROE 全部通过"
+      : holding.failed_metrics
+          .map((label) => compareMetric(label, holding, thresholds))
+          .join(" · ");
+    text.append(name, detail);
+    const status = document.createElement("em");
+    status.className = holding.qualifies ? "" : "is-fail";
+    status.textContent = holding.qualifies ? "符合" : "掉线";
+    item.append(text, status);
+    container.appendChild(item);
+  });
+}
+
+function renderPersonalPortfolio(portfolio) {
+  const section = $("#personal-section");
+  if (!portfolio?.stocks?.length) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+
+  const container = $("#watchlist-grid");
+  container.replaceChildren();
+  const thresholds = portfolio.thresholds;
+  const personalReturn = Number(portfolio.total_return_pct);
+  const priceReturn = Number(portfolio.price_return_pct);
+  const algorithmReturn = Number(portfolio.algorithm_return_pct);
+  const benchmarkReturn = Number(portfolio.benchmark_return_pct);
+  const vsAlgorithm = Number(portfolio.vs_algorithm_pp);
+  const vsBenchmark = Number(portfolio.vs_benchmark_pp);
+
+  $("#watchlist-caption").textContent =
+    `${portfolio.entry_date} 建仓 · ${portfolio.as_of} 更新`;
+  $("#personal-return").textContent = percent(personalReturn);
+  $("#personal-return").classList.toggle("negative", personalReturn < 0);
+  $("#personal-vs").textContent =
+    `${vsAlgorithm >= 0 ? "领先" : "落后"}算法 ${Math.abs(vsAlgorithm).toFixed(2)}pp`;
+  $("#personal-price-return").textContent = percent(priceReturn);
+  $("#personal-price-return").classList.toggle("negative", priceReturn < 0);
+  $("#personal-income").textContent =
+    `含分红增益 ${percentagePoints(portfolio.income_return_pp)}`;
+  $("#personal-algorithm-return").textContent = percent(algorithmReturn);
+  $("#personal-algorithm-return").classList.toggle("negative", algorithmReturn < 0);
+  $("#personal-benchmark-return").textContent = percent(benchmarkReturn);
+  $("#personal-benchmark-return").classList.toggle("negative", benchmarkReturn < 0);
+  $("#personal-note").textContent =
+    `${portfolio.holding_count} 只持仓中 ${portfolio.positive_count} 只上涨；` +
+    `${vsBenchmark >= 0 ? "领先" : "落后"}等权基准 ${Math.abs(vsBenchmark).toFixed(2)}pp；` +
+    `${portfolio.fully_qualifying_count}/${portfolio.holding_count} 只当前仍通过算法的四项条件。`;
+
+  portfolio.stocks.forEach((stock) => {
+    const card = document.createElement("article");
+    card.className = "watchlist-card";
+
+    const header = document.createElement("div");
+    header.className = "watchlist-card-head";
+    const name = document.createElement("div");
+    const strong = document.createElement("strong");
+    strong.textContent = stock.name;
+    const code = document.createElement("small");
+    code.textContent = `${stock.code} · 权重 ${stock.weight_pct.toFixed(1)}%`;
+    name.append(strong, code);
+
+    const passCount = document.createElement("span");
+    passCount.className = `watchlist-pass-count${stock.qualifies ? " all-pass" : ""}`;
+    passCount.textContent = `${stock.passing_count}/4 通过`;
+    header.append(name, passCount);
+
+    const performance = document.createElement("div");
+    performance.className = "watchlist-performance";
+    const stockReturn = document.createElement("strong");
+    stockReturn.className = stock.return_pct < 0 ? "negative" : "";
+    stockReturn.textContent = percent(stock.return_pct);
+    const performanceDetail = document.createElement("small");
+    performanceDetail.textContent =
+      `贡献 ${percentagePoints(stock.contribution_pp)} · 价格 ${percent(stock.price_return_pct)}` +
+      ` · 现价 ${Number(stock.latest_price).toFixed(2)}`;
+    performance.append(stockReturn, performanceDetail);
+
+    const kpis = document.createElement("div");
+    kpis.className = "watchlist-kpis";
+    METRIC_LABELS.forEach((label) => {
+      const config = METRIC_CONFIG[label];
+      const value = stock.metrics[config.metric];
+      const threshold = thresholds[config.threshold];
+      const passes = metricPasses(label, value, thresholds);
+      const cell = document.createElement("div");
+      cell.className = `kpi-cell ${passes ? "pass" : "fail"}`;
+
+      const kpiLabel = document.createElement("span");
+      kpiLabel.className = "kpi-label";
+      kpiLabel.textContent = label;
+      const kpiValue = document.createElement("b");
+      kpiValue.textContent = metricText(label, value);
+      const comparison = document.createElement("small");
+      comparison.textContent =
+        `${metricOperator(label, passes)} 阈值 ${metricText(label, threshold)}`;
+      cell.append(kpiLabel, kpiValue, comparison);
+      kpis.appendChild(cell);
+    });
+
+    card.append(header, performance, kpis);
+    container.appendChild(card);
+  });
+}
+
+function renderDashboard(data) {
+  const summary = data.summary;
+  const personalPortfolio = data.personal_portfolio;
+  const dateChip = $("#data-date");
+  if (data.data_quality?.complete) {
+    dateChip.textContent = `数据截至 ${data.data_as_of}`;
+  } else {
+    dateChip.textContent = `筛选 ${compactDate(data.data_as_of)} · 待更新`;
+    dateChip.title = data.data_quality?.latest_price_date
+      ? `行情已更新到 ${data.data_quality.latest_price_date}，但估值截面尚未完整`
+      : "行情数据尚未完整更新";
+  }
+  dateChip.classList.toggle("needs-update", !data.data_quality?.complete);
+  $("#portfolio-title").textContent = percent(summary.portfolio_return_pct);
+  $("#portfolio-title").classList.toggle("negative", summary.portfolio_return_pct < 0);
+
+  $("#excess-return").textContent = summary.excess_return_pp > 0
+    ? `跑赢 ${summary.excess_return_pp.toFixed(2)}pp`
+    : `落后 ${Math.abs(summary.excess_return_pp || 0).toFixed(2)}pp`;
+  $("#excess-return").classList.toggle("negative", summary.excess_return_pp < 0);
+
+  $("#benchmark-pill").textContent = `基准 ${percent(summary.benchmark_return_pct)}`;
+  const personalPill = $("#personal-pill");
+  personalPill.hidden = !personalPortfolio?.stocks?.length;
+  if (!personalPill.hidden) {
+    personalPill.textContent =
+      `个人持仓 ${percent(personalPortfolio.total_return_pct)} · ` +
+      `${personalPortfolio.vs_algorithm_pp >= 0 ? "领先" : "落后"}算法 ` +
+      `${Math.abs(personalPortfolio.vs_algorithm_pp).toFixed(2)}pp`;
+  }
+  $("#qualify-pill").textContent = `${summary.qualifying_count}/${summary.holding_count} 仍符合选股条件`;
+  $("#holdings-caption").textContent = `调仓日 ${data.rebalance_date}`;
+  $("#screen-date").textContent =
+    `${data.screen.as_of} · 动态池 ${data.rules.screen_universe_size} 只`;
+  $("#passed-count").textContent = String(data.screen.passed_count);
+  $("#still-count").textContent = `${summary.qualifying_count}/${summary.holding_count}`;
+  $("#new-count").textContent = String(summary.new_candidate_count);
+  $("#candidate-caption").textContent = `共 ${data.screen.passed_count} 只`;
+  $("#condition-caption").textContent = `通过 ${summary.qualifying_count}/${summary.holding_count}`;
+  $("#generated-at").textContent = `生成于 ${formatGeneratedAt(data.generated_at)}`;
+
+  const rules = data.rules;
+  $("#rules-copy").textContent =
+    `持仓由 ${rules.holding_universe_size} 只的 ${rules.holding_universe_snapshot} 选出并锁定；` +
+    `${rules.holding_selection}。` +
+    `周更阈值和候选股使用 ${rules.screen_universe_size} 只的${rules.screen_universe_snapshot}。` +
+    `PE、PB、PR 低于全样本最低 ${rules.valuation_quantile}% 分位，` +
+    `ROE 高于最高 ${100 - rules.roe_quantile}% 分位；先裁去各指标不利尾部 ${(rules.trim_ratio * 100).toFixed(1)}%。` +
+    `通过后按 ${rules.ranking}，最多保留 ${rules.max_positions} 只；上市不足 ${rules.new_stock_exclusion_days} 个交易日的股票排除。`;
+
+  renderHoldings(data.holdings, data.screen.thresholds);
+  renderCandidates(data.screen.candidates);
+  renderConditions(data.holdings, data.screen.thresholds);
+  renderPersonalPortfolio(personalPortfolio);
+  drawMainChart(data.history, personalPortfolio?.history || []);
+
+  $("#loading").hidden = true;
+  $("#dashboard").hidden = false;
+}
+
+async function init() {
+  try {
+    const data = window.__DASHBOARD_DATA__;
+    if (!data) throw new Error("页面中没有内嵌看板数据");
+    renderDashboard(data);
+
+    const chart = $("#trend-chart");
+    if (chart && "ResizeObserver" in window) {
+      new ResizeObserver(() =>
+        drawMainChart(data.history, data.personal_portfolio?.history || []),
+      ).observe(chart.parentElement);
+    }
+  } catch (error) {
+    $("#loading").hidden = true;
+    $("#error").hidden = false;
+    $("#error-message").textContent =
+      `看板初始化失败（${error.message}）。请重新运行 scripts/build_dashboard.py。`;
+  }
+}
+
+init();
+
+  </script>
 </body>
 </html>

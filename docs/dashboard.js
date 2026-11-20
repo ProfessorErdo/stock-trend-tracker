@@ -504,30 +504,8 @@ function renderDashboard(data) {
 
 async function init() {
   try {
-    const dataUrl = new URL("./data/dashboard.json", window.location.href);
-    dataUrl.searchParams.set("v", String(Date.now()));
-    let data;
-    try {
-      const response = await fetch(dataUrl, { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      data = await response.json();
-    } catch (fetchError) {
-      const scriptUrl = new URL("./data/dashboard-data.js", window.location.href);
-      scriptUrl.searchParams.set("v", String(Date.now()));
-      await new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = scriptUrl.href;
-        script.onload = resolve;
-        script.onerror = () => reject(fetchError);
-        document.head.appendChild(script);
-      });
-      data = window.__DASHBOARD_DATA__;
-      if (!data) {
-        throw new Error("静态数据脚本已加载，但没有找到看板数据");
-      }
-    }
+    const data = window.__DASHBOARD_DATA__;
+    if (!data) throw new Error("页面中没有内嵌看板数据");
     renderDashboard(data);
 
     const chart = $("#trend-chart");
@@ -540,7 +518,7 @@ async function init() {
     $("#loading").hidden = true;
     $("#error").hidden = false;
     $("#error-message").textContent =
-      `无法读取 /data/dashboard.json（${error.message}）。请先运行 scripts/build_dashboard.py。`;
+      `看板初始化失败（${error.message}）。请重新运行 scripts/build_dashboard.py。`;
   }
 }
 
