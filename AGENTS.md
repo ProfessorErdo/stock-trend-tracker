@@ -25,6 +25,16 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
   `build_consolidated_metrics.py`, `build_consolidated_report.py`,
   `build_m3b_dataset.py`, `build_m3b_report.py`.
 
+## Documentation Map Maintenance
+
+- **Any new, renamed, or removed backtest document must be reflected in the doc map.**
+  Update both in the same change:
+  - `docs/index-update-and-full-backtest-playbook.md` §0.1 文档地图
+  - the documentation table in `README.md`
+- Keep the M3b report (`docs/m3b-backtest-2026-11.md`) as the primary entry; M1/M2/M3
+  reports are supporting detail.
+- Before finishing a doc change, check that all relative markdown links resolve.
+
 ## Environment Setup
 
 Uses [uv](https://docs.astral.sh/uv/) for package management:
