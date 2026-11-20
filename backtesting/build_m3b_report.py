@@ -185,6 +185,48 @@ def chart_best_vs(df):
     plt.close(fig)
 
 
+
+def snapshot_block(df):
+    best = df[df["pool"] == "1052"].sort_values("M3b", ascending=False).iloc[0]
+    run_dir = os.path.join(ROOTS["1052"], "runs", best["y15_id"])
+    eq = pd.read_csv(os.path.join(run_dir, "equity_curve.csv"), parse_dates=["date"])
+    eq = eq.set_index("date")["strategy_equity"]
+    end = eq.index.max()
+
+    def seg(a, b):
+        sub = eq[(eq.index >= pd.Timestamp(a)) & (eq.index <= pd.Timestamp(b))]
+        return sub.iloc[-1] / sub.iloc[0] - 1
+
+    holdings = pd.read_csv(os.path.join(run_dir, "holdings_summary.csv"), dtype={"stock_code": str})
+    holdings["stock_code"] = holdings["stock_code"].str.zfill(6)
+    last = holdings[holdings["rebalance_date"] == holdings["rebalance_date"].max()].copy()
+    names = pd.read_csv(
+        os.path.join(PROJECT_DIR, "data", "input", "stock_names_full.csv"), dtype={"code": str}
+    ).set_index("code")["name"].to_dict()
+
+    values = []
+    for _, row in last.iterrows():
+        price = pd.read_csv(
+            os.path.join(PROJECT_DIR, "data", "input", "backtesting", "price",
+                         f"price_{row['stock_code']}.csv"),
+            parse_dates=["trade_date"],
+        )
+        close = price[price["trade_date"] == end].iloc[0]["close"]
+        values.append(row["shares"] * close)
+    total = sum(values)
+
+    rows = []
+    for (_, row), value in zip(last.iterrows(), values):
+        rows.append({
+            "代码": row["stock_code"],
+            "名称": names.get(row["stock_code"], row["stock_code"]),
+            "调仓权重": pct(row["weight"]),
+            "当前权重": pct(value / total) if total else "—",
+        })
+    table = pd.DataFrame(rows).to_markdown(index=False)
+
+    return table, seg("2022-01-04", "2022-05-05"), seg("2022-05-05", "2022-12-30"), seg("2026-01-05", "2026-05-06"), seg("2026-05-06", end), last["rebalance_date"].max()
+
 def main():
     global DATA, IMG, REPORT, ROOTS
     parser = argparse.ArgumentParser(description=__doc__)
@@ -379,6 +421,19 @@ def main():
     lines.append("![pool scatter](img/m3b-2026-11/m3b_pool_scatter.png)\n")
     lines.append("## 7. 逐年收益（M3b 前 5 / 池）\n")
     lines.append("![yearly](img/m3b-2026-11/m3b_yearly_top.png)\n")
+    snap, y22a, y22b, y26a, y26b, snap_date = snapshot_block(df)
+    lines.append("### 7.1 2022 的 0 与 2026 的 22%\n")
+    lines.append(
+        f"**2022 年不是空仓。** 全年 {pct((1 + y22a) * (1 + y22b) - 1)}，热力图四舍五入显示 0。"
+        f"2021 篮子 1-4 月 {pct(y22a)}，2022 篮子 5-12 月 {pct(y22b)}，一正一负抵消。\n"
+    )
+    lines.append(
+        f"**2026 年至今 {pct((1 + y26a) * (1 + y26b) - 1)}**：1-5 月持有 2025 篮子 {pct(y26a)}，"
+        f"5-11 月持有 2026 篮子 {pct(y26b)}。\n"
+    )
+    lines.append(f"当前持仓（{snap_date} 建仓，当前权重按最新收盘价漂移）：\n")
+    lines.append(snap)
+    lines.append("")
     lines.append("## 8. 与 M1 的排序一致性\n")
     for pool in ["1052", "932"]:
         sub = df[(df["pool"] == pool) & (df["phase"].isin(GRID_PHASES))]
