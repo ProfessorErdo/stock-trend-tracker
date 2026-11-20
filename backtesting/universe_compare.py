@@ -139,6 +139,7 @@ def install_caches():
 ACTIVE_POOL = "union"
 # 首个截面是否跳过新股过滤（修复数据起点导致的 2015 年空仓）
 IGNORE_FIRST_NEW_STOCK = False
+EXCLUDE_EARNINGS_OUTLIERS = False
 
 
 def base_spec(**overrides):
@@ -157,6 +158,7 @@ def base_spec(**overrides):
         "roe_thr": 0.75,
         "stop_loss": False,
         "ignore_first_new_stock": IGNORE_FIRST_NEW_STOCK,
+        "exclude_earnings_outliers": EXCLUDE_EARNINGS_OUTLIERS,
     }
     spec.update(overrides)
     return spec
@@ -181,6 +183,8 @@ def make_id(spec):
         parts.append("sl")
     if spec.get("ignore_first_new_stock"):
         parts.append("2015start")
+    if spec.get("exclude_earnings_outliers"):
+        parts.append("eo")
     return "_".join(parts)
 
 
@@ -207,6 +211,7 @@ def apply_spec(spec):
     config.WINSORIZE_ENABLED = spec["trim"] is not None
     config.THRESHOLD_TRIM_RATIO = spec["trim"] if spec["trim"] is not None else 0.01
     config.STOP_LOSS_ENABLED = spec["stop_loss"]
+    config.EXCLUDE_EARNINGS_OUTLIERS = spec.get("exclude_earnings_outliers", False)
 
 
 # ---------------------------------------------------------------------------
@@ -250,6 +255,7 @@ def run_one(spec, args, out_root):
         ranking_method=spec["ranking"],
         filter_indicators=spec["filters"],
         ignore_first_cutoff_new_stock=spec.get("ignore_first_new_stock", False),
+        exclude_earnings_outliers=spec.get("exclude_earnings_outliers", False),
     )
     if result is None:
         raise RuntimeError(f"backtest returned None for {spec['id']}")
@@ -623,15 +629,21 @@ def main():
         help="首个截面跳过新股过滤（让 2015 年也能建仓，用于 2015 起投口径）",
     )
     parser.add_argument(
+        "--exclude-earnings-outliers",
+        action="store_true",
+        help="排除 EPS_TTM 相对过去 5 年年度 EPS 中位数超出 [0.5, 2] 倍的股票",
+    )
+    parser.add_argument(
         "--phases",
         default="core,pool,trim,positions,threshold,refine,frequency,special",
         help="逗号分隔的阶段列表",
     )
     args = parser.parse_args()
 
-    global ACTIVE_POOL, IGNORE_FIRST_NEW_STOCK
+    global ACTIVE_POOL, IGNORE_FIRST_NEW_STOCK, EXCLUDE_EARNINGS_OUTLIERS
     ACTIVE_POOL = args.pool
     IGNORE_FIRST_NEW_STOCK = args.ignore_first_new_stock
+    EXCLUDE_EARNINGS_OUTLIERS = args.exclude_earnings_outliers
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_root = args.output_root or os.path.join(
@@ -696,6 +708,8 @@ def main():
                 "pool_sizes": pool_sizes,
                 "active_pool": ACTIVE_POOL,
                 "ignore_first_new_stock": IGNORE_FIRST_NEW_STOCK,
+                "exclude_earnings_outliers": EXCLUDE_EARNINGS_OUTLIERS,
+        "exclude_earnings_outliers": EXCLUDE_EARNINGS_OUTLIERS,
                 "phases": phases,
             },
             handle,

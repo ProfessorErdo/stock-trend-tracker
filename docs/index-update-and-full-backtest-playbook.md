@@ -18,6 +18,45 @@
 | 生成对比报告 | `cd backtesting && ../.venv/bin/python build_universe_report.py --output-root <结果目录> --report-path ../docs/universe-backtest-<日期>.md --end-date <日期> --assets-dir ../docs/img/universe-backtest-<日期>` |
 | 生成调仓计划 | `cd backtesting && ../.venv/bin/python next_rebalance.py`（交互式） |
 
+## 0.1 文档地图：先看哪一篇
+
+**一句话**：M3b 是当前主口径，先看 M3b 主报告；其他文档是它的明细、口径定义或历史对照。
+
+| 顺序 | 文档 | 角色 | 和主报告的关系 |
+|---:|---|---|---|
+| 1 | `README.md` | 总索引 | 入口 |
+| 2 | 本 playbook | 操作流程 | 入口 |
+| 3 | [`m3b-backtest-2026-11.md`](m3b-backtest-2026-11.md) | **主报告（M3b）** | 先看结论、排行、持仓 |
+| 4 | [`universe-backtest-2026-11.md`](universe-backtest-2026-11.md) | 1052 池 M1/M2 明细 | 主报告 1052 部分的展开 |
+| 5 | [`universe-backtest-932-2026-11.md`](universe-backtest-932-2026-11.md) | 932 池 M1/M2 对照 | 主报告 932 部分的展开 |
+| 6 | [`three-start-metrics-2026-11.md`](three-start-metrics-2026-11.md) | M1/M2/M3/M3b 定义 | 解释主报告口径 |
+| 7 | [`consolidated-metrics-2026-11.md`](consolidated-metrics-2026-11.md) | 两池四口径合并 | 横向比较、参数迁移 |
+| 8 | [`within-basket-rebalance-2026-11.md`](within-basket-rebalance-2026-11.md) | 调仓频率实验 | 独立问题，不参与主排名 |
+| 9 | [`earnings-outlier-filter-2026-11.md`](earnings-outlier-filter-2026-11.md) | 妖股/峰值业绩过滤实验 | 独立风险实验，默认不启用 |
+| 10 | [`backtesting-operations-qa.md`](backtesting-operations-qa.md) | 数据维护排错 | 运维 |
+
+关系图：
+
+```text
+README / playbook（入口）
+   └─ M3b 主报告（当前结论）
+        ├─ 1052 报告（M1/M2 明细）
+        ├─ 932 报告（M1/M2 对照）
+        ├─ 三口径报告（M1/M2/M3/M3b 定义）
+        └─ 合并对比（两池 × 四口径）
+   └─ 独立实验：within-basket（调仓频率）/ earnings-outlier（妖股过滤）
+   └─ operations QA（数据维护，运维）
+```
+
+阅读建议：
+
+- 只想知道“现在用什么参数”：README → M3b 主报告第 0/2/9 节。
+- 要复核 1052 的 M1/M2：M3b 主报告 → 1052 报告。
+- 要比较 932：M3b 主报告 → 932 报告 → 合并对比。
+- 要理解 M3b 和 M1/M2/M3 的换算：三口径报告。
+- 想看“妖股/峰值业绩过滤”：earnings-outlier-filter（结论：默认不启用）。
+- 要重跑 2027：本 playbook 第 8/8b/9 步。
+
 **当前状态（2026-11-07）**：股票池 1052 只，数据截至 2026-11-06，下一次年度截面 2027-04-30。
 
 ---

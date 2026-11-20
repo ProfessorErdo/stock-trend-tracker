@@ -301,6 +301,7 @@ def run_backtest(
     ranking_method: str = "pb",
     filter_indicators: list = None,
     ignore_first_cutoff_new_stock: bool = False,
+    exclude_earnings_outliers: bool = False,
 ) -> dict:
     """
     Execute full backtest workflow
@@ -464,6 +465,7 @@ def run_backtest(
                     ignore_new_stock=(
                         ignore_first_cutoff_new_stock and cutoff == first_cutoff
                     ),
+                    exclude_earnings_outliers=exclude_earnings_outliers,
                 )
                 final_selected = rank_and_limit(selected, val_df, config.MAX_POSITIONS, ranking_method)
 

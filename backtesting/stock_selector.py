@@ -27,36 +27,39 @@ def get_latest_financial_data(stock_code: str, as_of_date: pd.Timestamp) -> dict
     """
     加载单只股票的最新可用财务数据（尊重财报披露延迟）
 
-    Args:
-        stock_code: 股票代码
-        as_of_date: 截至日期（只使用在此日期前已可披露的财报）
-
-    Returns:
-        最新可用财务数据 dict: {'eps_ttm': float, 'bps_ttm': float, 'roe_ttm': float}
-        如果没有可用数据返回 None
+    额外返回 eps_ratio_5y: 最新 EPS_TTM / 过去最多 5 个年度 EPS 的中位数。
+    用于识别“疫情/景气峰值业绩”这类一次性利润（如 2021-2022 的英科医疗）。
     """
     df = load_financial_data(stock_code)
     if df.empty:
         return None
 
-    # 过滤到 ann_available_date <= as_of_date 的财报
-    df = df[df["ann_available_date"] <= as_of_date]
-    if df.empty:
+    hist = df[df["ann_available_date"] <= as_of_date].copy()
+    if hist.empty:
         return None
 
-    # 按报告期排序，取最新的
-    df = df.sort_values("report_date", ascending=False).iloc[0]
-
+    latest = hist.sort_values("report_date").iloc[-1]
     result = {}
     for key in ["eps_ttm", "bps_ttm", "roe_ttm"]:
-        if key in df.index:
-            val = df[key]
+        if key in latest.index:
+            val = latest[key]
             if pd.notna(val):
                 result[key] = float(val)
             else:
                 return None
         else:
             return None
+
+    annual = hist[(hist["report_date"].dt.month == 12) & hist["eps_ttm"].notna()]
+    annual = annual.sort_values("report_date").tail(5)
+    if len(annual) >= 3:
+        med_eps = annual["eps_ttm"].median()
+        if pd.notna(med_eps) and med_eps > 0:
+            result["eps_ratio_5y"] = float(result["eps_ttm"] / med_eps)
+        med_roe = annual["roe_ttm"].median()
+        if pd.notna(med_roe) and med_roe > 0:
+            result["roe_ratio_5y"] = float(result["roe_ttm"] / med_roe)
+        result["annual_count"] = int(len(annual))
 
     return result
 
@@ -196,6 +199,7 @@ def select_stocks(
     price_cache: dict = None,
     filter_indicators: list = None,
     ignore_new_stock: bool = False,
+    exclude_earnings_outliers: bool = False,
 ) -> tuple:
     """
     执行完整的四步选股流程
@@ -232,6 +236,13 @@ def select_stocks(
         fin_data = get_latest_financial_data(code, trade_date)
         if fin_data is None:
             continue
+
+        if exclude_earnings_outliers:
+            ratio = fin_data.get("eps_ratio_5y")
+            if ratio is not None and (
+                ratio < config.EARNINGS_RATIO_MIN or ratio > config.EARNINGS_RATIO_MAX
+            ):
+                continue
 
         # 计算估值
         valuation = calculate_valuation(price_df, trade_date, fin_data)

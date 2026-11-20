@@ -24,6 +24,7 @@ Start here if you are new to this repository, or if you are starting a new agent
 | [docs/universe-backtest-2026-11.md](docs/universe-backtest-2026-11.md) | 1052 只并集池的全角度回测与最佳选股方案（2026-11） |
 | [docs/universe-backtest-932-2026-11.md](docs/universe-backtest-932-2026-11.md) | 932 只旧池的同口径对比（2026-11） |
 | [docs/within-basket-rebalance-2026-11.md](docs/within-basket-rebalance-2026-11.md) | 固定年度篮子内的再平衡频率与权重实验（2026-11） |
+| [docs/earnings-outlier-filter-2026-11.md](docs/earnings-outlier-filter-2026-11.md) | 妖股/峰值业绩过滤实验：2022 归因、规则、回测（默认不启用） |
 | [docs/three-start-metrics-2026-11.md](docs/three-start-metrics-2026-11.md) | M1/M2/M3 三个起点口径：2015 空仓、首次建仓、2015 起投 |
 | [docs/consolidated-metrics-2026-11.md](docs/consolidated-metrics-2026-11.md) | 1052 vs 932 全量合并：M1/M2/M3/M3b 横向对比 |
 | [docs/backtesting-operations-qa.md](docs/backtesting-operations-qa.md) | 日常回测 Q&A、命令速查、故障排查 |

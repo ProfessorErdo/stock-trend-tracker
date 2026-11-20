@@ -46,7 +46,13 @@ FILTER_INDICATORS = ["pe", "pb", "pr"]  # 默认三者 AND 过滤
 PE_THRESHOLD = 0.25          # PE分位数阈值（保留最低25%）
 PB_THRESHOLD = 0.25          # PB分位数阈值（保留最低25%）
 PR_THRESHOLD = 0.25          # PR分位数阈值（保留最低25%）
-ROE_THRESHOLD = 0.75         # ROE分位数阈值（保留最高75%分位以上）
+ROE_THRESHOLD = 0.75
+
+# 盈利异常过滤（可选）：当前 EPS_TTM 相对过去最多 5 年年度 EPS 中位数的倍数
+# 用于排除疫情/景气峰值业绩股（如 2021-2022 的英科医疗）
+EXCLUDE_EARNINGS_OUTLIERS = False
+EARNINGS_RATIO_MIN = 0.5
+EARNINGS_RATIO_MAX = 2.0         # ROE分位数阈值（保留最高75%分位以上）
 
 # 分位阈值处理
 # 启用后分别裁掉各指标的不利尾部，再计算分位阈值：
