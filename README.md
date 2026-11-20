@@ -117,6 +117,9 @@ The build writes `docs/data/dashboard.json` and also generates a standalone
 The page therefore works when opened directly without a local HTTP server and
 does not issue any data `fetch` request.
 
+Open `docs/index.html` to view the dashboard. The build source is stored at
+`scripts/dashboard-index.template.html`; it is not a viewable dashboard page.
+
 Preview the static site locally:
 
 ```bash
