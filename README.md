@@ -15,6 +15,13 @@ A Python-based stock analysis tool that queries financial and price data, calcul
 
 **当前推荐（2026-11）**：1052 池 **PB10/ROE65 + 股息率排名**（M3b 15.53%，保守 paid 12.21%）；2023-2026 无股息版反超，需监控。详见 [2×2 总览](docs/strategy-matrix-2026-11.md)。
 
+## 报告体系演变
+
+- **2026-11 初**：M1 为主，1052/932 各一份全量报告；M1/M2/M3 并列展示。
+- **2026-11 中**：确认 M3b 最贴近真实建仓，改为 M3b 主口径，M1/M2/M3 只做辅助。
+- **2026-11 末**：固定为 **2×2 标准网格 + 五份报告**（1052/932 × 股息/非股息），每格 121 组 spec；股息率版成为 1052 默认候选。
+- **以后**：M3b 是唯一主指标；M1/M2/M3 不要求计算。股票清单变成 3×2/4×2 时加池子；长期明显更差的池子（如 932）可以移除，类似不再把 M1/M2/M3 当主指标。
+
 ## Documentation Map（文档索引）
 
 Start here if you are new to this repository, or if you are starting a new agent session:
@@ -25,7 +32,12 @@ Start here if you are new to this repository, or if you are starting a new agent
 | [docs/m3b-backtest-2026-11.md](docs/m3b-backtest-2026-11.md) | **主报告（M3b 主口径）**：1052 vs 932 全量排名、核心网格、裁尾/N/阈值、池间对比 |
 | [docs/1052-best-yearly-holdings-2026-11.md](docs/1052-best-yearly-holdings-2026-11.md) | 1052 最佳策略逐年收益、持仓、每只股票的当年收益 |
 | [docs/dividend-yield-strategy-2026-11.md](docs/dividend-yield-strategy-2026-11.md) | **股息率排名候选补丁**：M3b 15.53%，两段样本均改善（待前视审计） |
-| [docs/strategy-matrix-2026-11.md](docs/strategy-matrix-2026-11.md) | **2×2 总览**：1052/932 × 股息/非股息，年度热力图 + walk-forward |
+| [docs/strategy-matrix-2026-11.md](docs/strategy-matrix-2026-11.md) | 2×2 过渡版总览（旧） |
+| [docs/matrix-summary-2026-11.md](docs/matrix-summary-2026-11.md) | **2×2 五份报告汇总（新标准）**：四格最佳 + 链接到四份子报告 |
+| [docs/matrix-1052-nodiv-2026-11.md](docs/matrix-1052-nodiv-2026-11.md) | 1052 × 非股息：121 组标准网格 |
+| [docs/matrix-1052-div-2026-11.md](docs/matrix-1052-div-2026-11.md) | 1052 × 股息：121 组标准网格 |
+| [docs/matrix-932-nodiv-2026-11.md](docs/matrix-932-nodiv-2026-11.md) | 932 × 非股息：121 组标准网格 |
+| [docs/matrix-932-div-2026-11.md](docs/matrix-932-div-2026-11.md) | 932 × 股息：121 组标准网格 |
 | [docs/universe-backtest-2026-11.md](docs/universe-backtest-2026-11.md) | 1052 只并集池的全角度回测与最佳选股方案（2026-11） |
 | [docs/universe-backtest-932-2026-11.md](docs/universe-backtest-932-2026-11.md) | 932 只旧池的同口径对比（2026-11） |
 | [docs/within-basket-rebalance-2026-11.md](docs/within-basket-rebalance-2026-11.md) | 固定年度篮子内的再平衡频率与权重实验（2026-11） |

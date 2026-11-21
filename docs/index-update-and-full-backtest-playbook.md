@@ -29,7 +29,8 @@
 | 3 | [`m3b-backtest-2026-11.md`](m3b-backtest-2026-11.md) | **主报告（M3b）** | 先看结论、排行、持仓 |
 | 3b | [`1052-best-yearly-holdings-2026-11.md`](1052-best-yearly-holdings-2026-11.md) | 1052 最佳逐年持仓 | 主报告的逐年/持仓明细 |
 | 3c | [`dividend-yield-strategy-2026-11.md`](dividend-yield-strategy-2026-11.md) | 股息率排名候选补丁 | 主报告的最强候选，待审计 |
-| 3d | [`strategy-matrix-2026-11.md`](strategy-matrix-2026-11.md) | **2×2 总览**（1052/932 × 股息/非股息） | 四宫格对比、年度热力图、walk-forward |
+| 3d | [`strategy-matrix-2026-11.md`](strategy-matrix-2026-11.md) | **2×2 总览**（旧版四宫格） | 过渡版，保留历史 |
+| 3e | [`matrix-summary-2026-11.md`](matrix-summary-2026-11.md) | **2×2 五份报告汇总**（新标准） | 四格最佳 + 链接到四份子报告 |
 | 4 | [`universe-backtest-2026-11.md`](universe-backtest-2026-11.md) | 1052 池 M1/M2 明细 | 主报告 1052 部分的展开 |
 | 5 | [`universe-backtest-932-2026-11.md`](universe-backtest-932-2026-11.md) | 932 池 M1/M2 对照 | 主报告 932 部分的展开 |
 | 6 | [`three-start-metrics-2026-11.md`](three-start-metrics-2026-11.md) | M1/M2/M3/M3b 定义 | 解释主报告口径 |
@@ -104,6 +105,46 @@ README / playbook（入口）
 
 
 整个流程按顺序执行，任何一步失败都不要跳到下一步。
+
+### 2.0.1 2×2 标准网格与五份报告（2026-11 起）
+
+**以后只把 M3b 当主指标**；M1/M2/M3 只在需要解释时计算，不再作为排名依据。
+
+**2×2 定义**：`(1052, 932) × (非股息排名, 股息率排名)`。非股息格用 121 组标准网格；股息格本次先用 15 组 pilot（PB10-20 × ROE60-80），稳定后再扩到 121 组。标准网格范围：
+
+- 7 种过滤：`pe`、`pb`、`pr`、`pe+pb`、`pe+pr`、`pb+pr`、`pe+pb+pr`
+- 非股息排名：`pb`、`pe`、`pr`、`roe`、`pure_pb`；股息格固定 `div`
+- PB/PE/PR 阈值 0.10-0.40；ROE 0.55-0.85；裁尾 raw-5%；N 1-10
+- 阶段：core / trim / positions / threshold / refine
+
+**数据更新清单（每次年度回测）**：
+
+1. 股票清单：`scripts/update_stock_lists.py`
+2. 新进池数据：`scripts/fill_missing_pool_data.py`
+3. 价格 + 财务：`backtesting/run_backtest.py --update_all --update_only`
+4. **分红面板**：`backtesting/fetch_dividend_data.py`（年报 + 中期，2014 至今）
+5. 统一 `--end-date`，确认所有股票停在同一交易日
+
+**跑四格 + 出五份报告**：
+
+```bash
+cd backtesting
+../.venv/bin/python run_matrix_cell_mp.py --pool union  --mode nodiv --workers 4 --out ../data/processed/backtesting/matrix_20261121/1052_nodiv
+../.venv/bin/python run_matrix_cell_mp.py --pool union  --mode div   --workers 3 --specs ../data/processed/backtesting/matrix_20261121/specs_div_pilot.csv --out ../data/processed/backtesting/matrix_20261121/1052_div
+../.venv/bin/python run_matrix_cell_mp.py --pool legacy --mode nodiv --workers 4 --out ../data/processed/backtesting/matrix_20261121/932_nodiv
+../.venv/bin/python run_matrix_cell_mp.py --pool legacy --mode div   --workers 3 --specs ../data/processed/backtesting/matrix_20261121/specs_div_pilot.csv --out ../data/processed/backtesting/matrix_20261121/932_div
+../.venv/bin/python build_matrix_reports.py
+```
+
+**五份报告**：
+
+- [1052 非股息](matrix-1052-nodiv-2026-11.md)
+- [1052 股息](matrix-1052-div-2026-11.md)
+- [932 非股息](matrix-932-nodiv-2026-11.md)
+- [932 股息](matrix-932-div-2026-11.md)
+- [2×2 汇总](matrix-summary-2026-11.md)
+
+**复用原则**：清单/价格/财务/分红都没变时，直接复用上次 `matrix_<date>/` 结果；变了就重跑对应格子。未来清单变成 3×2/4×2 时，加一行池子；如果某个池长期明显更差（如 932），可以移除，类似我们不再把 M1/M2/M3 当主指标。
 
 ### 第 1 步：环境检查
 
