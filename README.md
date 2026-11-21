@@ -40,6 +40,8 @@ Start here if you are new to this repository, or if you are starting a new agent
 | [docs/grid-v1-1052-div-2026-11.md](docs/grid-v1-1052-div-2026-11.md) | grid_v1 · 1052 × 股息 |
 | [docs/grid-v1-932-nodiv-2026-11.md](docs/grid-v1-932-nodiv-2026-11.md) | grid_v1 · 932 × 非股息 |
 | [docs/grid-v1-932-div-2026-11.md](docs/grid-v1-932-div-2026-11.md) | grid_v1 · 932 × 股息 |
+| [docs/pdf/grid-v1-reports-2026-11.html](docs/pdf/grid-v1-reports-2026-11.html) | **五份报告合订 HTML**（自包含、带目录、可打印/存 PDF） |
+| [docs/pdf/grid-v1-reports-2026-11.pdf](docs/pdf/grid-v1-reports-2026-11.pdf) | 五份报告合订 PDF（20 页） |
 | [docs/matrix-1052-nodiv-2026-11.md](docs/matrix-1052-nodiv-2026-11.md) | 1052 × 非股息：121 组标准网格 |
 | [docs/matrix-1052-div-2026-11.md](docs/matrix-1052-div-2026-11.md) | 1052 × 股息：121 组标准网格 |
 | [docs/matrix-932-nodiv-2026-11.md](docs/matrix-932-nodiv-2026-11.md) | 932 × 非股息：121 组标准网格 |

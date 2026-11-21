@@ -140,6 +140,10 @@ cd backtesting
 ../.venv/bin/python run_matrix_cell_fast.py --pool union  --mode div   --workers 2 --specs grids/grid_v1_div.csv   --out ../data/processed/backtesting/grid_v1_20261121/1052_div
 ../.venv/bin/python run_matrix_cell_fast.py --pool legacy --mode nodiv --workers 2 --specs grids/grid_v1_nodiv.csv --out ../data/processed/backtesting/grid_v1_20261121/932_nodiv
 ../.venv/bin/python run_matrix_cell_fast.py --pool legacy --mode div   --workers 2 --specs grids/grid_v1_div.csv   --out ../data/processed/backtesting/grid_v1_20261121/932_div
+
+# 合订 HTML + PDF（在仓库根目录执行）
+python scripts/build_report_bundle.py
+# 输出：docs/pdf/grid-v1-reports-2026-11.html / .pdf
 ```
 
 **五份报告**：
