@@ -22,6 +22,8 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
   2×2 overview [`docs/strategy-matrix-2026-11.md`](docs/strategy-matrix-2026-11.md).
   M1/M2/M3 are auxiliary metrics.
 - M3b = annualized return since the first 2015-05-04 entry (2014 annual report available).
+- Recommended 1052 strategy (2026-11): PB10/ROE65 + dividend-yield ranking (M3b 15.53%, paid 12.21%).
+  Recent 2023-2026 OOS favors the no-dividend version, so keep monitoring.
 - Full-sweep scripts: `backtesting/universe_compare.py`, `build_universe_report.py`,
   `build_pool_report.py`, `analyze_holdings_diff.py`, `test_within_basket.py`,
   `enrich_summary_metrics.py`, `compare_three_metrics.py`,

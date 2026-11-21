@@ -13,6 +13,8 @@ A Python-based stock analysis tool that queries financial and price data, calcul
 - **Individual Stock Query**: Query and visualize valuation data for a specific stock
 - **Top Stocks Ranking**: Find top N stocks based on valuation indicators
 
+**当前推荐（2026-11）**：1052 池 **PB10/ROE65 + 股息率排名**（M3b 15.53%，保守 paid 12.21%）；2023-2026 无股息版反超，需监控。详见 [2×2 总览](docs/strategy-matrix-2026-11.md)。
+
 ## Documentation Map（文档索引）
 
 Start here if you are new to this repository, or if you are starting a new agent session:

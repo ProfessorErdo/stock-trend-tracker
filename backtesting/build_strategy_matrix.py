@@ -16,7 +16,7 @@ OUT='../data/processed/backtesting/strategy_matrix_20261121'
 os.makedirs(OUT,exist_ok=True); os.makedirs(os.path.join(OUT,'equity'),exist_ok=True)
 
 specs=[
- dict(id='1052_nodiv', pool='union', filters=['pb'], pb=0.15, roe=0.70, rank='pe', div=False, first2015=False),
+ dict(id='1052_nodiv', pool='union', filters=['pb'], pb=0.15, roe=0.70, rank='pe', div=False, first2015=True),
  dict(id='1052_div',   pool='union', filters=['pb'], pb=0.10, roe=0.65, rank='div', div=True,  first2015=True),
  dict(id='932_nodiv',  pool='legacy', filters=['pe'], pb=0.25, roe=0.75, rank='pb', div=False, first2015=True),
  dict(id='932_div',    pool='legacy', filters=['pb'], pb=0.10, roe=0.65, rank='div', div=True,  first2015=True),
