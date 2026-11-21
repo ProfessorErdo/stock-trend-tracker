@@ -40,7 +40,8 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
   (13.56%; own best 2017), 932 PB10/ROE60 (15.03%; own best 2017). The two robustness tests disagree
   for 1052 because PB35/ROE75's best year is 2025, not 2021; ROE65 is the only one strong in both.
   Always report full-period, ex-2021, and drop-own-best together.
-- 932 recommended (grid_v1): PB15/ROE65 + dividend + N6, M3b 15.07%, MDD -34.2%.
+- 932 (grid_v1): full-period max PB15/ROE65 + N6, M3b 15.07%, MDD -34.2%;
+  robustness-first PB10/ROE60/N5, 14.79%, ex-2021 15.34%, drop-own-best 15.03%, MDD -32.8%.
 - Full-sweep scripts: `backtesting/universe_compare.py`, `build_universe_report.py`,
   `build_pool_report.py`, `analyze_holdings_diff.py`, `test_within_basket.py`,
   `enrich_summary_metrics.py`, `compare_three_metrics.py`,
@@ -55,8 +56,9 @@ Every five-report run must follow the checklist in playbook §2.0.2. At minimum:
 - Each cell: top10, top5 annual heatmap, top15, **equity + drawdown**, 2026 holdings
   (grid-best and recommended), cell-specific caveats.
 - Dividend cells: **dividend-yield history, 2026 holdings yields, yield bar**; default
-  recommendation is ROE65, not the ROE55/ROE60 boundary (grid_v1 max is ROE55;
-  the ROE60 pilot's 2021 +118% was 中绿电 +365%).
+  recommendation is ROE65; ROE55 is the grid_v1 boundary (do not default to it).
+  ROE60 is an interior robust choice (not a boundary) and is the 932 robustness candidate.
+  The ROE60 pilot's 2021 +118% was 中绿电 +365%.
 - Summary: recommended 2x2 table, matrix, annual heatmap, **holdings comparison**,
   **equity/drawdown comparison**, dividend-yield history, links to 4 cell reports.
 - `build_matrix_reports.py` produces only the base tables/charts; the extra sections

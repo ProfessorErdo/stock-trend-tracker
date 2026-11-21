@@ -13,13 +13,14 @@ A Python-based stock analysis tool that queries financial and price data, calcul
 - **Individual Stock Query**: Query and visualize valuation data for a specific stock
 - **Top Stocks Ranking**: Find top N stocks based on valuation indicators
 
-**当前推荐（2026-11，grid_v1）**：1052 **PB10/ROE65 + 股息率**（M3b 15.53%）；932 **PB15/ROE65 + 股息率 + N6**（M3b 15.07%）。2023-2026 无股息版反超，需监控。详见 [grid_v1 汇总](docs/grid-v1-summary-2026-11.md)。
+**当前推荐（2026-11，grid_v1）**：1052 **PB10/ROE65 + 股息率**（M3b 15.53%）；932 全期最高 **PB15/ROE65 + N6**（15.07%），稳健优先 **PB10/ROE60**（14.79%，ex-2021 15.34%、剔自身最高年 15.03%）。2023-2026 无股息版反超，需监控。详见 [grid_v1 汇总](docs/grid-v1-summary-2026-11.md)。
 
 ## 报告体系演变
 
 - **2026-11 初**：M1 为主，1052/932 各一份全量报告；M1/M2/M3 并列展示。
 - **2026-11 中**：确认 M3b 最贴近真实建仓，改为 M3b 主口径，M1/M2/M3 只做辅助。
-- **2026-11 末**：固定为 **2×2 标准网格 + 五份报告**（1052/932 × 股息/非股息），每格 121 组 spec；股息率版成为 1052 默认候选。
+- **2026-11 末**：固定为 **grid_v1 2×2 标准网格 + 五份报告**（1052/932 × 股息/非股息）；股息 138 distinct/池、非股息 87 distinct/池、两池 450 distinct；股息率版成为 1052 默认候选。
+- **稳健性**：股息格必须同时看全期 M3b、剔除 2021、剔除自身最高年；后两项**只针对股息模式**，非股息格不适用。
 - **以后**：M3b 是唯一主指标；M1/M2/M3 不要求计算。股票清单变成 3×2/4×2 时加池子；长期明显更差的池子（如 932）可以移除，类似不再把 M1/M2/M3 当主指标。
 - **报告验收清单**：见 playbook §2.0.2（每份子报告必须有净值/回撤、股息格子必须有股息率数据，总报告必须有四格持仓对比）。
 
