@@ -250,7 +250,7 @@ def main():
 
     rank_labels = {
         "pe": "PE-lowest", "pb": "PB-lowest", "pr": "PR-lowest",
-        "roe": "ROE-highest", "pure_pb": "Pure-PB-lowest",
+        "roe": "ROE-highest", "pure_pb": "Pure-PB-lowest", "div": "Dividend-yield-highest",
     }
     rank_label = rank_labels.get(args.ranking, args.ranking)
 

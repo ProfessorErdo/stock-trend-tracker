@@ -24,7 +24,7 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
   `build_pool_report.py`, `analyze_holdings_diff.py`, `test_within_basket.py`,
   `enrich_summary_metrics.py`, `compare_three_metrics.py`,
   `build_consolidated_metrics.py`, `build_consolidated_report.py`,
-  `build_m3b_dataset.py`, `build_m3b_report.py`.
+  `build_m3b_dataset.py`, `build_m3b_report.py`, `fetch_dividend_data.py`.
 
 ## Documentation Map Maintenance
 

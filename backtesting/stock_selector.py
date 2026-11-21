@@ -22,6 +22,36 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config
 from data_loader import load_price_data, load_financial_data
 
+_DIVIDEND_PANEL = None
+
+
+def _load_dividend_panel():
+    """按股票代码缓存分红面板（年报+中期）。"""
+    global _DIVIDEND_PANEL
+    if _DIVIDEND_PANEL is None:
+        path = config.DIVIDEND_DATA_FILE
+        if not os.path.exists(path):
+            _DIVIDEND_PANEL = {}
+        else:
+            df = pd.read_csv(path, dtype={"code": str})
+            df["plan_date"] = pd.to_datetime(df["plan_date"])
+            df["code"] = df["code"].str.zfill(6)
+            _DIVIDEND_PANEL = {c: g for c, g in df.groupby("code")}
+    return _DIVIDEND_PANEL
+
+
+def get_dividend_yield(stock_code: str, as_of_date: pd.Timestamp, price: float) -> float:
+    """4·30 截面上的股息率 TTM：过去 12 个月已宣告的现金分红 / 当日收盘价。"""
+    panel = _load_dividend_panel()
+    g = panel.get(stock_code)
+    if g is None or price is None or price <= 0:
+        return 0.0
+    sub = g[(g["plan_date"] > as_of_date - pd.Timedelta(days=365)) & (g["plan_date"] <= as_of_date)]
+    if sub.empty:
+        return 0.0
+    div_per_share = sub["cash_div_per_10"].sum() / 10.0
+    return float(div_per_share / price)
+
 
 def get_latest_financial_data(stock_code: str, as_of_date: pd.Timestamp) -> dict:
     """
@@ -271,6 +301,10 @@ def select_stocks(
                 valuation["pr_ttm"] <= 0 or valuation["roe_ttm"] <= 0):
             continue
 
+        price_row = price_df[price_df["trade_date"] == trade_date].iloc[0]
+        close_na = price_row["close_na"] if "close_na" in price_row.index else price_row["close"]
+        valuation["div_yield"] = get_dividend_yield(code, trade_date, float(close_na))
+
         all_valuations.append({
             "code": code,
             **valuation,
@@ -375,6 +409,7 @@ def rank_and_limit(selected: list, val_df: pd.DataFrame, max_positions: int = 10
         "pe":  lambda c:  val_map.loc[c, "pe_ttm"],     # 越低越好
         "pb":  lambda c:  val_map.loc[c, "pb_ttm"],
         "pr":  lambda c:  val_map.loc[c, "pr_ttm"],
+        "div": lambda c: -val_map.loc[c, "div_yield"],
     }
     if ranking_method not in method_map:
         return selected[:max_positions]

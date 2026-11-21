@@ -28,6 +28,7 @@
 | 2 | 本 playbook | 操作流程 | 入口 |
 | 3 | [`m3b-backtest-2026-11.md`](m3b-backtest-2026-11.md) | **主报告（M3b）** | 先看结论、排行、持仓 |
 | 3b | [`1052-best-yearly-holdings-2026-11.md`](1052-best-yearly-holdings-2026-11.md) | 1052 最佳逐年持仓 | 主报告的逐年/持仓明细 |
+| 3c | [`dividend-yield-strategy-2026-11.md`](dividend-yield-strategy-2026-11.md) | 股息率排名候选补丁 | 主报告的最强候选，待审计 |
 | 4 | [`universe-backtest-2026-11.md`](universe-backtest-2026-11.md) | 1052 池 M1/M2 明细 | 主报告 1052 部分的展开 |
 | 5 | [`universe-backtest-932-2026-11.md`](universe-backtest-932-2026-11.md) | 932 池 M1/M2 对照 | 主报告 932 部分的展开 |
 | 6 | [`three-start-metrics-2026-11.md`](three-start-metrics-2026-11.md) | M1/M2/M3/M3b 定义 | 解释主报告口径 |
@@ -56,6 +57,7 @@ README / playbook（入口）
 - 要比较 932：M3b 主报告 → 932 报告 → 合并对比。
 - 要理解 M3b 和 M1/M2/M3 的换算：三口径报告。
 - 想看 1052 最佳每年买了什么、每只赚了多少：1052-best-yearly-holdings。
+- 想看“股息率排名”补丁：dividend-yield-strategy（候选，需先排除分红前视偏差）。
 - 想看“妖股/峰值业绩过滤”：earnings-outlier-filter（结论：默认不启用）。
 - 要重跑 2027：本 playbook 第 8/8b/9 步。
 
