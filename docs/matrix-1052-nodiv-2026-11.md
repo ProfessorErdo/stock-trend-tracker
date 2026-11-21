@@ -32,6 +32,12 @@
 
 ![top15](img/matrix-2026-11/1052_nodiv_top15.png)
 
+### 3.1 净值与回撤
+
+![equity](img/matrix-2026-11/1052_nodiv_equity.png)
+
+![drawdown](img/matrix-2026-11/1052_nodiv_drawdown.png)
+
 ## 4. 2026 持仓
 
 601838成都银行、600919江苏银行、600926杭州银行、601128常熟银行、600036招商银行

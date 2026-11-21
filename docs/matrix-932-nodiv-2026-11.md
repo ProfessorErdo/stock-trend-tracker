@@ -32,6 +32,12 @@
 
 ![top15](img/matrix-2026-11/932_nodiv_top15.png)
 
+### 3.1 净值与回撤
+
+![equity](img/matrix-2026-11/932_nodiv_equity.png)
+
+![drawdown](img/matrix-2026-11/932_nodiv_drawdown.png)
+
 ## 4. 2026 持仓
 
 601838成都银行、600926杭州银行、601128常熟银行、601319中国人保、601601中国太保
