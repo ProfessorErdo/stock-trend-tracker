@@ -33,8 +33,11 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
 - grid_v1 finding: dividend max is at ROE55 boundary (1052 17.92%, 932 16.63%), so the default
   stays at ROE65 (1052 15.53%, 932 15.07%); ROE55 is a boundary case, not a plateau.
 - Ex-2021 check: ROE55's edge is 2021-driven (both +123.6% in 2021; ex-2021 only 12.14%/10.89%).
-  Ex-2021 best: 1052 `pe+pb` PB35/ROE75 (16.65%); 932 PB10/ROE60 (15.34%). Always report ex-2021
-  alongside full-period M3b when a grid max looks like a single-year outlier.
+  Ex-2021 best: 1052 `pe+pb` PB35/ROE75 (16.65%); 932 PB10/ROE60 (15.34%).
+- Drop-own-best check: each strategy drops its own best 2016-2025 year. Best: 1052 PB10/ROE65
+  (13.56%; own best 2017), 932 PB10/ROE60 (15.03%; own best 2017). The two robustness tests disagree
+  for 1052 because PB35/ROE75's best year is 2025, not 2021; ROE65 is the only one strong in both.
+  Always report full-period, ex-2021, and drop-own-best together.
 - 932 recommended (grid_v1): PB15/ROE65 + dividend + N6, M3b 15.07%, MDD -34.2%.
 - Full-sweep scripts: `backtesting/universe_compare.py`, `build_universe_report.py`,
   `build_pool_report.py`, `analyze_holdings_diff.py`, `test_within_basket.py`,
