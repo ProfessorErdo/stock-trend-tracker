@@ -19,8 +19,8 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
 - Read first: [`docs/index-update-and-full-backtest-playbook.md`](docs/index-update-and-full-backtest-playbook.md)
   (annual/quarterly workflow), then the **M3b-primary report**
   [`docs/m3b-backtest-2026-11.md`](docs/m3b-backtest-2026-11.md), and the
-  2×2 overview [`docs/strategy-matrix-2026-11.md`](docs/strategy-matrix-2026-11.md).
-  M1/M2/M3 are auxiliary metrics.
+  2×2 five-report summary [`docs/matrix-summary-2026-11.md`](docs/matrix-summary-2026-11.md)
+  (old transition overview: `docs/strategy-matrix-2026-11.md`). M1/M2/M3 are auxiliary metrics.
 - M3b = annualized return since the first 2015-05-04 entry (2014 annual report available).
 - Recommended 1052 strategy (2026-11): PB10/ROE65 + dividend-yield ranking (M3b 15.53%, paid 12.21%).
   Recent 2023-2026 OOS favors the no-dividend version, so keep monitoring.
@@ -35,6 +35,20 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
   `enrich_summary_metrics.py`, `compare_three_metrics.py`,
   `build_consolidated_metrics.py`, `build_consolidated_report.py`,
   `build_m3b_dataset.py`, `build_m3b_report.py`, `fetch_dividend_data.py`.
+
+## Report Content Requirements (2026-11)
+
+Every five-report run must follow the checklist in playbook §2.0.2. At minimum:
+
+- 4 cell reports + 1 summary; M3b is the only primary metric.
+- Each cell: top10, top5 annual heatmap, top15, **equity + drawdown**, 2026 holdings
+  (grid-best and recommended), cell-specific caveats.
+- Dividend cells: **dividend-yield history, 2026 holdings yields, yield bar**; default
+  recommendation is ROE65, not the ROE60 boundary (2021 +118% was 中绿电 +365%).
+- Summary: recommended 2x2 table, matrix, annual heatmap, **holdings comparison**,
+  **equity/drawdown comparison**, dividend-yield history, links to 4 cell reports.
+- `build_matrix_reports.py` produces only the base tables/charts; the extra sections
+  are mandatory and must be added/checked before delivery.
 
 ## Documentation Map Maintenance
 
