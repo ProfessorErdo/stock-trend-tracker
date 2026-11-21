@@ -34,7 +34,9 @@ def _load_dividend_panel():
             _DIVIDEND_PANEL = {}
         else:
             df = pd.read_csv(path, dtype={"code": str})
-            df["plan_date"] = pd.to_datetime(df["plan_date"])
+            for col in ["plan_date", "latest_date", "ex_date"]:
+                if col in df.columns:
+                    df[col] = pd.to_datetime(df[col], errors="coerce")
             df["code"] = df["code"].str.zfill(6)
             _DIVIDEND_PANEL = {c: g for c, g in df.groupby("code")}
     return _DIVIDEND_PANEL
@@ -46,7 +48,13 @@ def get_dividend_yield(stock_code: str, as_of_date: pd.Timestamp, price: float) 
     g = panel.get(stock_code)
     if g is None or price is None or price <= 0:
         return 0.0
-    sub = g[(g["plan_date"] > as_of_date - pd.Timedelta(days=365)) & (g["plan_date"] <= as_of_date)]
+    mode = getattr(config, "DIVIDEND_MODE", "declared")
+    if mode == "paid":
+        sub = g[(g["ex_date"] <= as_of_date) & (g["ex_date"] > as_of_date - pd.Timedelta(days=365))]
+    elif mode == "final_known":
+        sub = g[(g["latest_date"] <= as_of_date) & (g["plan_date"] > as_of_date - pd.Timedelta(days=365))]
+    else:
+        sub = g[(g["plan_date"] > as_of_date - pd.Timedelta(days=365)) & (g["plan_date"] <= as_of_date)]
     if sub.empty:
         return 0.0
     div_per_share = sub["cash_div_per_10"].sum() / 10.0

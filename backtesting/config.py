@@ -21,6 +21,8 @@ FINANCIAL_SEASON_END = f"{datetime.now().year}-12-31"
 PRICE_DATA_DIR = os.path.join(DATA_INPUT_DIR, "price")
 DIVIDEND_DATA_DIR = os.path.join(DATA_INPUT_DIR, "dividend")
 DIVIDEND_DATA_FILE = os.path.join(DIVIDEND_DATA_DIR, "fhps_all.csv")
+# declared: 预案公告日 + 最终金额；paid: 除权日已派息；final_known: 最终公告日已知
+DIVIDEND_MODE = "declared"
 # 财务数据目录
 FINANCIAL_DATA_DIR = os.path.join(DATA_INPUT_DIR, "financial")
 # 股票池目录

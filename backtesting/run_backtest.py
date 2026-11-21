@@ -179,6 +179,8 @@ def main():
                         help="1-4 月跌幅阈值（默认 -0.20）")
     parser.add_argument("--price_crash_soft", action="store_true",
                         help="价格过滤改为软过滤：优先未崩的，不够 5 只用崩过的补足")
+    parser.add_argument("--dividend_mode", choices=["declared", "paid", "final_known"], default="declared",
+                        help="股息率口径：declared=预案+最终金额；paid=已派息；final_known=最终公告已知")
     parser.add_argument("--latest_pools_only", action="store_true",
                         help="每个池子只用最新一期清单（当前成分股，含幸存者偏差；默认合并历史各期）")
 
@@ -313,6 +315,7 @@ def main():
             logger.info("  Removed old intermediate results for full backtest")
 
     config.PRICE_CRASH_THRESHOLD = args.price_crash_threshold
+    config.DIVIDEND_MODE = args.dividend_mode
 
     result = run_backtest(
         args.start_date, args.end_date,
