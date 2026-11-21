@@ -5,10 +5,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / 'docs'
-OUT_DIR = DOCS / 'pdf'
+OUT_DIR = DOCS / 'html'
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 HTML_PATH = OUT_DIR / 'grid-v1-reports-2026-11.html'
-PDF_PATH = OUT_DIR / 'grid-v1-reports-2026-11.pdf'
 
 REPORTS = [
     ('summary', '00', '2×2 汇总', 'grid-v1-summary-2026-11.md'),
@@ -50,6 +49,7 @@ def rewrite_links(frag: str) -> str:
 def build_fragment(rel: str) -> str:
     path = DOCS / rel
     frag = pandoc_fragment(path)
+    frag = re.sub(r'(<table\b.*?</table>)', r'<div class="table-wrap">\1</div>', frag, flags=re.S)
     frag = embed_images(frag)
     frag = rewrite_links(frag)
     return frag
@@ -88,7 +88,7 @@ a:hover{text-decoration:underline}
 .toc a.active{box-shadow:inset 3px 0 0 #5eead4}
 .sidebar .hint{font-size:11px; color:#99f6e4; margin-top:22px; line-height:1.6}
 .content{
-  margin-left:286px; width:calc(100% - 286px); max-width:1180px;
+  margin-left:286px; width:calc(100% - 286px); max-width:1180px; min-width:0;
   padding:34px 46px 90px;
 }
 .toolbar{
@@ -125,7 +125,7 @@ a:hover{text-decoration:underline}
   padding:14px 18px; font-size:13px; line-height:1.65; margin:0 0 26px;
 }
 .report{
-  background:var(--panel); border:1px solid var(--line); border-radius:18px;
+  background:var(--panel); border:1px solid var(--line); border-radius:18px; min-width:0;
   padding:30px 38px 34px; margin:0 0 28px; box-shadow:0 10px 30px rgba(15,23,42,.05);
   scroll-margin-top:20px;
 }
@@ -145,8 +145,10 @@ a:hover{text-decoration:underline}
 }
 .report ul,.report ol{padding-left:24px; margin:10px 0}
 .report li{margin:5px 0}
+.table-wrap{width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; margin:14px 0 18px}
+.table-wrap table{margin:0}
 .report table{
-  width:100%; border-collapse:collapse; margin:14px 0 18px; font-size:13.5px;
+  width:100%; border-collapse:collapse; font-size:13.5px;
   line-height:1.55; background:#fff;
 }
 .report th,.report td{border:1px solid var(--line); padding:7px 9px; vertical-align:top}
@@ -169,17 +171,37 @@ a:hover{text-decoration:underline}
 }
 .backtop.show{display:block}
 @media (max-width: 980px){
-  .sidebar{transform:translateX(-100%); transition:transform .2s ease; width:280px; flex-basis:280px}
-  .sidebar.open{transform:translateX(0)}
-  .content{margin-left:0; width:100%; padding:24px 18px 80px}
+  .app{display:block}
+  .sidebar{transform:translateX(-100%); transition:transform .2s ease; width:min(84vw,320px); flex-basis:auto}
+  .sidebar.open{transform:translateX(0); box-shadow:0 0 0 100vmax rgba(15,23,42,.28)}
+  .content{margin-left:0; width:auto; max-width:none; min-width:0; padding:24px 16px 80px}
   .mobile-toggle{display:inline-flex}
-  .toolbar{top:12px; right:12px}
-  .cover{padding:38px 26px 34px; border-radius:16px}
-  .cover h1{font-size:32px}
-  .report{padding:22px 18px 26px; border-radius:14px}
+  .toolbar{top:10px; right:10px; max-width:calc(100% - 20px); flex-wrap:wrap; justify-content:flex-end}
+  .toolbar .btn{padding:7px 11px; font-size:12px}
+  .top-btn{display:none}
+  .desktop-label{display:none}
+  .mobile-label{display:inline}
+  .cover{padding:34px 22px 30px; border-radius:16px}
+  .cover h1{font-size:30px}
+  .cover .subtitle{font-size:15px; line-height:1.5}
+  .cover .meta{gap:6px 12px; font-size:12px}
+  .kpi{min-width:calc(50% - 6px); flex:1 1 calc(50% - 6px); padding:10px 12px}
+  .kpi b{font-size:19px}
+  .notice{font-size:12.5px; padding:12px 14px}
+  .report{padding:22px 16px 26px; border-radius:14px}
   .report h1{font-size:23px}
   .report h2{font-size:19px}
-  .report table{font-size:12px}
+  .report table{font-size:12px; min-width:620px}
+  .table-wrap{border:1px solid var(--line); border-radius:10px}
+  .table-wrap table{border:0}
+}
+@media (max-width: 520px){
+  .cover h1{font-size:27px}
+  .cover .subtitle{font-size:14px}
+  .cover .kpis{gap:8px}
+  .kpi{min-width:calc(50% - 4px); flex:1 1 calc(50% - 4px)}
+  .kpi b{font-size:18px}
+  .report h2{font-size:18px}
 }
 @media print{
   @page{size:A4; margin:14mm 12mm}
@@ -196,7 +218,8 @@ a:hover{text-decoration:underline}
   .report h1{font-size:20pt}
   .report h2{font-size:14pt; border-top:1px solid #cbd5e1}
   .report h3{font-size:12pt}
-  .report table{font-size:8.2pt; page-break-inside:auto}
+  .table-wrap{overflow:visible; border:0}
+  .report table{font-size:8.2pt; page-break-inside:auto; min-width:0}
   .report tr{page-break-inside:avoid}
   .report img{max-height:150mm; width:auto; max-width:100%; page-break-inside:avoid}
   .report blockquote{background:#f8fafc; border-left:3px solid #14b8a6}
@@ -211,6 +234,7 @@ JS = r'''
   const toggle=document.querySelector('.mobile-toggle');
   if(toggle){toggle.addEventListener('click',()=>sidebar.classList.toggle('open'));}
   const links=[...document.querySelectorAll('.toc a')];
+  links.forEach(a=>a.addEventListener('click',()=>{if(window.innerWidth<=980&&sidebar) sidebar.classList.remove('open');}));
   const sections=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
   const obs=new IntersectionObserver(entries=>{
     entries.forEach(e=>{
@@ -263,8 +287,8 @@ def build_html() -> str:
   <main class="content">
     <div class="toolbar">
       <button class="btn mobile-toggle" type="button">目录</button>
-      <button class="btn" type="button" onclick="window.scrollTo({{top:0,behavior:'smooth'}})">顶部</button>
-      <button class="btn primary" id="printBtn" type="button">打印 / 存为 PDF</button>
+      <button class="btn top-btn" type="button" onclick="window.scrollTo({{top:0,behavior:'smooth'}})">顶部</button>
+      <button class="btn primary" id="printBtn" type="button"><span class="desktop-label">打印 / 存为 PDF</span><span class="mobile-label">打印</span></button>
     </div>
     <section class="cover">
       <div class="eyebrow">grid_v1 · 2026-11</div>
@@ -288,30 +312,11 @@ def build_html() -> str:
 </html>'''
     return body
 
-def make_pdf() -> bool:
-    chrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-    if not Path(chrome).exists():
-        print('Chrome not found; HTML only', file=sys.stderr)
-        return False
-    cmd = [chrome, '--headless=new', '--disable-gpu', '--no-sandbox',
-           '--disable-dev-shm-usage', '--user-data-dir=/tmp/chrome-headless-pdf',
-           '--no-pdf-header-footer', '--run-all-compositor-stages-before-draw',
-           '--virtual-time-budget=8000', f'--print-to-pdf={PDF_PATH}',
-           f'file://{HTML_PATH}']
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    if r.returncode != 0 or not PDF_PATH.exists():
-        print(f'Chrome PDF failed: {r.returncode} {r.stderr[-500:]}', file=sys.stderr)
-        return False
-    return True
-
 def main():
     html_text = build_html()
     HTML_PATH.write_text(html_text, encoding='utf-8')
     print(f'HTML: {HTML_PATH} ({HTML_PATH.stat().st_size/1024/1024:.1f} MB)')
-    if make_pdf():
-        print(f'PDF:  {PDF_PATH} ({PDF_PATH.stat().st_size/1024/1024:.1f} MB)')
-    else:
-        print('PDF not generated; open HTML and print to PDF manually.')
+    print('PDF generation disabled; use the browser print dialog if needed.')
 
 if __name__ == '__main__':
     main()

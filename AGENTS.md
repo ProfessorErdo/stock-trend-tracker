@@ -66,9 +66,9 @@ Every five-report run must follow the checklist in playbook §2.0.2. At minimum:
   summary + all four cells.
 - `build_matrix_reports.py` produces only the base tables/charts; the extra sections
   are mandatory and must be added/checked before delivery.
-- Report bundle: `scripts/build_report_bundle.py` builds a self-contained HTML
-  (`docs/pdf/grid-v1-reports-2026-11.html`) plus PDF (`.pdf`) with all five reports,
-  TOC/navigation, embedded images, and print CSS.
+- Report bundle: `scripts/build_report_bundle.py` builds a self-contained, mobile-friendly
+  HTML (`docs/html/grid-v1-reports-2026-11.html`) with all five reports, TOC/navigation,
+  embedded images, and print CSS. No PDF artifact by default; use browser print if needed.
 
 ## Documentation Map Maintenance
 
