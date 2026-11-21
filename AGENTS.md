@@ -61,6 +61,9 @@ Every five-report run must follow the checklist in playbook §2.0.2. At minimum:
   The ROE60 pilot's 2021 +118% was 中绿电 +365%.
 - Summary: recommended 2x2 table, matrix, annual heatmap, **holdings comparison**,
   **equity/drawdown comparison**, dividend-yield history, links to 4 cell reports.
+- Summary structure: §4 is a **link table** to the four cell reports; §5 is robustness
+  (5.1 ex-2021, 5.2 drop-own-best). Each cell report starts with a nav block linking
+  summary + all four cells.
 - `build_matrix_reports.py` produces only the base tables/charts; the extra sections
   are mandatory and must be added/checked before delivery.
 
