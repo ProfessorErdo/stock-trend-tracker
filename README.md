@@ -13,7 +13,7 @@ A Python-based stock analysis tool that queries financial and price data, calcul
 - **Individual Stock Query**: Query and visualize valuation data for a specific stock
 - **Top Stocks Ranking**: Find top N stocks based on valuation indicators
 
-**当前推荐（2026-11）**：1052 池 **PB10/ROE65 + 股息率排名**（M3b 15.53%，保守 paid 12.21%）；2023-2026 无股息版反超，需监控。详见 [2×2 总览](docs/strategy-matrix-2026-11.md)。
+**当前推荐（2026-11，grid_v1）**：1052 **PB10/ROE65 + 股息率**（M3b 15.53%）；932 **PB15/ROE65 + 股息率 + N6**（M3b 15.07%）。2023-2026 无股息版反超，需监控。详见 [grid_v1 汇总](docs/grid-v1-summary-2026-11.md)。
 
 ## 报告体系演变
 
@@ -34,7 +34,11 @@ Start here if you are new to this repository, or if you are starting a new agent
 | [docs/1052-best-yearly-holdings-2026-11.md](docs/1052-best-yearly-holdings-2026-11.md) | 1052 最佳策略逐年收益、持仓、每只股票的当年收益 |
 | [docs/dividend-yield-strategy-2026-11.md](docs/dividend-yield-strategy-2026-11.md) | **股息率排名候选补丁**：M3b 15.53%，两段样本均改善（待前视审计） |
 | [docs/strategy-matrix-2026-11.md](docs/strategy-matrix-2026-11.md) | 2×2 过渡版总览（旧） |
-| [docs/matrix-summary-2026-11.md](docs/matrix-summary-2026-11.md) | **2×2 五份报告汇总（新标准）**：四格最佳 + 链接到四份子报告 |
+| [docs/grid-v1-summary-2026-11.md](docs/grid-v1-summary-2026-11.md) | **grid_v1 2×2 汇总（当前标准）**：股息 138/池 + 非股息 87/池，450 distinct |
+| [docs/grid-v1-1052-nodiv-2026-11.md](docs/grid-v1-1052-nodiv-2026-11.md) | grid_v1 · 1052 × 非股息 |
+| [docs/grid-v1-1052-div-2026-11.md](docs/grid-v1-1052-div-2026-11.md) | grid_v1 · 1052 × 股息 |
+| [docs/grid-v1-932-nodiv-2026-11.md](docs/grid-v1-932-nodiv-2026-11.md) | grid_v1 · 932 × 非股息 |
+| [docs/grid-v1-932-div-2026-11.md](docs/grid-v1-932-div-2026-11.md) | grid_v1 · 932 × 股息 |
 | [docs/matrix-1052-nodiv-2026-11.md](docs/matrix-1052-nodiv-2026-11.md) | 1052 × 非股息：121 组标准网格 |
 | [docs/matrix-1052-div-2026-11.md](docs/matrix-1052-div-2026-11.md) | 1052 × 股息：121 组标准网格 |
 | [docs/matrix-932-nodiv-2026-11.md](docs/matrix-932-nodiv-2026-11.md) | 932 × 非股息：121 组标准网格 |

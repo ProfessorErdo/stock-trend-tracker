@@ -19,17 +19,20 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
 - Read first: [`docs/index-update-and-full-backtest-playbook.md`](docs/index-update-and-full-backtest-playbook.md)
   (annual/quarterly workflow), then the **M3b-primary report**
   [`docs/m3b-backtest-2026-11.md`](docs/m3b-backtest-2026-11.md), and the
-  2×2 five-report summary [`docs/matrix-summary-2026-11.md`](docs/matrix-summary-2026-11.md)
-  (old transition overview: `docs/strategy-matrix-2026-11.md`). M1/M2/M3 are auxiliary metrics.
+  2×2 five-report summary [`docs/grid-v1-summary-2026-11.md`](docs/grid-v1-summary-2026-11.md)
+  (older transition: `docs/matrix-summary-2026-11.md`). M1/M2/M3 are auxiliary metrics.
 - M3b = annualized return since the first 2015-05-04 entry (2014 annual report available).
 - Recommended 1052 strategy (2026-11): PB10/ROE65 + dividend-yield ranking (M3b 15.53%, paid 12.21%).
   Recent 2023-2026 OOS favors the no-dividend version, so keep monitoring.
 - Report history: M1-primary (early 2026-11) -> M3b-primary (mid) -> 2x2 five-report
   standard grid (late 2026-11). Future 3x2/4x2 may add pools; weak pools can be retired
   the same way M1/M2/M3 stopped being primary.
-- Report system (2026-11): M3b is the only primary metric; the 2x2 standard grid is
-  (1052, 932) x (no-dividend, dividend), 121 specs per cell, with 4 cell reports plus
-  `docs/matrix-summary-2026-11.md`. M1/M2/M3 are auxiliary and need not be computed unless asked.
+- Report system (2026-11): M3b is the only primary metric; current grid is **grid_v1**:
+  dividend 138 distinct/pool, non-dividend 87 distinct/pool, 450 distinct total; 4 cell reports
+  plus `docs/grid-v1-summary-2026-11.md`. M1/M2/M3 are auxiliary and need not be computed unless asked.
+- grid_v1 finding: dividend max is at ROE55 boundary (1052 17.92%, 932 16.63%), so the default
+  stays at ROE65 (1052 15.53%, 932 15.07%); ROE55 is a boundary case, not a plateau.
+- 932 recommended (grid_v1): PB15/ROE65 + dividend + N6, M3b 15.07%, MDD -34.2%.
 - Full-sweep scripts: `backtesting/universe_compare.py`, `build_universe_report.py`,
   `build_pool_report.py`, `analyze_holdings_diff.py`, `test_within_basket.py`,
   `enrich_summary_metrics.py`, `compare_three_metrics.py`,
@@ -44,7 +47,8 @@ Every five-report run must follow the checklist in playbook §2.0.2. At minimum:
 - Each cell: top10, top5 annual heatmap, top15, **equity + drawdown**, 2026 holdings
   (grid-best and recommended), cell-specific caveats.
 - Dividend cells: **dividend-yield history, 2026 holdings yields, yield bar**; default
-  recommendation is ROE65, not the ROE60 boundary (2021 +118% was 中绿电 +365%).
+  recommendation is ROE65, not the ROE55/ROE60 boundary (grid_v1 max is ROE55;
+  the ROE60 pilot's 2021 +118% was 中绿电 +365%).
 - Summary: recommended 2x2 table, matrix, annual heatmap, **holdings comparison**,
   **equity/drawdown comparison**, dividend-yield history, links to 4 cell reports.
 - `build_matrix_reports.py` produces only the base tables/charts; the extra sections

@@ -30,7 +30,8 @@
 | 3b | [`1052-best-yearly-holdings-2026-11.md`](1052-best-yearly-holdings-2026-11.md) | 1052 最佳逐年持仓 | 主报告的逐年/持仓明细 |
 | 3c | [`dividend-yield-strategy-2026-11.md`](dividend-yield-strategy-2026-11.md) | 股息率排名候选补丁 | 主报告的最强候选，待审计 |
 | 3d | [`strategy-matrix-2026-11.md`](strategy-matrix-2026-11.md) | **2×2 总览**（旧版四宫格） | 过渡版，保留历史 |
-| 3e | [`matrix-summary-2026-11.md`](matrix-summary-2026-11.md) | **2×2 五份报告汇总**（新标准） | 四格最佳 + 链接到四份子报告 |
+| 3e | [`matrix-summary-2026-11.md`](matrix-summary-2026-11.md) | 2×2 五份报告汇总（过渡版，121+pilot） | 历史 |
+| 3f | [`grid-v1-summary-2026-11.md`](grid-v1-summary-2026-11.md) | **grid_v1 2×2 汇总（当前标准）** | 138/87 网格、450 distinct、四格推荐 + 子报告 |
 | 4 | [`universe-backtest-2026-11.md`](universe-backtest-2026-11.md) | 1052 池 M1/M2 明细 | 主报告 1052 部分的展开 |
 | 5 | [`universe-backtest-932-2026-11.md`](universe-backtest-932-2026-11.md) | 932 池 M1/M2 对照 | 主报告 932 部分的展开 |
 | 6 | [`three-start-metrics-2026-11.md`](three-start-metrics-2026-11.md) | M1/M2/M3/M3b 定义 | 解释主报告口径 |
@@ -110,7 +111,12 @@ README / playbook（入口）
 
 **以后只把 M3b 当主指标**；M1/M2/M3 只在需要解释时计算，不再作为排名依据。
 
-**2×2 定义**：`(1052, 932) × (非股息排名, 股息率排名)`。非股息格用 121 组标准网格；股息格本次先用 15 组 pilot（PB10-20 × ROE60-80），稳定后再扩到 121 组。标准网格范围：
+**2×2 定义**：`(1052, 932) × (非股息排名, 股息率排名)`。当前用 **grid_v1**：
+
+- 股息：**138 distinct/池**（PB-only 120 + 过滤 core 6 + 组合补充 12）
+- 非股息：**87 distinct/池**（核心 35 + 阈值面 44 + trim/N 8）
+- 单池 225，两池 **450 distinct**
+- 报告里必须写 grid 版本和 distinct 数，不能只写行数。
 
 - **121 是行数，不是 distinct**：非股息去重后 112 个，股息去重后 83 个（排名固定 div 会合并很多行）；股息 + 15 组 pilot（重叠 7、新增 8）= 91 个 distinct。报告里必须同时写“行数/去重数”。
 - 7 种过滤：`pe`、`pb`、`pr`、`pe+pb`、`pe+pr`、`pb+pr`、`pe+pb+pr`
@@ -130,11 +136,10 @@ README / playbook（入口）
 
 ```bash
 cd backtesting
-../.venv/bin/python run_matrix_cell_mp.py --pool union  --mode nodiv --workers 4 --out ../data/processed/backtesting/matrix_20261121/1052_nodiv
-../.venv/bin/python run_matrix_cell_mp.py --pool union  --mode div   --workers 3 --specs ../data/processed/backtesting/matrix_20261121/specs_div_pilot.csv --out ../data/processed/backtesting/matrix_20261121/1052_div
-../.venv/bin/python run_matrix_cell_mp.py --pool legacy --mode nodiv --workers 4 --out ../data/processed/backtesting/matrix_20261121/932_nodiv
-../.venv/bin/python run_matrix_cell_mp.py --pool legacy --mode div   --workers 3 --specs ../data/processed/backtesting/matrix_20261121/specs_div_pilot.csv --out ../data/processed/backtesting/matrix_20261121/932_div
-../.venv/bin/python build_matrix_reports.py
+../.venv/bin/python run_matrix_cell_fast.py --pool union  --mode nodiv --workers 2 --specs grids/grid_v1_nodiv.csv --out ../data/processed/backtesting/grid_v1_20261121/1052_nodiv
+../.venv/bin/python run_matrix_cell_fast.py --pool union  --mode div   --workers 2 --specs grids/grid_v1_div.csv   --out ../data/processed/backtesting/grid_v1_20261121/1052_div
+../.venv/bin/python run_matrix_cell_fast.py --pool legacy --mode nodiv --workers 2 --specs grids/grid_v1_nodiv.csv --out ../data/processed/backtesting/grid_v1_20261121/932_nodiv
+../.venv/bin/python run_matrix_cell_fast.py --pool legacy --mode div   --workers 2 --specs grids/grid_v1_div.csv   --out ../data/processed/backtesting/grid_v1_20261121/932_div
 ```
 
 **五份报告**：
@@ -155,7 +160,7 @@ cd backtesting
 
 - [ ] 标题、池子（1052/932）、首买日（2015-05）、主指标 M3b
 - [ ] 结论：**推荐配置** + M3b/M1/夏普/回撤
-- [ ] 如果网格最高值在参数边界（例如 ROE60），必须注明“边界值”，并给出风险调整推荐（例如 ROE65），不能只放最高值
+- [ ] 如果网格最高值在参数边界（例如 ROE55/ROE60），必须注明“边界值”，并给出风险调整推荐（例如 ROE65），不能只放最高值
 - [ ] 网格说明：spec 数、过滤/排名/PB/ROE/裁尾/N 的范围
 - [ ] Top 10（按 M3b）
 - [ ] Top5 年度收益热力图 + Top15 柱图
@@ -190,7 +195,7 @@ cd backtesting
 **长期规则**：
 
 - 只把 M3b 当主指标；M1/M2/M3 不要求计算，除非明确要求。
-- 股息格默认推荐 **PB10/ROE65**；ROE60 只作为边界案例展示。
+- 股息格默认推荐 **ROE65**；ROE55/ROE60 只作为边界案例展示（grid_v1 最高在 ROE55）。
 - 股票池变多时（3×2/4×2），加一行池子；长期明显更差的池子可以退役，并在 README/AGENTS 记录原因。
 - 新增/改名/删除报告，必须同步更新 playbook §0.1 文档地图和 README 文档表。
 
