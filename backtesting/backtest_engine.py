@@ -263,7 +263,7 @@ def check_inter_rebalance_stop_loss(
                 if price <= 0:
                     continue
                 exec_price = price * (1 - config.SLIPPAGE_RATE)
-                trade = portfolio.sell_shares(code, pos['shares'], exec_price, reason="止损清仓")
+                trade = portfolio.sell_shares(code, pos['shares'], exec_price, reason="止损清仓", trade_date=day_ts)
                 if trade:
                     trade['trade_date'] = day_ts
                     trade_records.append(trade)
@@ -284,7 +284,7 @@ def check_inter_rebalance_stop_loss(
                 if shares_to_sell <= 0:
                     continue
                 exec_price = price * (1 - config.SLIPPAGE_RATE)
-                trade = portfolio.sell_shares(code, shares_to_sell, exec_price, reason="止损减半")
+                trade = portfolio.sell_shares(code, shares_to_sell, exec_price, reason="止损减半", trade_date=day_ts)
                 if trade:
                     trade['trade_date'] = day_ts
                     trade_records.append(trade)
@@ -605,7 +605,7 @@ def run_backtest(
 
                 exec_price = price * (1 - config.SLIPPAGE_RATE)
                 trade = portfolio.sell_shares(
-                    code, shares_to_sell, exec_price, reason="调仓卖出"
+                    code, shares_to_sell, exec_price, reason="调仓卖出", trade_date=execution_date
                 )
                 if trade:
                     trade['trade_date'] = execution_date
@@ -627,7 +627,7 @@ def run_backtest(
 
                 exec_price = price * (1 + config.SLIPPAGE_RATE)
                 trade = portfolio.buy_shares(
-                    code, shares_to_buy, exec_price, reason="调仓买入"
+                    code, shares_to_buy, exec_price, reason="调仓买入", trade_date=execution_date
                 )
                 if trade:
                     trade['trade_date'] = execution_date

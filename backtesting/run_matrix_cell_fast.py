@@ -30,7 +30,7 @@ def work(task):
     import universe_compare as uc
     from backtest_engine import run_backtest
     from performance import calculate_performance
-    row,pool,mode=task
+    row,pool,mode,div_tax=task
     uc.set_pool(pool)
     filters=[x for x in str(row['filters']).split('+') if x]
     config.FILTER_INDICATORS=filters
@@ -39,6 +39,7 @@ def work(task):
     trim=str(row['trim']); config.WINSORIZE_ENABLED=(trim!='raw')
     config.THRESHOLD_TRIM_RATIO=float(trim) if trim!='raw' else 0.01
     config.DIVIDEND_MODE='declared'
+    config.DIVIDEND_TAX_ENABLED=bool(div_tax)
     ranking='div' if mode=='div' else row['ranking']
     try:
         r=run_backtest('2015-01-01','2026-11-06',frequency='annual',ranking_method=ranking,
@@ -62,10 +63,11 @@ if __name__=='__main__':
     ap.add_argument('--specs',default='../data/processed/backtesting/matrix_20261121/specs.csv')
     ap.add_argument('--out',required=True)
     ap.add_argument('--workers',type=int,default=4)
+    ap.add_argument('--dividend_tax',action='store_true')
     a=ap.parse_args()
     os.makedirs(a.out,exist_ok=True)
     specs=pd.read_csv(a.specs,dtype={'trim':str})
-    tasks=[(row,a.pool,a.mode) for _,row in specs.iterrows()]
+    tasks=[(row,a.pool,a.mode,a.dividend_tax) for _,row in specs.iterrows()]
     import multiprocessing as mp
     with mp.Pool(a.workers,initializer=init,initargs=(a.pool,)) as pool:
         results=pool.map(work,tasks)

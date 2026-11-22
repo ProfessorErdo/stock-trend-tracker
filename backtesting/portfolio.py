@@ -8,6 +8,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config
+from dividend_tax import tax_for_lot
 
 import pandas as pd
 
@@ -41,9 +42,9 @@ class Portfolio:
             equity += pos['shares'] * price
         return equity
 
-    def sell_shares(self, stock_code, shares, price, reason="调仓卖出") -> dict:
+    def sell_shares(self, stock_code, shares, price, reason="调仓卖出", trade_date=None) -> dict:
         """
-        卖出股票
+        卖出股票。FIFO 消耗批次，只对卖出的股份按持股期结算红利税。
         """
         pos = self.positions.get(stock_code)
         if pos is None:
@@ -57,7 +58,28 @@ class Portfolio:
         commission = self._calc_commission(amount)
         stamp_tax = self._calc_stamp_tax(amount)
 
-        self.cash += amount - commission - stamp_tax
+        # 红利税：按 lot 的持有期结算，只对卖出的股份征税。
+        sale_date = pd.Timestamp(trade_date) if trade_date is not None else pd.Timestamp.today().normalize()
+        dividend_tax = 0.0
+        remaining = actual_shares
+        lots = pos.get('lots', [])
+        if not lots and pos['shares'] > 0:
+            # 兼容老持仓：没有批次信息时按卖出日建一个批次（不追税）。
+            lots = [{'shares': pos['shares'], 'entry_date': sale_date, 'cost_price': pos['cost_price']}]
+            pos['lots'] = lots
+        for lot in list(lots):
+            if remaining <= 0:
+                break
+            take = min(remaining, int(lot.get('shares', 0)))
+            if take <= 0:
+                continue
+            dividend_tax += tax_for_lot(stock_code, take, lot.get('entry_date'), sale_date)
+            lot['shares'] = int(lot['shares']) - take
+            remaining -= take
+            if lot['shares'] <= 0:
+                lots.remove(lot)
+        # 老数据批次不足时，剩余股份不追税（避免错误重税）。
+        self.cash += amount - commission - stamp_tax - dividend_tax
         pos['shares'] -= actual_shares
 
         trade = {
@@ -69,6 +91,8 @@ class Portfolio:
             'amount': amount,
             'commission': round(commission, 2),
             'stamp_tax': round(stamp_tax, 2),
+            'dividend_tax': round(dividend_tax, 2),
+            'net_amount': round(amount - commission - stamp_tax - dividend_tax, 2),
             'reason': reason,
         }
         self.trade_history.append(trade)
@@ -78,7 +102,7 @@ class Portfolio:
 
         return trade
 
-    def buy_shares(self, stock_code, shares, price, reason="调仓买入") -> dict:
+    def buy_shares(self, stock_code, shares, price, reason="调仓买入", trade_date=None) -> dict:
         """
         买入股票（整手取整，不足现金时计算最大可买手数）
         """
@@ -109,16 +133,21 @@ class Portfolio:
 
         self.cash -= total_cost
 
-        # 更新持仓：加权平均成本
+        # 更新持仓：加权平均成本 + 批次（用于红利税持有期）
+        entry_date = pd.Timestamp(trade_date) if trade_date is not None else pd.Timestamp.today().normalize()
         if stock_code in self.positions:
             old = self.positions[stock_code]
+            if 'lots' not in old:
+                old['lots'] = []
             total_shares = old['shares'] + shares
             old['cost_price'] = (old['cost_price'] * old['shares'] + price * shares) / total_shares
             old['shares'] = total_shares
+            old['lots'].append({'shares': shares, 'entry_date': entry_date, 'cost_price': price})
         else:
             self.positions[stock_code] = {
                 'shares': shares,
                 'cost_price': price,
+                'lots': [{'shares': shares, 'entry_date': entry_date, 'cost_price': price}],
             }
 
         trade = {
@@ -130,6 +159,7 @@ class Portfolio:
             'amount': amount,
             'commission': round(commission, 2),
             'stamp_tax': 0.0,
+            'dividend_tax': 0.0,
             'reason': reason,
         }
         self.trade_history.append(trade)

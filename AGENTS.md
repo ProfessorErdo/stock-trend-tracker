@@ -47,6 +47,10 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
   declared; need initial proposal amounts to settle.
 - 932 (grid_v1): full-period max PB15/ROE65 + N6, M3b 15.07%, MDD -34.2%;
   robustness-first PB10/ROE60/N5, 14.79%, ex-2021 15.34%, drop-own-best 15.03%, MDD -32.8%.
+- Dividend tax module (2026-11): `backtesting/dividend_tax.py` + `portfolio.py` lots/FIFO.
+  Only sold shares are taxed: <=1 month 20%, <=1 year 10%, >1 year 0%. Retained/added shares
+  do not trigger tax. CLI: `--dividend_tax`. Tax drag is small (1052 declared 15.53->15.45,
+  2020+ 18.62->18.50) because exits are the only taxable events.
 - Full-sweep scripts: `backtesting/universe_compare.py`, `build_universe_report.py`,
   `build_pool_report.py`, `analyze_holdings_diff.py`, `test_within_basket.py`,
   `enrich_summary_metrics.py`, `compare_three_metrics.py`,

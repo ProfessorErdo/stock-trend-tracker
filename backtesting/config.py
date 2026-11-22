@@ -91,6 +91,18 @@ LOT_SIZE = 100                # 每手股数（A股100股/手）
 COMMISSION_RATE = 0.0003      # 佣金率（0.03%）
 COMMISSION_MIN = 5            # 最低佣金（元）
 STAMP_TAX_RATE = 0.001        # 印花税率（卖出0.1%）
+
+# ============== 红利税（A股差别化个人所得税） ==============
+# 分红时先不扣；卖出（换股）时按持股期限结算：
+#   <= 1 个月        20%
+#   1 个月 ~ 1 年    10%
+#   > 1 年           0%
+# 只对“被卖出的股份”对应的、持有期间收到的分红征税；
+# 同一只股票保留/加仓不卖出，不触发红利税。
+DIVIDEND_TAX_ENABLED = False
+DIVIDEND_TAX_SHORT_RATE = 0.20
+DIVIDEND_TAX_MEDIUM_RATE = 0.10
+DIVIDEND_TAX_LONG_RATE = 0.0
 SLIPPAGE_RATE = 0.001         # 滑点率（0.1%，买入加价、卖出减价）
 
 
