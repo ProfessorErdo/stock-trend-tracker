@@ -40,9 +40,11 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
   (13.56%; own best 2017), 932 PB10/ROE60 (15.03%; own best 2017). The two robustness tests disagree
   for 1052 because PB35/ROE75's best year is 2025, not 2021; ROE65 is the only one strong in both.
   Always report full-period, ex-2021, and drop-own-best together.
-- Dividend audit: `declared` uses final implemented amount at the first proposal date = look-ahead.
-  Paid: 1052 div M3b 12.21%, 2020+ 13.84% (2020-2025 12.55%); 932 div M3b 9.36%, 2020+ 12.28%.
-  Treat all declared dividend numbers as upper bounds; use paid for decisions.
+- Dividend audit: `declared` uses the proposal date (realistic) but the **final implemented amount**;
+  it is a valid approximation if proposal≈final, otherwise it overstates. Paid is a conservative
+  lower bound, not the true proposal strategy. Paid: 1052 div M3b 12.21%, 2020+ 13.84%
+  (2020-2025 12.55%); 932 div M3b 9.36%, 2020+ 12.28%. True value is likely between paid and
+  declared; need initial proposal amounts to settle.
 - 932 (grid_v1): full-period max PB15/ROE65 + N6, M3b 15.07%, MDD -34.2%;
   robustness-first PB10/ROE60/N5, 14.79%, ex-2021 15.34%, drop-own-best 15.03%, MDD -32.8%.
 - Full-sweep scripts: `backtesting/universe_compare.py`, `build_universe_report.py`,

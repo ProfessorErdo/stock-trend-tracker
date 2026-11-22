@@ -13,7 +13,7 @@ A Python-based stock analysis tool that queries financial and price data, calcul
 - **Individual Stock Query**: Query and visualize valuation data for a specific stock
 - **Top Stocks Ranking**: Find top N stocks based on valuation indicators
 
-**当前推荐（2026-11，grid_v1）**：1052 **PB10/ROE65 + 股息率**（declared 15.53%，**paid 12.21%**）；932 全期最高 **PB15/ROE65 + N6**（declared 15.07%，**paid 9.36%**），稳健优先 **PB10/ROE60**（14.79%，ex-2021 15.34%、剔自身最高年 15.03%）。2023-2026 无股息版反超，需监控。**股息 `declared` 含前视，决策看 `paid`**；详见 [股息口径审计](docs/dividend-audit-2026-11.md)。
+**当前推荐（2026-11，grid_v1）**：1052 **PB10/ROE65 + 股息率**（declared 15.53%，**paid 12.21%**）；932 全期最高 **PB15/ROE65 + N6**（declared 15.07%，**paid 9.36%**），稳健优先 **PB10/ROE60**（14.79%，ex-2021 15.34%、剔自身最高年 15.03%）。2023-2026 无股息版反超，需监控。**股息 `declared` 用预案日 + 最终金额；若预案≈实施则接近真实，`paid` 是保守下界**；详见 [股息口径审计](docs/dividend-audit-2026-11.md)。
 
 ## 报告体系演变
 
