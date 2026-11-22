@@ -1,0 +1,6 @@
+spec_id,filters,ranking,trim,max_positions,pe_thr,pb_thr,pr_thr,roe_thr
+div_pb10_roe55_n5_0.01,pb,div,0.01,5,0.25,0.1,0.25,0.55
+div_pb10_roe55_n6_0.01,pb,div,0.01,6,0.25,0.1,0.25,0.55
+div_pb15_roe65_n6_0.01,pb,div,0.01,6,0.25,0.15,0.25,0.65
+div_pb10_roe60_n5_0.01,pb,div,0.01,5,0.25,0.1,0.25,0.6
+div_pb20_roe55_n6_raw,pb,div,raw,6,0.25,0.2,0.25,0.55

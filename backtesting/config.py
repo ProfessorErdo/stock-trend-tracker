@@ -99,7 +99,7 @@ STAMP_TAX_RATE = 0.001        # 印花税率（卖出0.1%）
 #   > 1 年           0%
 # 只对“被卖出的股份”对应的、持有期间收到的分红征税；
 # 同一只股票保留/加仓不卖出，不触发红利税。
-DIVIDEND_TAX_ENABLED = False
+DIVIDEND_TAX_ENABLED = True
 DIVIDEND_TAX_SHORT_RATE = 0.20
 DIVIDEND_TAX_MEDIUM_RATE = 0.10
 DIVIDEND_TAX_LONG_RATE = 0.0

@@ -1,0 +1,6 @@
+spec_id,filters,ranking,trim,max_positions,pe_thr,pb_thr,pr_thr,roe_thr
+nodiv_core_pe_pb,pe,pb,0.01,5,0.25,0.25,0.25,0.75
+nodiv_thr_pe_35_roe75_pb,pe,pb,0.01,5,0.35,0.35,0.35,0.75
+nodiv_thr_pb_35_roe75_pb,pb,pb,0.01,5,0.35,0.35,0.35,0.75
+nodiv_thr_pe_15_roe75_pb,pe,pb,0.01,5,0.15,0.15,0.15,0.75
+nodiv_core_pr_pb,pr,pb,0.01,5,0.25,0.25,0.25,0.75

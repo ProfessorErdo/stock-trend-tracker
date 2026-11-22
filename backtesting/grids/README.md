@@ -22,3 +22,5 @@ cd backtesting
 ```
 
 去重签名：`(pool, ranking, 激活过滤器, 激活阈值, ROE, N, trim)`；未激活阈值不参与比较。
+
+`top5_tax/` 存的是 2026-11 每个格子前 5 名（税后重跑用）的 spec，方便复现五份报告的税后 Top5。

@@ -182,7 +182,9 @@ def main():
     parser.add_argument("--dividend_mode", choices=["declared", "paid", "final_known"], default="declared",
                         help="股息率口径：declared=预案+最终金额；paid=已派息；final_known=最终公告已知")
     parser.add_argument("--dividend_tax", action="store_true",
-                        help="启用A股红利税（卖出时按持股期：<=1月20%，<=1年10%，>1年0%）")
+                        help="兼容旧命令；红利税默认已开启")
+    parser.add_argument("--no_dividend_tax", action="store_true",
+                        help="关闭红利税（仅用于复现旧结果）")
     parser.add_argument("--latest_pools_only", action="store_true",
                         help="每个池子只用最新一期清单（当前成分股，含幸存者偏差；默认合并历史各期）")
 
@@ -318,7 +320,7 @@ def main():
 
     config.PRICE_CRASH_THRESHOLD = args.price_crash_threshold
     config.DIVIDEND_MODE = args.dividend_mode
-    config.DIVIDEND_TAX_ENABLED = args.dividend_tax
+    config.DIVIDEND_TAX_ENABLED = not args.no_dividend_tax
 
     result = run_backtest(
         args.start_date, args.end_date,

@@ -63,11 +63,12 @@ if __name__=='__main__':
     ap.add_argument('--specs',default='../data/processed/backtesting/matrix_20261121/specs.csv')
     ap.add_argument('--out',required=True)
     ap.add_argument('--workers',type=int,default=4)
-    ap.add_argument('--dividend_tax',action='store_true')
+    ap.add_argument('--dividend_tax',action='store_true',help='兼容旧命令；默认已开启')
+    ap.add_argument('--no_dividend_tax',action='store_true',help='关闭红利税')
     a=ap.parse_args()
     os.makedirs(a.out,exist_ok=True)
     specs=pd.read_csv(a.specs,dtype={'trim':str})
-    tasks=[(row,a.pool,a.mode,a.dividend_tax) for _,row in specs.iterrows()]
+    tasks=[(row,a.pool,a.mode,not a.no_dividend_tax) for _,row in specs.iterrows()]
     import multiprocessing as mp
     with mp.Pool(a.workers,initializer=init,initargs=(a.pool,)) as pool:
         results=pool.map(work,tasks)

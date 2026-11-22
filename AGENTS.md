@@ -22,7 +22,8 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
   2×2 five-report summary [`docs/grid-v1-summary-2026-11.md`](docs/grid-v1-summary-2026-11.md)
   (older transition: `docs/matrix-summary-2026-11.md`). M1/M2/M3 are auxiliary metrics.
 - M3b = annualized return since the first 2015-05-04 entry (2014 annual report available).
-- Recommended 1052 strategy (2026-11): PB10/ROE65 + dividend-yield ranking (M3b 15.53%, paid 12.21%).
+- Recommended 1052 strategy (2026-11): PB10/ROE65 + dividend-yield ranking (after tax M3b 15.45%,
+  pre-tax 15.53%, paid after tax 12.12%).
   Recent 2023-2026 OOS favors the no-dividend version, so keep monitoring.
 - Report history: M1-primary (early 2026-11) -> M3b-primary (mid) -> 2x2 five-report
   standard grid (late 2026-11). Future 3x2/4x2 may add pools; weak pools can be retired
@@ -30,27 +31,29 @@ A Python-based stock analysis tool for A-share market investing. Two main compon
 - Report system (2026-11): M3b is the only primary metric; current grid is **grid_v1**:
   dividend 138 distinct/pool, non-dividend 87 distinct/pool, 450 distinct total; 4 cell reports
   plus `docs/grid-v1-summary-2026-11.md`. M1/M2/M3 are auxiliary and need not be computed unless asked.
-- grid_v1 finding: dividend max is at ROE55 boundary (1052 17.92%, 932 16.63%), so the default
-  stays at ROE65 (1052 15.53%, 932 15.07%); ROE55 is a boundary case, not a plateau.
+- grid_v1 finding: dividend max is at ROE55 boundary (after tax 1052 17.85%, 932 16.56%), so the
+  default stays at ROE65 (after tax 1052 15.45%, 932 15.01%); ROE55 is a boundary case, not a plateau.
 - Ex-2021 check: ROE55's edge is 2021-driven (both +123.6% in 2021; ex-2021 only 12.14%/10.89%).
-  Ex-2021 best: 1052 `pe+pb` PB35/ROE75 (16.65%); 932 PB10/ROE60 (15.34%).
+  Ex-2021 best (pre-tax grid): 1052 `pe+pb` PB35/ROE75 (16.65%); 932 PB10/ROE60 (15.34%).
 - All ex-2021 / drop-own-best robustness checks are **dividend-only** (`ranking=div`); do not
   apply them to the non-dividend cells.
-- Drop-own-best check: each strategy drops its own best 2016-2025 year. Best: 1052 PB10/ROE65
+- Drop-own-best check (pre-tax grid): each strategy drops its own best 2016-2025 year. Best: 1052 PB10/ROE65
   (13.56%; own best 2017), 932 PB10/ROE60 (15.03%; own best 2017). The two robustness tests disagree
   for 1052 because PB35/ROE75's best year is 2025, not 2021; ROE65 is the only one strong in both.
   Always report full-period, ex-2021, and drop-own-best together.
 - Dividend audit: `declared` uses the proposal date (realistic) but the **final implemented amount**;
   it is a valid approximation if proposal≈final, otherwise it overstates. Paid is a conservative
-  lower bound, not the true proposal strategy. Paid: 1052 div M3b 12.21%, 2020+ 13.84%
-  (2020-2025 12.55%); 932 div M3b 9.36%, 2020+ 12.28%. True value is likely between paid and
-  declared; need initial proposal amounts to settle.
-- 932 (grid_v1): full-period max PB15/ROE65 + N6, M3b 15.07%, MDD -34.2%;
-  robustness-first PB10/ROE60/N5, 14.79%, ex-2021 15.34%, drop-own-best 15.03%, MDD -32.8%.
+  lower bound, not the true proposal strategy. Paid after tax: 1052 div M3b 12.12%, 2020+ 13.73%;
+  932 div M3b 9.34%, 2020+ 12.27%. True value is likely between paid and declared; need initial
+  proposal amounts to settle.
+- 932 (grid_v1): full-period max PB15/ROE65 + N6, after-tax M3b 15.01%, MDD -34.2%;
+  robustness-first PB10/ROE60/N5, after-tax 14.76% (pre-tax 14.79%); ex-2021 15.34% and
+  drop-own-best 15.03% are pre-tax grid metrics.
 - Dividend tax module (2026-11): `backtesting/dividend_tax.py` + `portfolio.py` lots/FIFO.
   Only sold shares are taxed: <=1 month 20%, <=1 year 10%, >1 year 0%. Retained/added shares
-  do not trigger tax. CLI: `--dividend_tax`. Tax drag is small (1052 declared 15.53->15.45,
-  2020+ 18.62->18.50) because exits are the only taxable events.
+  do not trigger tax. **Tax is ON by default**; use `--no_dividend_tax` to reproduce old results.
+  Tax drag is small (1052 declared 15.53->15.45, 2020+ 18.62->18.50) because exits are the
+  only taxable events.
 - Full-sweep scripts: `backtesting/universe_compare.py`, `build_universe_report.py`,
   `build_pool_report.py`, `analyze_holdings_diff.py`, `test_within_basket.py`,
   `enrich_summary_metrics.py`, `compare_three_metrics.py`,
