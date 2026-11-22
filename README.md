@@ -13,7 +13,7 @@ A Python-based stock analysis tool that queries financial and price data, calcul
 - **Individual Stock Query**: Query and visualize valuation data for a specific stock
 - **Top Stocks Ranking**: Find top N stocks based on valuation indicators
 
-**当前推荐（2026-11，grid_v1）**：1052 **PB10/ROE65 + 股息率**（M3b 15.53%）；932 全期最高 **PB15/ROE65 + N6**（15.07%），稳健优先 **PB10/ROE60**（14.79%，ex-2021 15.34%、剔自身最高年 15.03%）。2023-2026 无股息版反超，需监控。详见 [grid_v1 汇总](docs/grid-v1-summary-2026-11.md)。
+**当前推荐（2026-11，grid_v1）**：1052 **PB10/ROE65 + 股息率**（declared 15.53%，**paid 12.21%**）；932 全期最高 **PB15/ROE65 + N6**（declared 15.07%，**paid 9.36%**），稳健优先 **PB10/ROE60**（14.79%，ex-2021 15.34%、剔自身最高年 15.03%）。2023-2026 无股息版反超，需监控。**股息 `declared` 含前视，决策看 `paid`**；详见 [股息口径审计](docs/dividend-audit-2026-11.md)。
 
 ## 报告体系演变
 
@@ -21,6 +21,7 @@ A Python-based stock analysis tool that queries financial and price data, calcul
 - **2026-11 中**：确认 M3b 最贴近真实建仓，改为 M3b 主口径，M1/M2/M3 只做辅助。
 - **2026-11 末**：固定为 **grid_v1 2×2 标准网格 + 五份报告**（1052/932 × 股息/非股息）；股息 138 distinct/池、非股息 87 distinct/池、两池 450 distinct；股息率版成为 1052 默认候选。
 - **稳健性**：股息格必须同时看全期 M3b、剔除 2021、剔除自身最高年；后两项**只针对股息模式**，非股息格不适用。
+- **股息口径**：`declared` 是“预案日 + 最终金额”的上限，含前视；决策默认看 `paid`。
 - **以后**：M3b 是唯一主指标；M1/M2/M3 不要求计算。股票清单变成 3×2/4×2 时加池子；长期明显更差的池子（如 932）可以移除，类似不再把 M1/M2/M3 当主指标。
 - **报告验收清单**：见 playbook §2.0.2（每份子报告必须有净值/回撤、股息格子必须有股息率数据，总报告必须有四格持仓对比）。
 
@@ -41,6 +42,7 @@ Start here if you are new to this repository, or if you are starting a new agent
 | [docs/grid-v1-932-nodiv-2026-11.md](docs/grid-v1-932-nodiv-2026-11.md) | grid_v1 · 932 × 非股息 |
 | [docs/grid-v1-932-div-2026-11.md](docs/grid-v1-932-div-2026-11.md) | grid_v1 · 932 × 股息 |
 | [docs/html/grid-v1-reports-2026-11.html](docs/html/grid-v1-reports-2026-11.html) | **五份报告合订 HTML**（自包含、移动端适配、带目录、可打印） |
+| [docs/dividend-audit-2026-11.md](docs/dividend-audit-2026-11.md) | **股息口径审计**：declared 前视、paid 对照、幸存者偏差 |
 | [docs/matrix-1052-nodiv-2026-11.md](docs/matrix-1052-nodiv-2026-11.md) | 1052 × 非股息：121 组标准网格 |
 | [docs/matrix-1052-div-2026-11.md](docs/matrix-1052-div-2026-11.md) | 1052 × 股息：121 组标准网格 |
 | [docs/matrix-932-nodiv-2026-11.md](docs/matrix-932-nodiv-2026-11.md) | 932 × 非股息：121 组标准网格 |

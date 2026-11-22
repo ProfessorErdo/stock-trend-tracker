@@ -15,6 +15,7 @@ REPORTS = [
     ('1052-div', '02', '1052 × 股息', 'grid-v1-1052-div-2026-11.md'),
     ('932-nodiv', '03', '932 × 非股息', 'grid-v1-932-nodiv-2026-11.md'),
     ('932-div', '04', '932 × 股息', 'grid-v1-932-div-2026-11.md'),
+    ('audit', 'A', '附录：股息口径审计', 'dividend-audit-2026-11.md'),
 ]
 MD_ANCHORS = {f: f'#report-{rid}' for rid, _, _, f in REPORTS}
 
@@ -262,7 +263,7 @@ def build_html() -> str:
         frag = build_fragment(rel)
         sections.append(f'''
 <section class="report" id="report-{rid}">
-  <div class="report-head"><span class="report-no">报告 {no}</span><span class="report-title">{html.escape(title)}</span></div>
+  <div class="report-head"><span class="report-no">{'附录' if rid=='audit' else '报告'} {no}</span><span class="report-title">{html.escape(title)}</span></div>
   {frag}
   <p class="source">源文件：<a href="../{rel}">{rel}</a></p>
 </section>''')
@@ -279,7 +280,7 @@ def build_html() -> str:
   <aside class="sidebar">
     <div class="brand">A-share · grid_v1</div>
     <h1>2×2 回测报告</h1>
-    <div class="sub">1052 / 932 × 股息 / 非股息</div>
+    <div class="sub">1052 / 932 × 股息 / 非股息<br>5 份报告 + 股息口径审计</div>
     <div class="meta">数据截止 2026-11-06<br>生成 2026-11-21 · 5 份报告</div>
     <nav class="toc">{toc}</nav>
     <div class="hint">屏幕阅读建议用左侧目录；打印或“另存为 PDF”会自动隐藏导航，按 A4 排版。</div>
@@ -302,7 +303,7 @@ def build_html() -> str:
         <div class="kpi"><b>15.53%</b><span>1052 股息推荐 M3b</span></div>
       </div>
     </section>
-    <div class="notice"><b>阅读提示：</b>本合订本包含 1 份汇总 + 4 份子报告。股息格默认 ROE65；ROE55 是边界值，报告里单列。剔除 2021 / 剔除自身最高年两项稳健性检验<strong>只针对股息模式</strong>。</div>
+    <div class="notice"><b>阅读提示：</b>本合订本包含 1 份汇总 + 4 份子报告 + 股息口径审计附录。股息格 <code>declared</code> 数字含前视，只能当上限；决策请对照 <code>paid</code>。剔除 2021 / 剔除自身最高年两项稳健性检验<strong>只针对股息模式</strong>。</div>
     {''.join(sections)}
   </main>
 </div>
