@@ -303,7 +303,7 @@ def build_html() -> str:
         <div class="kpi"><b>15.53%</b><span>1052 股息推荐 M3b</span></div>
       </div>
     </section>
-    <div class="notice"><b>阅读提示：</b>本合订本包含 1 份汇总 + 4 份子报告 + 股息口径审计附录。股息格 <code>declared</code> 数字含前视，只能当上限；决策请对照 <code>paid</code>。剔除 2021 / 剔除自身最高年两项稳健性检验<strong>只针对股息模式</strong>。</div>
+    <div class="notice"><b>阅读提示：</b>本合订本包含 1 份汇总 + 4 份子报告 + 股息口径审计附录。股息格 <code>declared</code> 用“预案日 + 最终金额”；预案日选股合理，只有最终金额≠初始预案时才会高估；<code>paid</code> 是保守下界。剔除 2021 / 剔除自身最高年两项稳健性检验<strong>只针对股息模式</strong>。</div>
     {''.join(sections)}
   </main>
 </div>
